@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Opencsv
+Bundle-SymbolicName: au.com.opencsv
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Export-Package: au.com.bytecode.opencsv,
+ au.com.bytecode.opencsv.bean
