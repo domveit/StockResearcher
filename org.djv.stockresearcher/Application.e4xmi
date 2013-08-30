@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_urcBgAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ide.application" bindingContexts="_urcBiQn1EeOInNDXYak8ig">
+  <children xsi:type="basic:TrimmedWindow" xmi:id="_urcBgQn1EeOInNDXYak8ig" label="org.djv.stockresearcher" width="500" height="400">
+    <children xsi:type="advanced:PerspectiveStack" xmi:id="_urcolQn1EeOInNDXYak8ig">
+      <children xsi:type="advanced:Perspective" xmi:id="_urcolgn1EeOInNDXYak8ig">
+        <children xsi:type="basic:PartSashContainer" xmi:id="_urcolwn1EeOInNDXYak8ig">
+          <children xsi:type="basic:PartSashContainer" xmi:id="_QxSisAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partsashcontainer.1" horizontal="true">
+            <children xsi:type="basic:PartStack" xmi:id="_urcomAn1EeOInNDXYak8ig">
+              <children xsi:type="basic:Part" xmi:id="_urcomQn1EeOInNDXYak8ig" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.SectorSearchPart" label="Sector Search"/>
+            </children>
+          </children>
+          <children xsi:type="basic:PartSashContainer" xmi:id="_3cqAQAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partsashcontainer.0" horizontal="true">
+            <children xsi:type="basic:PartStack" xmi:id="_5EuKQAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partstack.1">
+              <children xsi:type="basic:Part" xmi:id="_5eHhsAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.1" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.StockChartPart" label="Chart"/>
+            </children>
+            <children xsi:type="basic:PartStack" xmi:id="_7RAboAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partstack.2" selectedElement="_818ZIAz6EeO-noCWkd_QVw">
+              <children xsi:type="basic:Part" xmi:id="_818ZIAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.2" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.DividendsPart" label="Dividends"/>
+              <children xsi:type="basic:Part" xmi:id="_wggGcAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.0" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.FinancialsPart" label="Financials"/>
+            </children>
+          </children>
+        </children>
+      </children>
+    </children>
+    <mainMenu xmi:id="_urcBmQn1EeOInNDXYak8ig" elementId="menu:org.eclipse.ui.main.menu">
+      <children xsi:type="menu:Menu" xmi:id="_urcBmgn1EeOInNDXYak8ig" label="File">
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcokAn1EeOInNDXYak8ig" label="Open" iconURI="platform:/plugin/org.djv.stockresearcher/icons/sample.gif" command="_urcBkAn1EeOInNDXYak8ig"/>
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcokQn1EeOInNDXYak8ig" label="Save" iconURI="platform:/plugin/org.djv.stockresearcher/icons/save_edit.gif" command="_urcBkwn1EeOInNDXYak8ig"/>
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcokgn1EeOInNDXYak8ig" label="Quit" command="_urcBjAn1EeOInNDXYak8ig"/>
+      </children>
+      <children xsi:type="menu:Menu" xmi:id="_urcokwn1EeOInNDXYak8ig" label="Help">
+        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcolAn1EeOInNDXYak8ig" label="About" command="_urcBlgn1EeOInNDXYak8ig"/>
+      </children>
+    </mainMenu>
+    <trimBars xmi:id="_urcomgn1EeOInNDXYak8ig">
+      <children xsi:type="menu:ToolBar" xmi:id="_urcomwn1EeOInNDXYak8ig" elementId="toolbar:org.eclipse.ui.main.toolbar">
+        <children xsi:type="menu:HandledToolItem" xmi:id="_urconAn1EeOInNDXYak8ig" iconURI="platform:/plugin/org.djv.stockresearcher/icons/sample.gif" command="_urcBkAn1EeOInNDXYak8ig"/>
+        <children xsi:type="menu:HandledToolItem" xmi:id="_urconQn1EeOInNDXYak8ig" iconURI="platform:/plugin/org.djv.stockresearcher/icons/save_edit.gif" command="_urcBkwn1EeOInNDXYak8ig"/>
+      </children>
+    </trimBars>
+  </children>
+  <handlers xmi:id="_urcBjQn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.quitCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.QuitHandler" command="_urcBjAn1EeOInNDXYak8ig"/>
+  <handlers xmi:id="_urcBkQn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.openCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.OpenHandler" command="_urcBkAn1EeOInNDXYak8ig"/>
+  <handlers xmi:id="_urcBlAn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.saveCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.SaveHandler" command="_urcBkwn1EeOInNDXYak8ig"/>
+  <handlers xmi:id="_urcBlwn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.aboutCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.AboutHandler" command="_urcBlgn1EeOInNDXYak8ig"/>
+  <bindingTables xmi:id="_urcBjgn1EeOInNDXYak8ig" bindingContext="_urcBiQn1EeOInNDXYak8ig">
+    <bindings xmi:id="_urcBjwn1EeOInNDXYak8ig" keySequence="M1+Q" command="_urcBjAn1EeOInNDXYak8ig"/>
+    <bindings xmi:id="_urcBkgn1EeOInNDXYak8ig" keySequence="M1+O" command="_urcBkAn1EeOInNDXYak8ig"/>
+    <bindings xmi:id="_urcBlQn1EeOInNDXYak8ig" keySequence="M1+S" command="_urcBkwn1EeOInNDXYak8ig"/>
+    <bindings xmi:id="_urcBmAn1EeOInNDXYak8ig" keySequence="M1+A" command="_urcBlgn1EeOInNDXYak8ig"/>
+  </bindingTables>
+  <rootContext xmi:id="_urcBiQn1EeOInNDXYak8ig" elementId="org.eclipse.ui.contexts.dialogAndWindow" name="In Dialog and Windows">
+    <children xmi:id="_urcBign1EeOInNDXYak8ig" elementId="org.eclipse.ui.contexts.window" name="In Windows"/>
+    <children xmi:id="_urcBiwn1EeOInNDXYak8ig" elementId="org.eclipse.ui.contexts.dialog" name="In Dialogs"/>
+  </rootContext>
+  <commands xmi:id="_urcBjAn1EeOInNDXYak8ig" elementId="org.eclipse.ui.file.exit" commandName="quitCommand"/>
+  <commands xmi:id="_urcBkAn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.open" commandName="openCommand"/>
+  <commands xmi:id="_urcBkwn1EeOInNDXYak8ig" elementId="org.eclipse.ui.file.save" commandName="saveCommand"/>
+  <commands xmi:id="_urcBlgn1EeOInNDXYak8ig" elementId="org.eclipse.ui.help.aboutAction" commandName="aboutCommand"/>
+  <addons xmi:id="_urcBggn1EeOInNDXYak8ig" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
+  <addons xmi:id="_urcBgwn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>
+  <addons xmi:id="_urcBhAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.bindings.service" contributionURI="bundleclass://org.eclipse.e4.ui.bindings/org.eclipse.e4.ui.bindings.BindingServiceAddon"/>
+  <addons xmi:id="_urcBhQn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.workbench.commands.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.CommandProcessingAddon"/>
+  <addons xmi:id="_urcBhgn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.workbench.handler.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.HandlerProcessingAddon"/>
+  <addons xmi:id="_urcBhwn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.workbench.contexts.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.ContextProcessingAddon"/>
+  <addons xmi:id="_urcBiAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.workbench.bindings.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench.swt/org.eclipse.e4.ui.workbench.swt.util.BindingProcessingAddon"/>
+</application:Application>

@@ -1,0 +1,215 @@
+110;Basic Materials;Chemicals - Major Diversified
+111;Basic Materials;Synthetics
+112;Basic Materials;Agricultural Chemicals
+113;Basic Materials;Specialty Chemicals
+120;Basic Materials;Major Integrated Oil & Gas
+121;Basic Materials;Independent Oil & Gas
+122;Basic Materials;Oil & Gas Refining & Marketing
+123;Basic Materials;Oil & Gas Drilling & Exploration
+124;Basic Materials;Oil & Gas Equipment & Services
+125;Basic Materials;Oil & Gas Pipelines
+130;Basic Materials;Steel & Iron
+131;Basic Materials;Copper
+132;Basic Materials;Aluminum
+133;Basic Materials;Industrial Metals & Minerals
+134;Basic Materials;Gold
+135;Basic Materials;Silver
+136;Basic Materials;Nonmetallic Mineral Mining
+210;Conglomerates;Conglomerates
+310;Consumer Goods;Appliances
+311;Consumer Goods;Home Furnishings & Fixtures
+312;Consumer Goods;Housewares & Accessories
+313;Consumer Goods;Business Equipment
+314;Consumer Goods;Electronic Equipment
+315;Consumer Goods;Toys & Games
+316;Consumer Goods;Sporting Goods
+317;Consumer Goods;Recreational Goods, Other
+318;Consumer Goods;Photographic Equipment & Supplies
+320;Consumer Goods;Textile - Apparel Clothing
+321;Consumer Goods;Textile - Apparel Footwear & Accessories
+322;Consumer Goods;Rubber & Plastics
+323;Consumer Goods;Personal Products
+324;Consumer Goods;Paper & Paper Products
+325;Consumer Goods;Packaging & Containers
+326;Consumer Goods;Cleaning Products
+327;Consumer Goods;Office Supplies
+330;Consumer Goods;Auto Manufacturers - Major
+331;Consumer Goods;Trucks & Other Vehicles
+332;Consumer Goods;Recreational Vehicles
+333;Consumer Goods;Auto Parts
+340;Consumer Goods;Food - Major Diversified
+341;Consumer Goods;Farm Products
+342;Consumer Goods;Processed & Packaged Goods
+343;Consumer Goods;Meat Products
+344;Consumer Goods;Dairy Products
+345;Consumer Goods;Confectioners
+346;Consumer Goods;Beverages - Brewers
+347;Consumer Goods;Beverages - Wineries & Distillers
+348;Consumer Goods;Beverages - Soft Drinks
+350;Consumer Goods;Cigarettes
+351;Consumer Goods;Tobacco Products, Other
+410;Financial;Money Center Banks
+411;Financial;Regional - Northeast Banks
+412;Financial;Regional - Mid-Atlantic Banks
+413;Financial;Regional - Southeast Banks
+414;Financial;Regional - Midwest Banks
+415;Financial;Regional - Southwest Banks
+416;Financial;Regional - Pacific Banks
+417;Financial;Foreign Money Center Banks
+418;Financial;Foreign Regional Banks
+419;Financial;Savings & Loans
+420;Financial;Investment Brokerage - National
+421;Financial;Investment Brokerage - Regional
+422;Financial;Asset Management
+423;Financial;Diversified Investments
+424;Financial;Credit Services
+425;Financial;Closed-End Fund - Debt
+426;Financial;Closed-End Fund - Equity
+427;Financial;Closed-End Fund - Foreign
+430;Financial;Life Insurance
+431;Financial;Accident & Health Insurance
+432;Financial;Property & Casualty Insurance
+433;Financial;Surety & Title Insurance
+434;Financial;Insurance Brokers
+440;Financial;REIT - Diversified
+441;Financial;REIT - Office
+442;Financial;REIT - Healthcare Facilities
+443;Financial;REIT - Hotel/Motel
+444;Financial;REIT - Industrial
+445;Financial;REIT - Residential
+446;Financial;REIT - Retail
+447;Financial;Mortgage Investment
+448;Financial;Property Management
+449;Financial;Real Estate Development
+510;Healthcare;Drug Manufacturers - Major
+511;Healthcare;Drug Manufacturers - Other
+512;Healthcare;Drugs - Generic
+513;Healthcare;Drug Delivery
+514;Healthcare;Drug Related Products
+515;Healthcare;Biotechnology
+516;Healthcare;Diagnostic Substances
+520;Healthcare;Medical Instruments & Supplies
+521;Healthcare;Medical Appliances & Equipment
+522;Healthcare;Health Care Plans
+523;Healthcare;Long-Term Care Facilities
+524;Healthcare;Hospitals
+525;Healthcare;Medical Laboratories & Research
+526;Healthcare;Home Health Care
+527;Healthcare;Medical Practitioners
+528;Healthcare;Specialized Health Services
+610;Industrial Goods;Aerospace/Defense - Major Diversified
+611;Industrial Goods;Aerospace/Defense Products & Services
+620;Industrial Goods;Farm & Construction Machinery
+621;Industrial Goods;Industrial Equipment & Components
+622;Industrial Goods;Diversified Machinery
+623;Industrial Goods;Pollution & Treatment Controls
+624;Industrial Goods;Machine Tools & Accessories
+625;Industrial Goods;Small Tools & Accessories
+626;Industrial Goods;Metal Fabrication
+627;Industrial Goods;Industrial Electrical Equipment
+628;Industrial Goods;Textile Industrial
+630;Industrial Goods;Residential Construction
+631;Industrial Goods;Manufactured Housing
+632;Industrial Goods;Lumber, Wood Production
+633;Industrial Goods;Cement
+634;Industrial Goods;General Building Materials
+635;Industrial Goods;Heavy Construction
+636;Industrial Goods;General Contractors
+637;Industrial Goods;Waste Management
+710;Services;Lodging
+711;Services;Resorts & Casinos
+712;Services;Restaurants
+713;Services;Specialty Eateries
+714;Services;Gaming Activities
+715;Services;Sporting Activities
+716;Services;General Entertainment
+720;Services;Advertising Agencies
+721;Services;Marketing Services
+722;Services;Entertainment - Diversified
+723;Services;Broadcasting - TV
+724;Services;Broadcasting - Radio
+725;Services;CATV Systems
+726;Services;Movie Production, Theaters
+727;Services;Publishing - Newspapers
+728;Services;Publishing - Periodicals
+729;Services;Publishing - Books
+730;Services;Apparel Stores
+731;Services;Department Stores
+732;Services;Discount, Variety Stores
+733;Services;Drug Stores
+734;Services;Grocery Stores
+735;Services;Electronics Stores
+736;Services;Home Improvement Stores
+737;Services;Home Furnishing Stores
+738;Services;Auto Parts Stores
+739;Services;Catalog & Mail Order Houses
+740;Services;Sporting Goods Stores
+741;Services;Toy & Hobby Stores
+742;Services;Jewelry Stores
+743;Services;Music & Video Stores
+744;Services;Auto Dealerships
+745;Services;Specialty Retail, Other
+750;Services;Auto Parts Wholesale
+751;Services;Building Materials Wholesale
+752;Services;Industrial Equipment Wholesale
+753;Services;Electronics Wholesale
+754;Services;Medical Equipment Wholesale
+755;Services;Computers Wholesale
+756;Services;Drugs Wholesale
+757;Services;Food Wholesale
+758;Services;Basic Materials Wholesale
+759;Services;Wholesale, Other
+760;Services;Business Services
+761;Services;Rental & Leasing Services
+762;Services;Personal Services
+763;Services;Consumer Services
+764;Services;Staffing & Outsourcing Services
+765;Services;Security & Protection Services
+766;Services;Education & Training Services
+767;Services;Technical Services
+768;Services;Research Services
+769;Services;Management Services
+770;Services;Major Airlines
+771;Services;Regional Airlines
+772;Services;Air Services, Other
+773;Services;Air Delivery & Freight Services
+774;Services;Trucking
+775;Services;Shipping
+776;Services;Railroads
+810;Technology;Diversified Computer Systems
+811;Technology;Personal Computers
+812;Technology;Computer Based Systems
+813;Technology;Data Storage Devices
+814;Technology;Networking & Communication Devices
+815;Technology;Computer Peripherals
+820;Technology;Multimedia & Graphics Software
+821;Technology;Application Software
+822;Technology;Technical & System Software
+823;Technology;Security Software & Services
+824;Technology;Information Technology Services
+825;Technology;Healthcare Information Services
+826;Technology;Business Software & Services
+827;Technology;Information & Delivery Services
+830;Technology;Semiconductor - Broad Line
+831;Technology;Semiconductor- Memory Chips
+832;Technology;Semiconductor - Specialized
+833;Technology;Semiconductor - Integrated Circuits
+834;Technology;Semiconductor Equipment & Materials
+835;Technology;Printed Circuit Boards
+836;Technology;Diversified Electronics
+837;Technology;Scientific & Technical Instruments
+840;Technology;Wireless Communications
+841;Technology;Communication Equipment
+842;Technology;Processing Systems & Products
+843;Technology;Long Distance Carriers
+844;Technology;Telecom Services - Domestic
+845;Technology;Telecom Services - Foreign
+846;Technology;Diversified Communication Services
+850;Technology;Internet Service Providers
+851;Technology;Internet Information Providers
+852;Technology;Internet Software & Services
+910;Utilities;Foreign Utilities
+911;Utilities;Electric Utilities
+912;Utilities;Gas Utilities
+913;Utilities;Diversified Utilities
+914;Utilities;Water Utilities
