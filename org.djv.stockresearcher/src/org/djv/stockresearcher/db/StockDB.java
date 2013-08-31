@@ -20,9 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.inject.Inject;
 
 import org.djv.stockresearcher.model.DivData;
-import org.djv.stockresearcher.model.FinData;
 import org.djv.stockresearcher.model.FinPeriodData;
 import org.djv.stockresearcher.model.StockData;
 import org.eclipse.e4.core.di.annotations.Creatable;
@@ -32,23 +35,65 @@ import au.com.bytecode.opencsv.CSVReader;
 @Creatable
 public class StockDB {
 	
+	final ExecutorService pool = Executors.newFixedThreadPool(8);
 	Map<String, StockData> stockMap = new HashMap<String, StockData>();
+	Map<Integer, List<StockData>> industryStockMap = new HashMap<Integer, List<StockData>>();
 	
-	public void getDataForStocks(List<StockData> stocks) throws Exception {
+	List<IndustryStockListener> industryStockListeners = new ArrayList<IndustryStockListener>();
+	
+	List<StockDataChangeListener> stockDataChangeListeners = new ArrayList<StockDataChangeListener>();
+	
+	@Inject
+	private SectorIndustryRegistry sir;
+	
+	public void notifyAllIndustryStockListeners(int industry, List<StockData> sdl) {
+		for (IndustryStockListener isl : industryStockListeners){
+			isl.notifyChanged(industry, sdl);
+		}
+	}
+	
+	public void addIndustryStockListener(IndustryStockListener isl) {
+		industryStockListeners.add(isl);
+	}
+	
+	public void notifyAllStockDataChangeListeners(StockData sd) {
+		for (StockDataChangeListener sdcl : stockDataChangeListeners){
+			sdcl.notifyChanged(sd);
+		}
+	}
+	
+	public void addStockDataChangeListener(StockDataChangeListener sdcl) {
+		stockDataChangeListeners.add(sdcl);
+	}
+	
+	public void getDataForStocks(final List<StockData> stocks) throws Exception {
 		int nbrStocks = stocks.size();
 		
-		if (nbrStocks > 50){
-			int nbrGroups = (nbrStocks - 1) /50 + 1;
-			for (int i = 1; i <= nbrGroups; i ++){
-				if (i == nbrGroups){
-					getDataForStocks(stocks.subList(50 * (i-1), stocks.size()));
-				} else {
-					getDataForStocks(stocks.subList(50 * (i-1), 50 * i));
-				}
+		int nbrGroups = (nbrStocks - 1) /50 + 1;
+		for (int i = 1; i <= nbrGroups; i ++){
+			List<StockData> subList = null;
+			if (i == nbrGroups){
+				subList = stocks.subList(50 * (i-1), stocks.size());
+			} else {
+				subList = stocks.subList(50 * (i-1), 50 * i);
 			}
-			return;
+			final List<StockData> subListFinal = subList;
+			pool.execute(new Runnable(){
+				@Override
+				public void run() {
+					try {
+						getDataForStocksInternal(subListFinal);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				
+			});
 		}
-		
+		return;
+	}
+	
+	public void getDataForStocksInternal(List<StockData> stocks) throws Exception {
 		YahooFinanceUtil.createStockFiles(stocks);
 		
 		for (StockData sd : stocks) {
@@ -74,18 +119,31 @@ public class StockDB {
 				sd.setMarketCap(marketCap);
 				sd.setExchange(exchange);
 			}
+			notifyAllStockDataChangeListeners(sd);
 			reader.close();
+			
+			final StockData finalSD = sd;
+			pool.execute(new Runnable(){
+				@Override
+				public void run() {
+					try {
+						getDivData(finalSD);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				
+			});
 		}
 	}
 
 
 	public void getDivData(StockData stockData) throws Exception {
-		if (stockData.getDivData() == null){
-			System.err.println("getting div data for " + stockData.getSymbol());
-			List<DivData> ddl = getHistoricalDividend(stockData.getSymbol());
-			stockData.setDivData(ddl);
-			StockDataUtil.crunchDividends(stockData);
-		}
+		System.err.println("getting div data for " + stockData.getSymbol());
+		List<DivData> ddl = getHistoricalDividend(stockData.getSymbol());
+		stockData.setDivData(ddl);
+		StockDataUtil.crunchDividends(stockData);
+		notifyAllStockDataChangeListeners(stockData);
 	}
 
 	public List<DivData> getHistoricalDividend(String symbol) throws Exception {
@@ -237,9 +295,46 @@ public class StockDB {
 	    	}
     	}
 	}
+	
+	
+	public void updateSectorAndIndustry(String sector, String industry){
+		if ("ALL".equals(industry)){
+			List<String> ilist = sir.getIndustriesForSector(sector);
+			for (String i : ilist){
+				if ("ALL".equals(i)){
+					continue;
+				}
+				final int id = sir.getIdForSectorIndustry(sector, i);
+				pool.submit(new Runnable(){
+					@Override
+					public void run() {
+						try {
+							List<StockData> list = getStocksForIndustryAndSector(id);
+							getDataForStocks(list);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+			}
+		} else {
+			final int id = sir.getIdForSectorIndustry(sector, industry);
+			pool.submit(new Runnable(){
+				@Override
+				public void run() {
+					try {
+						List<StockData> list = getStocksForIndustryAndSector(id);
+						getDataForStocks(list);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		}
+	}
 
 
-	public List<StockData> getStocksForIndustryAndSector(int industryId) throws Exception {
+	private List<StockData> getStocksForIndustryAndSector(int industryId) throws Exception {
 		System.err.println("getting Stocks for " + industryId);
 		 Map<String, String> nameMap = getNameMap(industryId);
 		
@@ -318,8 +413,10 @@ public class StockDB {
 			l.add(sd);
 		}
 	    
+		industryStockMap.put(industryId, l);
+		notifyAllIndustryStockListeners(industryId, l);
+	    
 	    reader.close();
-		
 		return l;
 	}
 

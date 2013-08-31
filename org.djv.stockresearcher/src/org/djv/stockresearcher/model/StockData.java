@@ -14,8 +14,8 @@ public class StockData {
 	Double yield;
 	String pe;
 	String peg;
-	Integer streak;
-	Integer skipped;
+	int streak;
+	int skipped;
 	
 	String normDividend;
 	Double normYield;
@@ -149,16 +149,16 @@ public class StockData {
 	public void setPeg(String peg) {
 		this.peg = peg;
 	}
-	public Integer getStreak() {
+	public int getStreak() {
 		return streak;
 	}
-	public void setStreak(Integer streak) {
+	public void setStreak(int streak) {
 		this.streak = streak;
 	}
-	public Integer getSkipped() {
+	public int getSkipped() {
 		return skipped;
 	}
-	public void setSkipped(Integer skipped) {
+	public void setSkipped(int skipped) {
 		this.skipped = skipped;
 	}
 	public Map<Integer, DivYearData> getDivYearData() {

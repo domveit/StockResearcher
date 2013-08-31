@@ -31,28 +31,28 @@ public class StockDBTest {
 		}
 	}
 	
-	@Test
-	public void test1b() throws Exception {
-		StockDB db = new StockDB();
-		
-		List<StockData> sl = db.getStocksForIndustryAndSector(110);
-		
-		db.getDataForStocks(sl);
-		for (StockData sd : sl){
-//			db.getDivData(sd);
-			System.err.println(sd);
-		}
-	}
-	
-	@Test
-	public void test2() throws Exception {
-		StockDB yf = new StockDB();
-		List<StockData> l3 = yf.getStocksForIndustryAndSector(110);
-		for (StockData sd : l3){
-			System.err.println(sd);
-		}
-	}
-	
+//	@Test
+//	public void test1b() throws Exception {
+//		StockDB db = new StockDB();
+//		
+//		List<StockData> sl = db.getStocksForIndustryAndSector(110);
+//		
+//		db.getDataForStocks(sl);
+//		for (StockData sd : sl){
+////			db.getDivData(sd);
+//			System.err.println(sd);
+//		}
+//	}
+//	
+//	@Test
+//	public void test2() throws Exception {
+//		StockDB yf = new StockDB();
+//		List<StockData> l3 = yf.getStocksForIndustryAndSector(110);
+//		for (StockData sd : l3){
+//			System.err.println(sd);
+//		}
+//	}
+//	
 	@Test
 	public void test2a() throws Exception {
 		StockDB yf = new StockDB();
