@@ -191,28 +191,28 @@ public class StockDataUtil {
 			if (stockData.getNormYield() >= 1.0d){
 				yr = 1;
 			} 
-			if (stockData.getNormYield() >= 2.0d){
+			if (stockData.getNormYield() >= 1.5d){
 				yr = 2;
 			} 
-			if (stockData.getNormYield() >= 3.0d){
+			if (stockData.getNormYield() >= 2.0d){
 				yr = 3;
 			} 
-			if (stockData.getNormYield() >= 3.5d){
+			if (stockData.getNormYield() >= 2.5d){
 				yr = 4;
 			} 
-			if (stockData.getNormYield() >= 4.0d){
+			if (stockData.getNormYield() >= 3.0d){
 				yr = 5;
 			}
-			if (stockData.getNormYield() >= 4.5d){
+			if (stockData.getNormYield() >= 3.5d){
 				yr = 6;
 			} 
-			if (stockData.getNormYield() >= 5.0d){
+			if (stockData.getNormYield() >= 4.0d){
 				yr = 7;
 			} 
-			if (stockData.getNormYield() >= 6.0d){
+			if (stockData.getNormYield() >= 5.0d){
 				yr = 8;
 			} 
-			if (stockData.getNormYield() >= 7.5d){
+			if (stockData.getNormYield() >= 7.0d){
 				yr = 9;
 			}
 			if (stockData.getNormYield() >= 9.0d){
@@ -294,12 +294,42 @@ public class StockDataUtil {
 				gr = 10;
 			} 
 		}
+
+		double overall = (yr + sr + gr);
+		double nbrDiv = 3.0;
+		if (yr == 1 || yr == 10){
+			overall += (1 * yr);
+			nbrDiv += 1.0;
+		}
+		if (sr == 1 || sr == 10){
+			overall += (1 * sr);
+			nbrDiv += 1.0;
+		}
+		if (gr == 1 || gr == 10){
+			overall += (1 * gr);
+			nbrDiv += 1.0;
+		}
 		
-		double overall = (yr + sr + gr) / 3.0d;
+		if (yr == 2 || yr == 3|| yr == 8|| yr == 9){
+			overall += (.5* yr);
+			nbrDiv += 0.5;
+		}
+		
+		if (sr == 2 || sr == 3|| sr == 8|| sr == 9){
+			overall += (.5* sr);
+			nbrDiv += 0.5;
+		}
+		
+		if (gr == 2 || gr == 3|| gr == 8|| gr == 9){
+			overall += (.5* gr);
+			nbrDiv += 0.5;
+		}
+		
+		double rank = overall / nbrDiv;
 		stockData.setYieldRank(yr);
 		stockData.setStalwartRank(sr);
 		stockData.setGrowthRank(gr);
-		stockData.setOverAllRank(overall);
+		stockData.setOverAllRank(rank);
 	}
 
 	private static void normalizeDivs(StockData sd) {
