@@ -93,7 +93,7 @@ public class StockDataUtil {
 			}
 			BigDecimal prevDiv = dydPrevYr.getNormalizedDiv();
 			
-			if (prevDiv.compareTo(currDiv) > 0){
+			if (prevDiv.compareTo(currDiv) > 0 || currDiv.compareTo(BigDecimal.ZERO) == 0){
 				stopStreak = true;
 			}
 			
@@ -136,6 +136,44 @@ public class StockDataUtil {
 		Map<Integer, DivYearData> divYearData = sd.getDivYearData();
 		Calendar c = Calendar.getInstance();
 		int currYYYY = c.get(Calendar.YEAR);
+		
+		// look for early paid Q4 dividends in 2012 and move them to 2013
+		{
+		DivYearData dyd = divYearData.get(currYYYY);
+		DivYearData dydMinus1 = divYearData.get(currYYYY - 1);
+		DivYearData dydMinus2 = divYearData.get(currYYYY - 2);
+		DivYearData dydMinus3 = divYearData.get(currYYYY - 3);
+		
+		if (dyd != null && dydMinus1 != null && dydMinus2!= null && dydMinus3 != null){
+			if (dydMinus2.getDivDetail().size() == 4 && dydMinus3.getDivDetail().size() == 4 && dydMinus1.getDivDetail().size() == 5){
+				DivData extraQ4Div = null;
+				for (DivData dd : dydMinus1.getDivDetail()){
+					int em =dd.getDate().get(Calendar.MONTH);
+					if (em == Calendar.DECEMBER || em == Calendar.NOVEMBER){
+						extraQ4Div = dd;
+						break;
+					}
+				}
+				DivData q1Div = null;
+				for (DivData dd : dyd.getDivDetail()){
+					int em =dd.getDate().get(Calendar.MONTH);
+					if (em == Calendar.JANUARY || em == Calendar.FEBRUARY){
+						q1Div = dd;
+						break;
+					}
+				}
+				
+				if (extraQ4Div != null && q1Div == null){
+					dydMinus1.getDivDetail().remove(extraQ4Div);
+					dydMinus1.setNormalizedDiv(dydMinus1.getNormalizedDiv().subtract(extraQ4Div.getNormalizedDivided()));
+					dyd.getDivDetail().add(extraQ4Div);
+					dyd.setNormalizedDiv(dyd.getNormalizedDiv().add(extraQ4Div.getNormalizedDivided()));
+				}
+				
+			}
+		}
+		}
+		
 		for (Integer y = currYYYY - 1; y > 1960; y --){
 			
 			DivYearData dyd = divYearData.get(y);
@@ -144,6 +182,11 @@ public class StockDataUtil {
 			if (dyd == null){
 				continue;
 			}
+			
+			if (nextdyd.getYear() == currYYYY){
+				nextdyd = divYearData.get(y - 2);
+			}
+			
 			int normNbrPayments = dyd.getDivDetail().size();
 			if (prevdyd == null && nextdyd == null){
 				continue;
@@ -175,6 +218,9 @@ public class StockDataUtil {
 				}
 			}
 		}
+		
+	
+		
 		DivYearData lastYear = divYearData.get(currYYYY - 1);
 		if (lastYear != null && !"N/A".equals(sd.getPrice())){
 			sd.setNormDividend(lastYear.getNormalizedDiv().toString());
@@ -188,41 +234,44 @@ public class StockDataUtil {
 	public static void calcRankings(StockData stockData) {
 		int yr = 0;
 		if (stockData.getNormYield() != null){
-			if (stockData.getNormYield() >= 1.0d){
+			if (stockData.getNormYield() > 0.0d){
 				yr = 1;
 			} 
-			if (stockData.getNormYield() >= 1.5d){
+			if (stockData.getNormYield() >= 0.5d){
 				yr = 2;
 			} 
-			if (stockData.getNormYield() >= 2.0d){
+			if (stockData.getNormYield() >= 1.0d){
 				yr = 3;
 			} 
-			if (stockData.getNormYield() >= 2.5d){
+			if (stockData.getNormYield() >= 1.5d){
 				yr = 4;
 			} 
-			if (stockData.getNormYield() >= 3.0d){
+			if (stockData.getNormYield() >= 2.0d){
 				yr = 5;
 			}
-			if (stockData.getNormYield() >= 3.5d){
+			if (stockData.getNormYield() >= 2.5d){
 				yr = 6;
 			} 
-			if (stockData.getNormYield() >= 4.0d){
+			if (stockData.getNormYield() >= 3.5){
+				yr = 6;
+			} 
+			if (stockData.getNormYield() >= 4.5d){
 				yr = 7;
 			} 
-			if (stockData.getNormYield() >= 5.0d){
+			if (stockData.getNormYield() >= 6.0d){
 				yr = 8;
 			} 
-			if (stockData.getNormYield() >= 7.0d){
+			if (stockData.getNormYield() >= 7.5d){
 				yr = 9;
 			}
 			if (stockData.getNormYield() >= 9.0d){
 				yr = 10;
 			}
 			if (stockData.getNormYield() >= 15.0d){
-				yr = 7;
+				yr = 6;
 			} 
 			if (stockData.getNormYield() >= 25.0d){
-				yr = 4;
+				yr = 2;
 			} 
 			if (stockData.getNormYield() >= 50.0d){
 				yr = 0;
@@ -231,66 +280,60 @@ public class StockDataUtil {
 		
 		int sr = 0;
 		if (stockData.getStreak() >= 1){
-			sr = 1;
-		} 
-		if (stockData.getStreak() >= 2){
-			sr = 2;
-		} 		
-		if (stockData.getStreak() >= 3){
 			sr = 3;
-		} 		
-		if (stockData.getStreak() >= 4){
+		} 
+		if (stockData.getStreak() >= 2 && stockData.getSkipped() <= 1){
 			sr = 4;
 		} 		
-		if (stockData.getStreak() >= 5){
+		if (stockData.getStreak() >= 3 && stockData.getSkipped() <= 1){
 			sr = 5;
-		} 
-		if (stockData.getStreak() >= 6 && stockData.getSkipped() <= 1){
+		} 		
+		if (stockData.getStreak() >= 4 && stockData.getSkipped() <= 1){
 			sr = 6;
-		} 
-		if (stockData.getStreak() >= 8 && stockData.getSkipped() <= 1){
+		} 		
+		if (stockData.getStreak() >= 5 && stockData.getSkipped() <= 1){
 			sr = 7;
-		} 		
-		if (stockData.getStreak() >= 10 && stockData.getSkipped() <= 1){
+		} 
+		if ((stockData.getStreak() >= 6 && stockData.getSkipped() <= 1) || (stockData.getStreak() >= 10 && stockData.getSkipped() <= 3)){
 			sr = 8;
-		} 		
-		if (stockData.getStreak() >= 12 && stockData.getSkipped() <= 1){
+		} 
+		if ((stockData.getStreak() >= 8 && stockData.getSkipped() <= 2) || (stockData.getStreak() >= 12 && stockData.getSkipped() <= 3)){
 			sr = 9;
 		} 		
-		if (stockData.getStreak() >= 15 && stockData.getSkipped() <= 1){
+		if ((stockData.getStreak() >= 10 && stockData.getSkipped() <= 3) || (stockData.getStreak() >= 15 && stockData.getSkipped() <= 3)){
 			sr = 10;
-		} 
+		} 		
 		
 		int gr = 0;
 		if (stockData.getDg4() != null && stockData.getDg8() != null){
-			if (stockData.getDg4() >= 2){
+			if (stockData.getDg4() >= .5){
 				gr = 1;
 			} 
-			if (stockData.getDg4() >= 3){
+			if (stockData.getDg4() >= 1){
 				gr = 2;
 			} 
-			if (stockData.getDg4() >= 4){
+			if (stockData.getDg4() >= 2 && stockData.getDg8() >=0){
 				gr = 3;
 			} 
-			if (stockData.getDg4() >= 5){
+			if (stockData.getDg4() >= 3 && stockData.getDg8() >=0){
 				gr = 4;
 			} 
-			if (stockData.getDg4() >= 5 && stockData.getDg8() >=3){
+			if (stockData.getDg4() >= 4 && stockData.getDg8() >=0){
 				gr = 5;
 			} 
-			if (stockData.getDg4() >= 6 && stockData.getDg8() >=4){
+			if (stockData.getDg4() >= 6 && stockData.getDg8() >=0){
 				gr = 6;
 			} 
-			if (stockData.getDg4() >= 8 && stockData.getDg8() >=5){
+			if ((stockData.getDg4() >= 8 && stockData.getDg8() >=3) || stockData.getDg4() >= 10){
 				gr = 7;
 			} 
-			if (stockData.getDg4() >= 10 && stockData.getDg8() >=6){
+			if ((stockData.getDg4() >= 10 && stockData.getDg8() >=4) || stockData.getDg4() >= 13){
 				gr = 8;
 			} 
-			if (stockData.getDg4() >= 12 && stockData.getDg8() >=8){
+			if ((stockData.getDg4() >= 12 && stockData.getDg8() >=5) || stockData.getDg4() >= 15){
 				gr = 9;
 			} 
-			if (stockData.getDg4() >= 14 && stockData.getDg8() >=10){
+			if ((stockData.getDg4() >= 15 && stockData.getDg8() >=6) || stockData.getDg4() >= 20){
 				gr = 10;
 			} 
 		}
@@ -298,31 +341,31 @@ public class StockDataUtil {
 		double overall = (yr + sr + gr);
 		double nbrDiv = 3.0;
 		if (yr == 1 || yr == 10){
-			overall += (1 * yr);
-			nbrDiv += 1.0;
-		}
-		if (sr == 1 || sr == 10){
-			overall += (1 * sr);
-			nbrDiv += 1.0;
-		}
-		if (gr == 1 || gr == 10){
-			overall += (1 * gr);
-			nbrDiv += 1.0;
-		}
-		
-		if (yr == 2 || yr == 3|| yr == 8|| yr == 9){
 			overall += (.5* yr);
 			nbrDiv += 0.5;
 		}
-		
-		if (sr == 2 || sr == 3|| sr == 8|| sr == 9){
+		if (sr == 1 || sr == 10){
 			overall += (.5* sr);
 			nbrDiv += 0.5;
 		}
-		
-		if (gr == 2 || gr == 3|| gr == 8|| gr == 9){
+		if (gr == 1 || gr == 10){
 			overall += (.5* gr);
 			nbrDiv += 0.5;
+		}
+		
+		if (yr == 2 || yr == 3|| yr == 8|| yr == 9){
+			overall += (.25* yr);
+			nbrDiv += 0.25;
+		}
+		
+		if (sr == 2 || sr == 3|| sr == 8|| sr == 9){
+			overall += (.25* sr);
+			nbrDiv += 0.25;
+		}
+		
+		if (gr == 2 || gr == 3|| gr == 8|| gr == 9){
+			overall += (.25* gr);
+			nbrDiv += 0.25;
 		}
 		
 		double rank = overall / nbrDiv;
@@ -330,6 +373,7 @@ public class StockDataUtil {
 		stockData.setStalwartRank(sr);
 		stockData.setGrowthRank(gr);
 		stockData.setOverAllRank(rank);
+		stockData.setRanksCalculated(true);
 	}
 
 	private static void normalizeDivs(StockData sd) {

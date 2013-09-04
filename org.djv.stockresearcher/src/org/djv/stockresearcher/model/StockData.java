@@ -25,9 +25,11 @@ public class StockData {
 	double stdDev = 0;
 	double wildness = 0d;
 	
+	boolean ranksCalculated = false;
 	int yieldRank = 0;
 	int stalwartRank = 0;
 	int growthRank = 0;
+	double overAllRank = 0;
 	
 	List<DivData> divData;
 	Map<Integer, DivYearData> divYearData;
@@ -40,6 +42,13 @@ public class StockData {
 	public StockData(String symbol) {
 		super();
 		this.symbol = symbol;
+	}
+	
+	public boolean isRanksCalculated() {
+		return ranksCalculated;
+	}
+	public void setRanksCalculated(boolean ranksCalculated) {
+		this.ranksCalculated = ranksCalculated;
 	}
 	
 	public String getNormDividend() {
@@ -92,8 +101,7 @@ public class StockData {
 	public void setOverAllRank(double overAllRank) {
 		this.overAllRank = overAllRank;
 	}
-	double overAllRank = 0;
-	
+
 	public String getSymbol() {
 		return symbol;
 	}
