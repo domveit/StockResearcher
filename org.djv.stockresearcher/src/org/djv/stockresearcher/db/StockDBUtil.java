@@ -8,11 +8,12 @@ import java.util.Map;
 
 public class StockDBUtil {
 	
-	private static String STOCK_REPO = "C:\\stockData";	
+	private static String STOCK_REPO = "~\\stockResearcher\\Data";	
 	
 	public static File getStockDataFile(String symbol) {
 		new File(STOCK_REPO).mkdirs();
 		File stockFile = new File(STOCK_REPO + "\\Stock_" + symbol+ "_" + datePrefix() + ".csv");
+		System.err.println(stockFile.getAbsolutePath());
 		return stockFile;
 	}
 
