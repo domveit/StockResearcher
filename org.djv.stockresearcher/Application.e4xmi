@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_urcBgAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ide.application" bindingContexts="_urcBiQn1EeOInNDXYak8ig">
+<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmi:id="_urcBgAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ide.application" bindingContexts="_urcBiQn1EeOInNDXYak8ig">
   <children xsi:type="basic:TrimmedWindow" xmi:id="_urcBgQn1EeOInNDXYak8ig" label="org.djv.stockresearcher" width="500" height="400">
     <children xsi:type="advanced:PerspectiveStack" xmi:id="_urcolQn1EeOInNDXYak8ig">
       <children xsi:type="advanced:Perspective" xmi:id="_urcolgn1EeOInNDXYak8ig">
@@ -22,22 +22,6 @@
         </children>
       </children>
     </children>
-    <mainMenu xmi:id="_urcBmQn1EeOInNDXYak8ig" elementId="menu:org.eclipse.ui.main.menu">
-      <children xsi:type="menu:Menu" xmi:id="_urcBmgn1EeOInNDXYak8ig" label="File">
-        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcokAn1EeOInNDXYak8ig" label="Open" iconURI="platform:/plugin/org.djv.stockresearcher/icons/sample.gif" command="_urcBkAn1EeOInNDXYak8ig"/>
-        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcokQn1EeOInNDXYak8ig" label="Save" iconURI="platform:/plugin/org.djv.stockresearcher/icons/save_edit.gif" command="_urcBkwn1EeOInNDXYak8ig"/>
-        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcokgn1EeOInNDXYak8ig" label="Quit" command="_urcBjAn1EeOInNDXYak8ig"/>
-      </children>
-      <children xsi:type="menu:Menu" xmi:id="_urcokwn1EeOInNDXYak8ig" label="Help">
-        <children xsi:type="menu:HandledMenuItem" xmi:id="_urcolAn1EeOInNDXYak8ig" label="About" command="_urcBlgn1EeOInNDXYak8ig"/>
-      </children>
-    </mainMenu>
-    <trimBars xmi:id="_urcomgn1EeOInNDXYak8ig">
-      <children xsi:type="menu:ToolBar" xmi:id="_urcomwn1EeOInNDXYak8ig" elementId="toolbar:org.eclipse.ui.main.toolbar">
-        <children xsi:type="menu:HandledToolItem" xmi:id="_urconAn1EeOInNDXYak8ig" iconURI="platform:/plugin/org.djv.stockresearcher/icons/sample.gif" command="_urcBkAn1EeOInNDXYak8ig"/>
-        <children xsi:type="menu:HandledToolItem" xmi:id="_urconQn1EeOInNDXYak8ig" iconURI="platform:/plugin/org.djv.stockresearcher/icons/save_edit.gif" command="_urcBkwn1EeOInNDXYak8ig"/>
-      </children>
-    </trimBars>
   </children>
   <handlers xmi:id="_urcBjQn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.quitCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.QuitHandler" command="_urcBjAn1EeOInNDXYak8ig"/>
   <handlers xmi:id="_urcBkQn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.openCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.OpenHandler" command="_urcBkAn1EeOInNDXYak8ig"/>

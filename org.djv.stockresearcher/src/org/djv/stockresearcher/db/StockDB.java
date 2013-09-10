@@ -165,6 +165,9 @@ public class StockDB {
 			StringTokenizer st = new StringTokenizer(sDiv, ",");
 			Date date = new SimpleDateFormat("yyyy-MM-dd").parse(st.nextToken());
 			BigDecimal div = new BigDecimal(st.nextToken());
+			if (div.compareTo(BigDecimal.ZERO) == 0){
+				continue;
+			}
 			DivData dd = new DivData();
 			Calendar c2 = Calendar.getInstance();
 			c2.setTime(date);
