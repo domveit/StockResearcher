@@ -69,6 +69,9 @@ public class DividendsPart implements AppStateListener {
 	
 	private void createChart() throws Exception {
 		StockData sd = AppState.getInstance().getSelectedStock();
+		if (sd.getDivYearData() == null){
+			return;
+		}
 
 		TimeSeries series1 = new TimeSeries("Individual Payouts");
 		TimeSeries series2 = new TimeSeries("Yearly Payouts");
@@ -83,7 +86,7 @@ public class DividendsPart implements AppStateListener {
 					series1.add(new Day(c.getTime()), 0.00);
 				} else {
 					for (DivData dd : dyd.getDivDetail()) {
-						series1.add(new Day(dd.getDate().getTime()),
+						series1.add(new Day(dd.getPaydate()),
 								dd.getDividend());
 					}
 				}
@@ -139,7 +142,7 @@ public class DividendsPart implements AppStateListener {
 							0,
 							"     "
 									+ new SimpleDateFormat("MM/dd/yyyy")
-											.format(dd.getDate().getTime()));
+											.format(dd.getPaydate()));
 					item2.setText(1, String.valueOf(dd.getDividend()));
 					if (dd.getDividend().compareTo(dd.getNormalizedDivided()) != 0) {
 						item2.setText(2,

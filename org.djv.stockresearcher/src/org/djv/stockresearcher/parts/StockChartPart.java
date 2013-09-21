@@ -75,7 +75,7 @@ public class StockChartPart implements AppStateListener {
 			final StockData sd = appState.getSelectedStock();
 			
 			String t = (String)chartLabel.getData("t");
-			URL url = new URL("http://chart.finance.yahoo.com/z?s=" + sd.getSymbol() + "&t="+ t +"&q=c&l=off&z=m&a=v&p=s&lang=en-US&region=US");
+			URL url = new URL("http://chart.finance.yahoo.com/z?s=" + sd.getStock().getSymbol() + "&t="+ t +"&q=c&l=off&z=m&a=v&p=s&lang=en-US&region=US");
 			InputStream is = url.openStream();
 			final Image img = new Image(Display.getDefault(), is);
 			Display.getDefault().asyncExec(new Runnable(){

@@ -1,7 +1,8 @@
  
 package org.djv.stockresearcher.parts;
 
-import java.util.HashMap;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -67,6 +68,9 @@ public class FinancialsPart implements AppStateListener {
 			@Override
 			public void run() {
 				final StockData sd = AppState.getInstance().getSelectedStock();
+				if (sd == null){
+					return;
+				}
 				try {
 					db.getFinData(sd);
 				} catch (Exception e) {
@@ -159,27 +163,30 @@ public class FinancialsPart implements AppStateListener {
 //				    	Free Cash Flow Per Share USD,,0.92,1.04,1.14,1.41,1.76,1.52,1.57,1.60,1.92,
 //				    	Working Capital USD Mil,"5,121","5,640","3,520","14,363","18,216","21,841","30,522","32,188","39,725","44,202",
 						
+						if (finDataMap == null){
+							return;
+						}
 						
 						int i = 1;
 						for (String s : finDataMap.keySet()){
 							TableColumn column = new TableColumn (finTable, SWT.NONE);
 							FinPeriodData fd = finDataMap.get(s);
 							column.setText(s);
-							revItem.setText(i, fd.getRevenue());
-							gmItem.setText(i, fd.getGrossMargin() + "%");
-							oiItem.setText(i, fd.getOperatingIncome());
-							omItem.setText(i, fd.getOperatingMargin() + "%");
-							niItem.setText(i, fd.getNetIncome());
-							epsItem.setText(i, fd.getEarningsPerShare());
-							dItem.setText(i, fd.getDividends());
-							prItem.setText(i, fd.getPayoutRatio() + "%");
-							sItem.setText(i, fd.getShares());
-							bvItem.setText(i, fd.getBookValuePerShare());
-							ocfItem.setText(i, fd.getOperatingCashFlow());
-							csItem.setText(i, fd.getCapitalSpending());
-							fcfItem.setText(i, fd.getFreeCashFlow());						
-							fcfpsItem.setText(i, fd.getFreeCashFlowPerShare());
-							wcItem.setText(i, fd.getWorkingCapital());
+							revItem.setText(i, formatBdWhole(fd.getRevenue()));
+							gmItem.setText(i, formatBdPct(fd.getGrossMargin()));
+							oiItem.setText(i, formatBdWhole(fd.getOperatingIncome()));
+							omItem.setText(i, formatBdPct(fd.getOperatingMargin()));
+							niItem.setText(i, formatBdWhole(fd.getNetIncome()));
+							epsItem.setText(i, formatBd(fd.getEarningsPerShare()));
+							dItem.setText(i, formatBd(fd.getDividends()));
+							prItem.setText(i, formatBdPct(fd.getPayoutRatio()));
+							sItem.setText(i, formatBdWhole(fd.getShares()));
+							bvItem.setText(i, formatBd(fd.getBookValuePerShare()));
+							ocfItem.setText(i, formatBdWhole(fd.getOperatingCashFlow()));
+							csItem.setText(i, formatBdWhole(fd.getCapitalSpending()));
+							fcfItem.setText(i, formatBdWhole(fd.getFreeCashFlow()));						
+							fcfpsItem.setText(i, formatBd(fd.getFreeCashFlowPerShare()));
+							wcItem.setText(i, formatBdWhole(fd.getWorkingCapital()));
 							i++;
 						}
 						
@@ -188,6 +195,18 @@ public class FinancialsPart implements AppStateListener {
 						}
 						
 						parent.layout(true, true);
+					}
+
+					public String formatBdWhole(BigDecimal bd) {
+						return  bd == null ? "" : new DecimalFormat("###,###,###,##0").format(bd);
+					}
+					
+					public String formatBd(BigDecimal bd) {
+						return  bd == null ? "" : new DecimalFormat("###,###,###,##0.00").format(bd);
+					}
+					
+					public String formatBdPct(BigDecimal bd) {
+						return  bd == null ? "" : new DecimalFormat("###,##0.00").format(bd) + "%";
 					}
 				});
 			}

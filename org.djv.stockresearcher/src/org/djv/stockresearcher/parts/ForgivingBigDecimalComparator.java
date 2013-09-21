@@ -26,6 +26,11 @@ class ForgivingBigDecimalComparator implements Comparator<String> {
 			if (s1.equals("N/A") || s1.trim().equals("")){
 				return new BigDecimal(0);
 			}
-			return new BigDecimal(s1.replace("%", " ").trim());
+			try {
+				return new BigDecimal(s1.replace("%", " ").trim());
+			} catch (Exception e){
+				System.err.println("could not convert " + s1 );
+				return BigDecimal.ZERO;
+			}
 		}
  }

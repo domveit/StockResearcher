@@ -1,34 +1,32 @@
 package org.djv.stockresearcher.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 public class StockData {
 	
-	String symbol;
-	String exchange;
-	String name;
-	String price;
-	String marketCap;
-	String dividend;
-	Double yield;
-	String pe;
-	String peg;
+	Stock stock;
 	int streak;
 	int skipped;
 	
-	String normDividend;
-	Double normYield;
+	BigDecimal normDividend;
+	BigDecimal normYield;
 	
 	Double dg4 = 0d;
 	Double dg8 = 0d;
 	double stdDev = 0;
 	double wildness = 0d;
 	
+	Double eps4 = 0d;
+	Double eps8 = 0d;
+
 	boolean ranksCalculated = false;
+
 	int yieldRank = 0;
 	int stalwartRank = 0;
 	int growthRank = 0;
+	int finRank = 0;
 	double overAllRank = 0;
 	
 	List<DivData> divData;
@@ -39,9 +37,11 @@ public class StockData {
 	public StockData() {
 		super();
 	}
+	
 	public StockData(String symbol) {
 		super();
-		this.symbol = symbol;
+		stock = new Stock();
+		stock.setSymbol(symbol);
 	}
 	
 	public boolean isRanksCalculated() {
@@ -51,25 +51,41 @@ public class StockData {
 		this.ranksCalculated = ranksCalculated;
 	}
 	
-	public String getNormDividend() {
-		return normDividend;
+	public int getFinRank() {
+		return finRank;
 	}
-	public void setNormDividend(String normDividend) {
-		this.normDividend = normDividend;
-	}
-	public Double getNormYield() {
-		return normYield;
-	}
-	public void setNormYield(Double normYield) {
-		this.normYield = normYield;
+	public void setFinRank(int finRank) {
+		this.finRank = finRank;
 	}
 	
-	public String getExchange() {
-		return exchange;
+	public Double getEps4() {
+		return eps4;
 	}
-	public void setExchange(String exchange) {
-		this.exchange = exchange;
+	public void setEps4(Double eps4) {
+		this.eps4 = eps4;
 	}
+	public Double getEps8() {
+		return eps8;
+	}
+	public void setEps8(Double eps8) {
+		this.eps8 = eps8;
+	}
+	public BigDecimal getNormDividend() {
+		return normDividend;
+	}
+
+	public void setNormDividend(BigDecimal normDividend) {
+		this.normDividend = normDividend;
+	}
+
+	public BigDecimal getNormYield() {
+		return normYield;
+	}
+
+	public void setNormYield(BigDecimal normYield) {
+		this.normYield = normYield;
+	}
+
 	public Map<String, FinPeriodData> getFinData() {
 		return finData;
 	}
@@ -101,61 +117,11 @@ public class StockData {
 	public void setOverAllRank(double overAllRank) {
 		this.overAllRank = overAllRank;
 	}
-
-	public String getSymbol() {
-		return symbol;
-	}
-	public void setSymbol(String symbol) {
-		this.symbol = symbol;
-	}
-	
 	public List<DivData> getDivData() {
 		return divData;
 	}
 	public void setDivData(List<DivData> divData) {
 		this.divData = divData;
-	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
-	public String getPrice() {
-		return price;
-	}
-	public void setPrice(String price) {
-		this.price = price;
-	}
-	public String getMarketCap() {
-		return marketCap;
-	}
-	public void setMarketCap(String marketCap) {
-		this.marketCap = marketCap;
-	}
-	public String getDividend() {
-		return dividend;
-	}
-	public void setDividend(String dividend) {
-		this.dividend = dividend;
-	}
-	public Double getYield() {
-		return yield;
-	}
-	public void setYield(Double yield) {
-		this.yield = yield;
-	}
-	public String getPe() {
-		return pe;
-	}
-	public void setPe(String pe) {
-		this.pe = pe;
-	}
-	public String getPeg() {
-		return peg;
-	}
-	public void setPeg(String peg) {
-		this.peg = peg;
 	}
 	public int getStreak() {
 		return streak;
@@ -202,15 +168,21 @@ public class StockData {
 	public void setWildness(double wildness) {
 		this.wildness = wildness;
 	}
+	
+	
+	
+	public Stock getStock() {
+		return stock;
+	}
+
+	public void setStock(Stock stock) {
+		this.stock = stock;
+	}
+
 	public String toString(){
-		String s = "symbol= " + symbol + "\n";
-		s+= "name= " + name + "\n";
-		s+= "price= " + price + "\n";
-		s+= "marketCap= " + marketCap + "\n";
-		s+= "dividend= " + dividend + "\n";
-		s+= "yield= " + yield + "\n";
-		s+= "pe= " + pe + "\n";
-		s+= "peg= " + peg + "\n";
+		String s = "==== stock ====\n";
+		s+= stock+ "\n";
+
 		s+= "streak= " + streak + "\n";
 		s+= "skipped= " + skipped + "\n";
 		s+= "divGrowthRate5yr= " + dg4 + "\n";

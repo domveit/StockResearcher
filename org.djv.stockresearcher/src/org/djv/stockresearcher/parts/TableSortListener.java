@@ -54,7 +54,7 @@ final class TableSortListener implements Listener {
                     
                     items[i].dispose();
                     TableItem item = new TableItem(this.sectorSearchPart.stockTable, SWT.NONE, j);
-                    this.sectorSearchPart.tableItemMap.put(sd.getSymbol(), item);
+                    this.sectorSearchPart.tableItemMap.put(sd.getStock().getSymbol(), item);
                     item.setData("sd", sd);
                     item.setText(values);
                     sectorSearchPart.setColor(sd, item);

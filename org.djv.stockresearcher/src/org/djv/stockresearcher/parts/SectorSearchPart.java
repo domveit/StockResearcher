@@ -51,7 +51,7 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 	
 	Map<String, TableItem> tableItemMap = new HashMap<String, TableItem>();
 	
-	String[] titles = {"Stock", "Name", "MCap", "Price", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg4", "dg8", "Rank", "Exchange"};
+	String[] titles = {"Stock", "Name", "MCap", "Price", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg 4yr", "dg 8yr", "rg 4yr", "rg 8yr", "Rank", "Exchange", "Industry"};
 	Table stockTable;
 	
 	private Shell shell;
@@ -188,14 +188,14 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 				if (!stockTable.isDisposed()){
 					progressLabel.setText("Updating Industry " + industry);
 					for (StockData sd : sdList){
-						if (sd.getSymbol() == null){
+						if (sd.getStock().getSymbol() == null){
 							continue;
 						}
-						TableItem item = tableItemMap.get(sd.getSymbol());;
+						TableItem item = tableItemMap.get(sd.getStock().getSymbol());;
 						if (item == null){
 							item = new TableItem (stockTable, SWT.NONE);
 							item.setData("sd", sd);
-							tableItemMap.put(sd.getSymbol(), item);
+							tableItemMap.put(sd.getStock().getSymbol(), item);
 						}
 						updateItem(sd, item, false);
 					}
@@ -206,13 +206,15 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 
 	@Override
 	public void notifyChanged(final StockData sd) {
+		
 		Display.getDefault().asyncExec(new Runnable(){
 			@Override
 			public void run() {
-				TableItem item = tableItemMap.get(sd.getSymbol());
+				Display.getDefault().timerExec(2000, tablePacker);	
+				TableItem item = tableItemMap.get(sd.getStock().getSymbol());
 				if (item != null & !stockTable.isDisposed() && !item.isDisposed()){
-					progressLabel.setText("Updating Stock " + sd.getSymbol());
-					if (sd.isRanksCalculated() && sd.getOverAllRank() == 0.00){
+					progressLabel.setText("Updating Stock " + sd.getStock().getSymbol());
+					if (sd.isRanksCalculated() && (sd.getOverAllRank() < 4 || (sd.getGrowthRank() == 0.00 && sd.getYieldRank()==0.00))){
 						tableItemMap.remove(sd);
 						item.dispose();
 						
@@ -225,46 +227,54 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 	}
 	
 	public void updateItem(final StockData sd, TableItem item, boolean setColors) {
+		if (item.isDisposed()){
+			return;
+		}
 		if (setColors){
 			setColor(sd, item);
 		}
 		
-		item.setText (0, sd.getSymbol());
-		item.setText (1, sd.getName());
-		item.setText (2, sd.getMarketCap());
-		item.setText (3, (sd.getPrice() == null) ? "N/A" : sd.getPrice());
+		item.setText (0, sd.getStock().getSymbol());
+		item.setText (1, sd.getStock().getName());
+		item.setText (2, sd.getStock().getMarketCap());
+		item.setText (3, (sd.getStock().getPrice() == null) ? "N/A" : String.valueOf(sd.getStock().getPrice()));
 		
 		if (sd.getNormDividend() != null){
-			item.setText (4,  sd.getNormDividend());
+			item.setText (4,  String.valueOf(sd.getNormDividend()));
 		} else {
-			item.setText (4, (sd.getDividend() == null) ? "N/A" : sd.getDividend());
+			item.setText (4, (sd.getStock().getDividend() == null) ? "N/A" : String.valueOf(sd.getStock().getDividend()));
 		}
 		
 		if (sd.getNormYield() != null){
 			item.setText (5, new DecimalFormat("0.00").format(sd.getNormYield()));
 		} else {
-			item.setText (5, (sd.getYield() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getYield()));
+			item.setText (5, (sd.getStock().getYield() == null) ? "N/A" :  String.valueOf(sd.getStock().getYield()));
 		}
 		
-		item.setText (6, (sd.getPe() == null) ? "N/A" : sd.getPe());
-		item.setText (7, (sd.getPeg() == null) ? "N/A" : sd.getPeg());
+		item.setText (6, (sd.getStock().getPe() == null) ? "N/A" : String.valueOf(sd.getStock().getPe()));
+		item.setText (7, (sd.getStock().getPeg() == null) ? "N/A" : String.valueOf(sd.getStock().getPeg()));
 		item.setText (8, String.valueOf(sd.getStreak()));
 		item.setText (9,  String.valueOf(sd.getSkipped()));
 		item.setText (10, (sd.getDg4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg4()) + "%");
 		item.setText (11, (sd.getDg8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg8()) + "%");
+		
+		item.setText (12, (sd.getEps4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps4()) + "%");
+		item.setText (13, (sd.getEps8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps8()) + "%");
 
-		item.setText (12, new DecimalFormat("0.00").format(sd.getOverAllRank()));
-		item.setText (13, (sd.getExchange() == null) ? "" : sd.getExchange());
-		Display.getDefault().timerExec(2000, tablePacker);
+		item.setText (14, new DecimalFormat("0.00").format(sd.getOverAllRank()));
+		item.setText (15, (sd.getStock().getExchange() == null) ? "" : sd.getStock().getExchange());
+		item.setText (16, (sd.getStock().getIndustryId() == null) ? "" : sir.getIndustryName(sd.getStock().getIndustryId()));
 	}
 
 	public void setColor(StockData sd, TableItem item) {
-		item.setBackground(12, getColorForRank(sd.getOverAllRank()));
+		item.setBackground(14, getColorForRank(sd.getOverAllRank()));
 		item.setBackground(8, getColorForRank(sd.getStalwartRank()));
 		item.setBackground(9, getColorForRank(sd.getStalwartRank()));
 		item.setBackground(5, getColorForRank(sd.getYieldRank()));
 		item.setBackground(10, getColorForRank(sd.getGrowthRank()));
 		item.setBackground(11, getColorForRank(sd.getGrowthRank()));
+		item.setBackground(12, getColorForRank(sd.getFinRank()));
+		item.setBackground(13, getColorForRank(sd.getFinRank()));
 	};
 	
 	public Color getColorForRank(double rank) {

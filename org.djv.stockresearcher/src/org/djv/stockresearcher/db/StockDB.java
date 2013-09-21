@@ -1,14 +1,10 @@
 package org.djv.stockresearcher.db;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.net.MalformedURLException;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,6 +23,7 @@ import javax.inject.Inject;
 
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
+import org.djv.stockresearcher.model.Stock;
 import org.djv.stockresearcher.model.StockData;
 import org.eclipse.e4.core.di.annotations.Creatable;
 
@@ -35,8 +32,34 @@ import au.com.bytecode.opencsv.CSVReader;
 @Creatable
 public class StockDB {
 	
-	final ExecutorService pool = Executors.newFixedThreadPool(8);
+	Connection con = null;
+	
+	public StockDB(){
+		createDatabase();
+	}
+
+	private void createDatabase() {
+        try
+        {
+            Class.forName("org.h2.Driver");
+            con = DriverManager.getConnection("jdbc:h2:~/stockDB/stockDB", "stockDB", "" );
+            new IndustryDAO(con).createTableIfNotExists();
+            new NameMapDAO(con).createTableIfNotExists();
+            new StockDAO(con).createTableIfNotExists();
+            new DividendDAO(con).createTableIfNotExists();
+            new FinDataDAO(con).createTableIfNotExists();
+        }
+        catch( Exception e ){
+            e.printStackTrace();
+        }
+	}
+	
+	final ExecutorService pool = Executors.newFixedThreadPool(16);
 	Map<String, StockData> stockMap = new HashMap<String, StockData>();
+	public ExecutorService getPool() {
+		return pool;
+	}
+
 	Map<Integer, List<StockData>> industryStockMap = new HashMap<Integer, List<StockData>>();
 	
 	List<IndustryStockListener> industryStockListeners = new ArrayList<IndustryStockListener>();
@@ -94,13 +117,24 @@ public class StockDB {
 	}
 	
 	public void getDataForStocksInternal(List<StockData> stocks) throws Exception {
-		YahooFinanceUtil.createStockFiles(stocks);
-		
+		List<String> stocksGettingData = new ArrayList<String>();
+		String stockURLParm = "";
 		for (StockData sd : stocks) {
-			Reader br = new InputStreamReader(new FileInputStream(StockDBUtil.getStockDataFile(sd.getSymbol())));
+			if (dataExpired(sd.getStock().getDataDate())){
+				if (stockURLParm.length() > 0){
+					stockURLParm += "+";
+				}
+				stockURLParm += sd.getStock().getSymbol();
+				stocksGettingData.add(sd.getStock().getSymbol());
+			}
+		}
+		if (stocksGettingData.size() > 0) {
+			BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/d/quotes.csv?s=" +stockURLParm + "&f=npj1dyrr5x0");
 			CSVReader reader = new CSVReader(br);
-			String [] nextCSVLine = reader.readNext();
-			if (nextCSVLine	!= null){ 
+			int symLoop = 0;
+			String [] nextCSVLine = null; 
+			while((nextCSVLine = reader.readNext()) != null){
+				String symbol = stocksGettingData.get(symLoop);
 				String name = nextCSVLine[0];
 				String price = nextCSVLine[1];
 				String marketCap = nextCSVLine[2];
@@ -110,24 +144,67 @@ public class StockDB {
 				String peg = nextCSVLine[6];
 				String exchange = nextCSVLine[7];
 				
-				sd.setName(name);
-				sd.setDividend(dividend);
-				sd.setPe(pe);
-				sd.setPeg(peg);
-				sd.setPrice(price);
-				sd.setYield("N/A".equals(yield)? null: Double.parseDouble(yield));
-				sd.setMarketCap(marketCap);
-				sd.setExchange(exchange);
+				Stock s = null;
+				StockData sd = null;
+				for (StockData sdLoop : stocks){
+					if (sdLoop.getStock().getSymbol().equals(symbol)){
+						sd = sdLoop;
+						s = sdLoop.getStock();
+						break;
+					}
+				}
+				
+				s.setName(name);
+				
+				try {
+					s.setDividend(new BigDecimal(dividend));
+				} catch (Exception e){
+					s.setDividend(null);
+				}
+				try {
+					s.setPe(new BigDecimal(pe));
+				} catch (Exception e){
+					s.setPe(null);
+				}
+				
+				try {
+					s.setPeg(new BigDecimal(peg));
+				} catch (Exception e){
+					s.setPeg(null);
+				}
+				
+				try {
+					s.setPrice(new BigDecimal(price));
+				} catch (Exception e){
+					s.setPrice(null);
+				}
+				
+				try {
+					s.setYield(new BigDecimal(yield));
+				} catch (Exception e){
+					s.setYield(null);
+				}
+				
+				s.setMarketCap(marketCap);
+				s.setExchange(exchange);
+				s.setDataDate(new java.sql.Date(new Date().getTime()));
+				
+				new StockDAO(con).update(s);
+				notifyAllStockDataChangeListeners(sd);
+				symLoop++;
 			}
-			notifyAllStockDataChangeListeners(sd);
 			reader.close();
+		}
 			
-			final StockData finalSD = sd;
+		for (final StockData sd : stocks){
 			pool.execute(new Runnable(){
 				@Override
 				public void run() {
 					try {
-						getDivData(finalSD);
+						getDivData(sd);
+						getFinData(sd);
+						StockDataUtil.calcRankings(sd);
+						notifyAllStockDataChangeListeners(sd);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -137,26 +214,39 @@ public class StockDB {
 		}
 	}
 
-
-	public void getDivData(StockData stockData) throws Exception {
-		System.err.println("getting div data for " + stockData.getSymbol());
-		List<DivData> ddl = getHistoricalDividend(stockData.getSymbol());
-		stockData.setDivData(ddl);
-		StockDataUtil.crunchDividends(stockData);
-		notifyAllStockDataChangeListeners(stockData);
-	}
-
-	public List<DivData> getHistoricalDividend(String symbol) throws Exception {
-		List<DivData> l = new ArrayList<DivData>();
-		File divFile= StockDBUtil.getDivDataFile(symbol);
-		if (!divFile.exists()){
-			YahooFinanceUtil.createDivFile(symbol);
+	public void getDivData(StockData sd) throws Exception {
+		if (dataExpired(sd.getStock().getDivDataDate())){
+			new DividendDAO(con).deleteForStock(sd.getStock().getSymbol());
+			insertDividends(sd);
+			sd.getStock().setDivDataDate(new java.sql.Date(new Date().getTime()));
+			new StockDAO(con).update(sd.getStock());
 		}
 		
-		if (!divFile.exists()){
-			return l;
+		List<DivData> ddl = new DividendDAO(con).getDividendsForSymbol(sd.getStock().getSymbol());
+		Collections.sort(ddl, new Comparator<DivData>() {
+			@Override
+			public int compare(DivData dd1, DivData dd2) {
+				return dd2.getPaydate().compareTo(dd1.getPaydate());
+			}
+		});
+		sd.setDivData(ddl);
+		StockDataUtil.crunchDividends(sd);
+	}
+
+	public void insertDividends(StockData sd) throws Exception {
+		String symbol = sd.getStock().getSymbol();
+		
+		Calendar c = Calendar.getInstance();
+		int year = c.get(Calendar.YEAR);
+		int month = c.get(Calendar.MONTH);
+		int day = c.get(Calendar.DATE);
+		String urlString = "http://ichart.finance.yahoo.com/table.csv?s=" +symbol + "&a=00&b=2&c=1962&d=" + month +"&e=" +day+ "&f=" + year + "&g=v&ignore=.csv";
+		BufferedReader br = YahooFinanceUtil.getYahooCSVNice(urlString);
+		if (br == null){
+			sd.getStock().setDivDataDate(new java.sql.Date(new Date().getTime()));
+			new StockDAO(con).update(sd.getStock());
+			return;
 		}
-		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(divFile)));
 		String sDiv = null;
 		while ((sDiv = br.readLine()) != null){
 			if (sDiv.startsWith("Date")){
@@ -169,33 +259,37 @@ public class StockDB {
 				continue;
 			}
 			DivData dd = new DivData();
-			Calendar c2 = Calendar.getInstance();
-			c2.setTime(date);
-			dd.setDate(c2);
+			dd.setSymbol(symbol);
+			dd.setPaydate(new java.sql.Date(date.getTime()));
 			dd.setDividend(div);
-			l.add(dd);
+			new DividendDAO(con).insert(dd);
 		}
+
 		br.close();
 		
-		Collections.sort(l, new Comparator<DivData>() {
-			@Override
-			public int compare(DivData dd1, DivData dd2) {
-				return dd2.getDate().compareTo(dd1.getDate());
-			}
-		});
-		return l;
 	}
 	
-	public void getFinData(StockData stockData) throws Exception {
-		if (stockData.getFinData() == null){
-			System.err.println("getting fin data for " + stockData.getSymbol());
-			Map<String, FinPeriodData> fdl = getFinDataHist(stockData.getSymbol(), stockData.getExchange());
-			stockData.setFinData(fdl);
-			StockDataUtil.crunchFinancials(stockData);
+	public void getFinData(StockData sd) throws Exception {
+		
+		if (dataExpired(sd.getStock().getFinDataDate())){
+			new FinDataDAO(con).deleteForStock(sd.getStock().getSymbol());
+			insertFinancials(sd);
+			sd.getStock().setFinDataDate(new java.sql.Date(new Date().getTime()));
+			new StockDAO(con).update(sd.getStock());
 		}
+		
+		List<FinPeriodData> fpdl = new FinDataDAO(con).getFinDataForStock(sd.getStock().getSymbol());
+		Map<String, FinPeriodData> finData = new TreeMap<String, FinPeriodData>();
+		for (FinPeriodData fpd: fpdl){
+			finData.put(fpd.getPeriod(), fpd);
+		}
+		sd.setFinData(finData);
+		StockDataUtil.crunchFinancials(sd);
 	}
 	
-	public Map<String, FinPeriodData> getFinDataHist(String symbol, String exchange) throws Exception {
+	public void insertFinancials(StockData sd) throws Exception {
+		String symbol = sd.getStock().getSymbol();
+		String exchange = sd.getStock().getExchange();
 		Map<String, FinPeriodData> l = new TreeMap<String, FinPeriodData>();
 		Map<Integer, FinPeriodData> listInt = new TreeMap<Integer, FinPeriodData>();
 		String convertedSymbol = symbol;
@@ -206,27 +300,28 @@ public class StockDB {
 		
 		String msExchange = StockDBUtil.mapYahooExchangeToMorningStar(exchange);
 		if (msExchange == null){
-			System.err.println("Could not map to morningstar exhange " + symbol + ":" + exchange);
-			return l;
+			if (symbol.endsWith(".DE")){
+				msExchange = "XFRA";
+			} else {
+				System.err.println("Could not map to morningstar exhange " + symbol + ":" + exchange);
+				return;
+			}
 		}
 		if ("XHKG".equals(msExchange)){
 			convertedSymbol = "0" + convertedSymbol;
-			
-		}
-		File f= StockDBUtil.getFinDataFile(symbol);
-		if (!f.exists()){
-			boolean worked = YahooFinanceUtil.createFinFile(symbol, convertedSymbol, msExchange);
-			// sometimes "other OTC" is "PINX"
-			if (!worked && "XOTC".equals(msExchange)){
-				YahooFinanceUtil.createFinFile(symbol, convertedSymbol, "PINX");
-			}
 		}
 		
-		if (!f.exists()){
-			return l;
+		String urlString = "http://financials.morningstar.com/ajax/exportKR2CSV.html?&callback=?&t="+msExchange+ ":"+ convertedSymbol +"&region=usa&culture=en-US&cur=USD";
+		BufferedReader br = YahooFinanceUtil.getYahooCSVNice(urlString);
+		if (br == null && "XOTC".equals(msExchange)){
+			msExchange = "PINX";
+			urlString = "http://financials.morningstar.com/ajax/exportKR2CSV.html?&callback=?&t="+msExchange+ ":"+ convertedSymbol +"&region=usa&culture=en-US&cur=USD";
+			br = YahooFinanceUtil.getYahooCSVNice(urlString);
 		}
-		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
 		
+		if (br == null){
+			return;
+		}
 		CSVReader reader = new CSVReader(br, ',');
 	    String [] nextLine;
 	    int ln = 0;
@@ -240,6 +335,18 @@ public class StockDB {
 		    		FinPeriodData fd = new FinPeriodData();
 		    		String period = nextLine[yr];
 		    		fd.setPeriod(period);
+		    		if ("TTM".equals(period)){
+		    			fd.setYear(9999);
+		    		} else {
+			    		try{
+			    			Integer year = Integer.valueOf(period.substring(0, 4));
+			    			fd.setYear(year);
+			    		} catch (Exception e){
+			    			System.err.println("could not read year: \""  + period + "\"");
+			    			fd.setYear(null);
+			    		}
+		    		}
+		    		fd.setSymbol(symbol);
 		    		l.put(period, fd);
 		    		listInt.put(yr, fd);
 		    	}
@@ -280,8 +387,12 @@ public class StockDB {
 //	    	Working Capital USD Mil,"5,121","5,640","3,520","14,363","18,216","21,841","30,522","32,188","39,725","44,202",
 		}
 	    reader.close();
-		
-		return l;
+	    for (String key : l.keySet()){
+	    	FinPeriodData fpd = l.get(key);
+	    	if (fpd.getYear() != null){
+	    		new FinDataDAO(con).insert(fpd);
+	    	}
+	    }
 	}
 
 	private void setFinValues(Map<Integer, FinPeriodData> listInt, String[] line, String match, String field) {
@@ -291,12 +402,21 @@ public class StockDB {
 	    		try {
 					Field f = FinPeriodData.class.getDeclaredField(field);
 					f.setAccessible(true);
-					f.set(fd, line[yr]);
+					f.set(fd, convertBd(line[yr]));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 	    	}
     	}
+	}
+
+	public BigDecimal convertBd(String s) {
+		s = s.replace(",", "");
+		try{
+			return new BigDecimal(s);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 	
 	
@@ -337,108 +457,189 @@ public class StockDB {
 	}
 
 
-	private List<StockData> getStocksForIndustryAndSector(int industryId) throws Exception {
-		System.err.println("getting Stocks for " + industryId);
-		 Map<String, String> nameMap = getNameMap(industryId);
+	public List<StockData> getStocksForIndustryAndSector(int industryId) throws Exception {
+		Date d = new IndustryDAO(con).getDataDateForIndustry(industryId);
+		
+		if (dataExpired(d)){
+			rebuildNameMap(industryId);
+			new StockDAO(con).deleteStocksForIndustry(industryId);
+			
+			BufferedReader br = YahooFinanceUtil.getYahooCSV("http://biz.yahoo.com/p/csv/" + industryId + "conameu.csv");
+			CSVReader reader = new CSVReader(br, ',');
+		    String [] nextLine;
+
+			String lastName = null;
+			int nameCount = 0;
+			
+			int count = 0;
+		    while ((nextLine = reader.readNext()) != null) {
+				if (count < 3 ){
+					count++;
+					continue;
+				}
+				
+				String name = nextLine[0];
+				if (name.trim().length() ==0){
+					continue;
+				}
+				
+				String marketCap =  nextLine[2];
+				String pe =  nextLine[3];
+				String yield =  nextLine[5];
+				
+//				String roe =  nextLine[4];
+//				String oneDayPriceChange =  nextLine[1];
+//				String debtToEquity =  nextLine[6];
+//				String priceToBook =  nextLine[7];
+//				String netProfitMargin =  nextLine[8];
+//				String priceToFreeCashFlow =  nextLine[9];
+
+				if (lastName == null){
+					lastName = name;
+				} else if (lastName.equals(name)){
+					nameCount++;
+				} else {
+					nameCount = 0;
+					lastName = name;
+				}
+				
+				String nameLookup = name + nameCount;
+				String symbol = new NameMapDAO(con).getSymbolForName(nameLookup);
+				
+				if (symbol == null){
+					System.err.println("could not namemap look up " + nameLookup);
+					continue;
+				}
+				
+				Stock s = new Stock();
+				s.setSymbol(symbol);
+				s.setMarketCap(marketCap);
+				s.setName(name);
+				s.setIndustryId(industryId);
+				
+				
+				try {
+					s.setPe(new BigDecimal(pe));
+				} catch (Exception e){
+					s.setPe(null);
+				}
+				
+				try {
+					s.setYield(new BigDecimal(yield));
+				} catch (Exception e){
+					s.setYield(null);
+				}
+				
+				new StockDAO(con).insert(s);
+			}
+		    reader.close();
+		    new IndustryDAO(con).setDataDateForIndustry(industryId, new Date());
+		}
 		
 		List<StockData> l = new ArrayList<StockData>();
 		
-		File stockIndustryFile= StockDBUtil.getStockIndustryFile(industryId);
-		if (!stockIndustryFile.exists()){
-			YahooFinanceUtil.createStockIndustryFile(industryId);
-		}
+		List<Stock> stockList = new StockDAO(con).getStocksForIndustry(industryId);
 		
-		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(stockIndustryFile)));
-		CSVReader reader = new CSVReader(br, ',');
-	    String [] nextLine;
-
-		String lastName = null;
-		int nameCount = 0;
-		
-		int count = 0;
-	    while ((nextLine = reader.readNext()) != null) {
-			if (count < 3 ){
-				count++;
-				continue;
-			}
-			
-			String name = nextLine[0];
-			if (name.trim().length() ==0){
-				continue;
-			}
-			
-			String marketCap =  nextLine[2];
-			String pe =  nextLine[3];
-			String yield =  nextLine[5];
-			
-			String roe =  nextLine[4];
-			String oneDayPriceChange =  nextLine[1];
-			String debtToEquity =  nextLine[6];
-			String priceToBook =  nextLine[7];
-			String netProfitMargin =  nextLine[8];
-			String priceToFreeCashFlow =  nextLine[9];
-
-			
-			if (lastName == null){
-				lastName = name;
-			} else if (lastName.equals(name)){
-				nameCount++;
-			} else {
-				nameCount = 0;
-				lastName = name;
-			}
-			
-			String nameLookup = name + nameCount;
-			String symbol = nameMap.get(nameLookup);
-			
-			if (symbol == null){
-				System.err.println("could not look up " + nameLookup);
-				continue;
-			}
-			
-			StockData sd = stockMap.get(symbol);
-			if (sd == null){
-				sd = new StockData();
-				stockMap.put(symbol, sd);
-			}
-			
-			sd.setSymbol(symbol);
-			
-			sd.setPe(pe);
-			try {
-				double yieldDouble = Double.parseDouble(yield);	
-				sd.setYield(yieldDouble);
-			} catch (Exception e){
-			}
-			sd.setMarketCap(marketCap);
-			sd.setName(name);
-			
+		for (Stock s : stockList){
+			StockData sd = new StockData();
+			sd.setStock(s);
 			l.add(sd);
 		}
-	    
+
 		industryStockMap.put(industryId, l);
 		notifyAllIndustryStockListeners(industryId, l);
-	    
-	    reader.close();
+
 		return l;
 	}
 
-	private Map<String, String> getNameMap(int industryId) throws MalformedURLException, IOException {
-		Map<String, String> nameMap = new HashMap<String, String>();
-		File nameMapFile= StockDBUtil.getNameMapFile(industryId);
-		if (!nameMapFile.exists()){
-			YahooFinanceUtil.createNameMapFile(industryId);
+	private void rebuildNameMap(int industryId) throws Exception {
+		//http://biz.yahoo.com/p/110conameu.html
+		new NameMapDAO(con).clearIndustry(industryId);
+		BufferedReader br = YahooFinanceUtil.getYahooCSV("http://biz.yahoo.com/p/" + industryId + "conameu.html");
+		StringBuffer sb = new StringBuffer();
+		String s = br.readLine();
+		while (s != null){
+			sb.append(s);
+			sb.append(" ");
+			s = br.readLine();
 		}
-		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(nameMapFile)));
-		String sDiv = null;
-		while ((sDiv = br.readLine()) != null){
-			StringTokenizer st = new StringTokenizer(sDiv, ";");
-			String name = st.nextToken();
-			String stock = st.nextToken();
-			nameMap.put(name, stock);
-		}
-		br.close();
-		return nameMap;
+		int startIx = sb.indexOf("<b>Companies</b>");
+		String lookFor = "<a href=\"http://us.rd.yahoo.com/finance/industry/quote/colist/*http://biz.yahoo.com/p/";
+		                //<a href=\"http://us.rd.yahoo.com/finance/industry/quote/colist/*http://biz.yahoo.com/p/r/remimet.bo.html">RMG Alloy Steel Ltd</a>
+		String lastName = null;
+		int nameCount = 0;
+		do {
+			int linkIx = sb.indexOf(lookFor, startIx);
+			if (linkIx > -1){
+				int linkEnd = sb.indexOf("</a>", linkIx + lookFor.length());
+				String chopped = sb.substring(linkIx + lookFor.length() + 2, linkEnd);
+				String lookFor2 = ".html\">";
+				int hIx = chopped.indexOf(lookFor2);
+				String stock = chopped.substring(0, hIx).toUpperCase();
+				String name = chopped.substring(hIx + lookFor2.length());
+				if (lastName == null){
+					lastName = name;
+				} else if (lastName.equals(name)){
+					nameCount++;
+				} else {
+					nameCount = 0;
+					lastName = name;
+				}
+
+				new NameMapDAO(con).insert(industryId, name + nameCount, stock);
+				startIx = linkEnd + 4;
+			} else {
+				break;
+			}
+		} while (startIx > -1);
 	}
 
+	
+	private boolean dataExpired(Date d) {
+		if (d == null){
+			return true;
+		}
+		Calendar now = Calendar.getInstance();
+		Calendar c = Calendar.getInstance();
+		c.setTime(d);
+		
+		if (now.get(Calendar.YEAR) > c.get(Calendar.YEAR)){
+			return true;
+		}
+		
+		if (now.get(Calendar.YEAR) == c.get(Calendar.YEAR) && now.get(Calendar.MONTH) > c.get(Calendar.MONTH)){
+			return true;
+		}
+		
+		if (now.get(Calendar.YEAR) == c.get(Calendar.YEAR) && now.get(Calendar.MONTH) == c.get(Calendar.MONTH) && now.get(Calendar.DATE) > c.get(Calendar.DATE)){
+			return true;
+		}
+		
+		return false;
+	}
+
+	public String getCompanyInfo(String symbol) throws Exception {
+		BufferedReader br = YahooFinanceUtil.getYahooCSVNice("http://finance.yahoo.com/q/pr?s=" +symbol+ "+Profile");
+		
+		if (br == null){
+			return "";
+		}
+		
+		StringBuffer sb = new StringBuffer();
+		String s = null; ;
+		while ((s = br.readLine()) != null){
+			sb.append(s);
+			sb.append(" ");
+		}
+		
+		String ss = "Business Summary</span></th><th align=\"right\">&nbsp;</th></tr></table><p>";
+		int ix = sb.indexOf(ss);
+		if (ix > -1){
+			int begix = ix + ss.length();
+			int endix = sb.indexOf("</p>", begix);
+			return sb.substring(begix, endix);
+		}
+		return "";
+		
+	}
 }

@@ -16,6 +16,7 @@ import org.eclipse.e4.core.di.annotations.Creatable;
 public class SectorIndustryRegistry {
 
 	Map<SectorIndustry, Integer> sectorIndustryMap = new HashMap<SectorIndustry, Integer>();
+	Map<Integer, SectorIndustry> sectorIndustryMap2 = new HashMap<Integer, SectorIndustry>();
 	Map<String, List<String>> industriesBySectorMap = new HashMap<String, List<String>>();
 	List<String> allSectors = new ArrayList<String>();
 
@@ -33,6 +34,7 @@ public class SectorIndustryRegistry {
 					String industryDesc = st.nextToken().trim();
 					SectorIndustry si = new SectorIndustry(sectorDesc, industryDesc);
 					sectorIndustryMap.put(si, id);
+					sectorIndustryMap2.put(id, si);
 					
 					List<String> l = industriesBySectorMap.get(sectorDesc);
 					if (l == null){
@@ -56,6 +58,10 @@ public class SectorIndustryRegistry {
 	
 	public Integer getIdForSectorIndustry(String sector, String industry){
 		return sectorIndustryMap.get(new SectorIndustry(sector, industry));
+	}
+	
+	public String getIndustryName(int industryId){
+		return sectorIndustryMap2.get(industryId).getIndustryName();
 	}
 	
 	public List<String> getAllSectors(){
