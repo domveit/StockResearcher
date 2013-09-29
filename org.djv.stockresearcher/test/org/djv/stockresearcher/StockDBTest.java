@@ -29,6 +29,7 @@ public class StockDBTest {
 		List<StockData> sl = new ArrayList<StockData>();
 		for (String s: stocks){
 			StockData sd = new StockData(s);
+			sd.getStock().setIndustryId(1);
 			sl.add(sd);
 		}
 		

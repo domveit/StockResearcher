@@ -6,6 +6,6 @@ import org.djv.stockresearcher.model.StockData;
 
 public interface IndustryStockListener {
 	
-	void notifyChanged(int industry, List<StockData> stockData);
+	void notifyChanged(int industry, List<StockData> stockData, int industriesToUpdate, int industriesUpdated, int beginOrEnd);
 
 }

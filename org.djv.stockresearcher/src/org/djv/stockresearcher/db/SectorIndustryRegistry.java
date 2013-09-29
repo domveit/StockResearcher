@@ -12,8 +12,16 @@ import java.util.StringTokenizer;
 import org.djv.stockresearcher.model.SectorIndustry;
 import org.eclipse.e4.core.di.annotations.Creatable;
 
-@Creatable
 public class SectorIndustryRegistry {
+	
+	private static SectorIndustryRegistry instance;
+	
+	public static SectorIndustryRegistry getInstance(){
+		if (instance == null){
+			instance = new SectorIndustryRegistry();
+		}
+		return instance;
+	}
 
 	Map<SectorIndustry, Integer> sectorIndustryMap = new HashMap<SectorIndustry, Integer>();
 	Map<Integer, SectorIndustry> sectorIndustryMap2 = new HashMap<Integer, SectorIndustry>();
@@ -62,6 +70,10 @@ public class SectorIndustryRegistry {
 	
 	public String getIndustryName(int industryId){
 		return sectorIndustryMap2.get(industryId).getIndustryName();
+	}
+	
+	public String getSectorName(int industryId){
+		return sectorIndustryMap2.get(industryId).getSectorName();
 	}
 	
 	public List<String> getAllSectors(){

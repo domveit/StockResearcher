@@ -156,7 +156,7 @@ public class StockDataUtil {
 				DivData q1Div = null;
 				for (DivData dd : dyd.getDivDetail()){
 					int em =dd.getPayDateCal().get(Calendar.MONTH);
-					if (em == Calendar.JANUARY || em == Calendar.FEBRUARY){
+					if (em == Calendar.JANUARY || em == Calendar.FEBRUARY|| em == Calendar.MARCH){
 						q1Div = dd;
 						break;
 					}
@@ -174,8 +174,8 @@ public class StockDataUtil {
 		}
 		
 		for (Integer y = currYYYY - 1; y > 1960; y --){
-			
 			DivYearData dyd = divYearData.get(y);
+			
 			DivYearData nextdyd = divYearData.get(y + 1);
 			DivYearData prevdyd = divYearData.get(y - 1);
 			if (dyd == null){
@@ -218,15 +218,31 @@ public class StockDataUtil {
 			}
 		}
 		
-	
+		int regularPayer = -1;
 		
-		DivYearData lastYear = divYearData.get(currYYYY - 1);
-		if (lastYear != null && sd.getStock().getPrice() != null && !"N/A".equals(sd.getStock().getPrice())){
-			sd.setNormDividend(lastYear.getNormalizedDiv());
-			sd.setNormYield(lastYear.getNormalizedDiv().multiply(new BigDecimal(100)).divide(sd.getStock().getPrice(), RoundingMode.HALF_UP));
-		} else {
-			sd.setNormDividend(sd.getStock().getDividend());
-			sd.setNormYield(sd.getStock().getYield());
+		DivYearData lastYear = divYearData.get(currYYYY -1);
+		DivYearData lastYear2 = divYearData.get(currYYYY - 2);
+		DivYearData lastYear3 = divYearData.get(currYYYY - 3);
+		
+		if (lastYear != null && lastYear2 != null && lastYear3 != null){
+			if (lastYear.getDivDetail().size() == lastYear2.getDivDetail().size() && lastYear2.getDivDetail().size() == lastYear3.getDivDetail().size()){
+				regularPayer = lastYear.getDivDetail().size();
+			}
+		}
+
+		if (sd.getStock().getPrice() != null){
+			if (regularPayer > -1){
+				sd.setNormDividend(sd.getDivData().get(0).getDividend().multiply(new BigDecimal(regularPayer)));
+				sd.setNormYield(sd.getNormDividend().multiply(new BigDecimal(100)).divide(sd.getStock().getPrice(), RoundingMode.HALF_UP));
+			} else {
+				if (lastYear != null ){
+					sd.setNormDividend(lastYear.getNormalizedDiv());
+					sd.setNormYield(lastYear.getNormalizedDiv().multiply(new BigDecimal(100)).divide(sd.getStock().getPrice(), RoundingMode.HALF_UP));
+				} else {
+					sd.setNormDividend(sd.getStock().getDividend());
+					sd.setNormYield(sd.getStock().getYield());
+				}
+			}
 		}
 	}
 
@@ -252,23 +268,26 @@ public class StockDataUtil {
 			if (y >= 2.5d){
 				yr = 6;
 			} 
-			if (y >= 3.5){
-				yr = 6;
-			} 
-			if (y >= 4.5d){
+			if (y >= 3.25d){
 				yr = 7;
 			} 
-			if (y >= 6.0d){
+			if (y >= 4.0d){
 				yr = 8;
 			} 
-			if (y >= 7.5d){
+			if (y >= 5.5d){
 				yr = 9;
-			}
-			if (y >= 9.0d){
+			} 
+			if (y >= 7.0d){
 				yr = 10;
 			}
-			if (y >= 15.0d){
+			if (y >= 9.0d){
+				yr = 8;
+			} 
+			if (y >= 12.0d){
 				yr = 6;
+			} 
+			if (y >= 15.0d){
+				yr = 4;
 			} 
 			if (y >= 25.0d){
 				yr = 2;

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.djv.stockresearcher.model.StockData;
+import org.eclipse.swt.widgets.Display;
 
 public class AppState {
 	
@@ -30,8 +31,13 @@ public class AppState {
 	}
 
 	private void notifyAllChanged(){
-		for (AppStateListener l: listeners){
-			l.notifyChanged(this);
+		for (final AppStateListener l: listeners){
+			Display.getDefault().asyncExec(new Runnable(){
+				@Override
+				public void run() {
+					l.notifyChanged(instance);
+				}
+			});
 		}
 	}
 	

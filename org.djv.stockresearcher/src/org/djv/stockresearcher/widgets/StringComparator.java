@@ -1,4 +1,4 @@
-package org.djv.stockresearcher.parts;
+package org.djv.stockresearcher.widgets;
 
 import java.util.Comparator;
 

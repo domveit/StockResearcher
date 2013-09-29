@@ -12,6 +12,9 @@ public class IndustryDAO extends H2DAO{
 	private static final String INSERT_SQL = "INSERT INTO INDUSTRY VALUES (?, ?)";
 	private static final String DELETE_SQL = "DELETE FROM INDUSTRY WHERE ID = ?";
 	
+	private static final String INDEX1_SQL = 
+			"CREATE UNIQUE INDEX IF NOT EXISTS INDUSTRYIX1 ON INDUSTRY (ID ASC) ";
+	
 	public IndustryDAO(Connection con) {
 		super(con);
 	}
@@ -20,9 +23,14 @@ public class IndustryDAO extends H2DAO{
 		PreparedStatement st = con.prepareStatement(CREATE_SQL);
 		st.executeUpdate();
 		st.close();
+		
+		PreparedStatement ist = con.prepareStatement(INDEX1_SQL);
+		ist.executeUpdate();
+		ist.close();
 	}
 	
 	public Date getDataDateForIndustry(int ind) throws Exception {
+//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(SELECT_SQL);
 		st.setInt(1, ind);
 		ResultSet rs = st.executeQuery();
@@ -31,10 +39,14 @@ public class IndustryDAO extends H2DAO{
 			d = rs.getDate("DATADATE");
 		}
 		st.close();
+//		long end = System.currentTimeMillis();
+//		System.err.println("IndustryDAO.getDataDateForIndustry " + (end-beg));
 		return d;
+		
 	}
 	
 	public void setDataDateForIndustry(int ind, java.util.Date d) throws Exception {
+//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(DELETE_SQL);
 		st.setInt(1, ind);
 		st.executeUpdate();
@@ -43,6 +55,8 @@ public class IndustryDAO extends H2DAO{
 		st2.setInt(1, ind);
 		st2.setDate(2, new java.sql.Date(d.getTime()));
 		st2.executeUpdate();
+//		long end = System.currentTimeMillis();
+//		System.err.println("IndustryDAO.setDataDateForIndustry " + (end-beg));
 	}
 
 }

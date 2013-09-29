@@ -1,13 +1,13 @@
 package org.djv.stockresearcher.db;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.djv.stockresearcher.model.DivData;
-import org.djv.stockresearcher.model.Stock;
 
 public class DividendDAO extends H2DAO{
 	
@@ -22,11 +22,11 @@ public class DividendDAO extends H2DAO{
 			"SELECT SYMBOL, PAYDATE, DIVIDEND FROM DIVIDEND ";
 	
 	private static final String INDEX1_SQL = 
-			"CREATE INDEX IF NOT EXISTS DIVIDENDIX1 ON DIVIDEND (SYMBOL ASC) ";
+			"CREATE UNIQUE INDEX IF NOT EXISTS DIVIDENDIX1 ON DIVIDEND (SYMBOL ASC, PAYDATE DESC) ";
 	
 	private static final String SELECT_SYMBOL_SQL = 
 			SELECT_SQL
-			+ "WHERE SYMBOL = ?";
+			+ "WHERE SYMBOL = ? ORDER BY PAYDATE DESC";
 	
 	private static final String INSERT_SQL = "INSERT INTO DIVIDEND VALUES (?, ?, ?)";
 	
@@ -47,6 +47,7 @@ public class DividendDAO extends H2DAO{
 	}
 	
 	public List<DivData> getDividendsForSymbol(String symbol) throws Exception {
+//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(SELECT_SYMBOL_SQL);
 		st.setString(1, symbol);
 		ResultSet rs = st.executeQuery();
@@ -58,21 +59,43 @@ public class DividendDAO extends H2DAO{
 			dd.setDividend(rs.getBigDecimal("DIVIDEND"));
 			l.add(dd);
 		}
+//		long end = System.currentTimeMillis();
+//		System.err.println("DividendDAO.getDividendsForSymbol " + (end-beg));
 		return l;
 	}
 	
+	public Date getLastDividendOnFileForSymbol(String symbol) throws Exception {
+//		long beg = System.currentTimeMillis();
+		PreparedStatement st = con.prepareStatement(SELECT_SYMBOL_SQL);
+		st.setString(1, symbol);
+		ResultSet rs = st.executeQuery();
+		Date d = null;
+		if (rs.next()){
+			d  = rs.getDate("PAYDATE");
+		}
+//		long end = System.currentTimeMillis();
+//		System.err.println("DividendDAO.getLastDividendOnFileForSymbol " + (end-beg));
+		return d;
+	}
+	
 	public void deleteForStock(String symbol) throws Exception {
+//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(DELETE_SQL);
 		st.setString(1, symbol);
 		st.executeUpdate();
+//		long end = System.currentTimeMillis();
+//		System.err.println("DividendDAO.deleteForStock " + (end-beg));
 	}
 
 	public void insert(DivData dd) throws Exception {
+//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(INSERT_SQL);
 		st.setString(1, dd.getSymbol());
 		st.setDate(2, dd.getPaydate());
 		st.setBigDecimal(3, dd.getDividend());
 		st.executeUpdate();
+//		long end = System.currentTimeMillis();
+//		System.err.println("DividendDAO.insert " + (end-beg));
 	}
 	
 //	public void update(Stock s) throws Exception {

@@ -8,29 +8,33 @@ import java.sql.DriverManager;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.inject.Inject;
+import java.util.concurrent.TimeUnit;
 
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
 import org.djv.stockresearcher.model.Stock;
 import org.djv.stockresearcher.model.StockData;
-import org.eclipse.e4.core.di.annotations.Creatable;
+import org.eclipse.swt.widgets.Display;
 
 import au.com.bytecode.opencsv.CSVReader;
 
-@Creatable
 public class StockDB {
+	
+	private static StockDB instance;
+	
+	public static StockDB getInstance(){
+		if (instance == null){
+			instance = new StockDB();
+		}
+		return instance;
+	}
 	
 	Connection con = null;
 	
@@ -48,30 +52,33 @@ public class StockDB {
             new StockDAO(con).createTableIfNotExists();
             new DividendDAO(con).createTableIfNotExists();
             new FinDataDAO(con).createTableIfNotExists();
+            new WatchListDAO(con).createTableIfNotExists();
         }
         catch( Exception e ){
             e.printStackTrace();
         }
 	}
 	
-	final ExecutorService pool = Executors.newFixedThreadPool(16);
-	Map<String, StockData> stockMap = new HashMap<String, StockData>();
-	public ExecutorService getPool() {
-		return pool;
-	}
-
-	Map<Integer, List<StockData>> industryStockMap = new HashMap<Integer, List<StockData>>();
+	volatile int industriesToUpdate = 0;
+	volatile int industriesUpdated = 0;
+	
+	volatile int stocksToUpdate = 0;
+	volatile int stocksUpdated = 0;
 	
 	List<IndustryStockListener> industryStockListeners = new ArrayList<IndustryStockListener>();
-	
 	List<StockDataChangeListener> stockDataChangeListeners = new ArrayList<StockDataChangeListener>();
+	List<WatchListListener> watchListListeners = new ArrayList<WatchListListener>();
 	
-	@Inject
-	private SectorIndustryRegistry sir;
+	private SectorIndustryRegistry sir = SectorIndustryRegistry.getInstance();
 	
-	public void notifyAllIndustryStockListeners(int industry, List<StockData> sdl) {
-		for (IndustryStockListener isl : industryStockListeners){
-			isl.notifyChanged(industry, sdl);
+	public void notifyAllIndustryStockListeners(final int industry, final List<StockData> sdl, final int beginOrEnd) {
+		for (final IndustryStockListener isl : industryStockListeners){
+			Display.getDefault().asyncExec(new Runnable(){
+				@Override
+				public void run() {
+					isl.notifyChanged(industry, sdl, industriesToUpdate, industriesUpdated, beginOrEnd);
+				}
+			});
 		}
 	}
 	
@@ -79,9 +86,14 @@ public class StockDB {
 		industryStockListeners.add(isl);
 	}
 	
-	public void notifyAllStockDataChangeListeners(StockData sd) {
-		for (StockDataChangeListener sdcl : stockDataChangeListeners){
-			sdcl.notifyChanged(sd);
+	public void notifyAllStockDataChangeListeners(final StockData sd) {
+		for (final StockDataChangeListener sdcl : stockDataChangeListeners){
+			Display.getDefault().asyncExec(new Runnable(){
+				@Override
+				public void run() {
+					sdcl.notifyChanged(sd, stocksToUpdate, stocksUpdated);
+				}
+			});
 		}
 	}
 	
@@ -89,29 +101,40 @@ public class StockDB {
 		stockDataChangeListeners.add(sdcl);
 	}
 	
-	public void getDataForStocks(final List<StockData> stocks) throws Exception {
-		int nbrStocks = stocks.size();
+	public void notifyAllWatchListListeners(final List<StockData> sd) {
+		for (final WatchListListener wll : watchListListeners){
+			Display.getDefault().asyncExec(new Runnable(){
+				@Override
+				public void run() {
+					wll.notifyChanged(sd);
+				}
+			});
+		}
+	}
+	
+	public void addWatchListListener(WatchListListener wll) {
+		watchListListeners.add(wll);
+	}
+	
+	public void getDataForStocks(final List<StockData> sdList) throws Exception {
+		List<StockData> sdUpdateList = new ArrayList<StockData>();
+		for (StockData sd : sdList) {
+			if (dataExpired(sd.getStock().getDataDate())){
+				sdUpdateList.add(sd);
+			} 
+		}
+				
+		int nbrStocks = sdUpdateList.size();
 		
 		int nbrGroups = (nbrStocks - 1) /50 + 1;
 		for (int i = 1; i <= nbrGroups; i ++){
 			List<StockData> subList = null;
 			if (i == nbrGroups){
-				subList = stocks.subList(50 * (i-1), stocks.size());
+				subList = sdUpdateList.subList(50 * (i-1), sdUpdateList.size());
 			} else {
-				subList = stocks.subList(50 * (i-1), 50 * i);
+				subList = sdUpdateList.subList(50 * (i-1), 50 * i);
 			}
-			final List<StockData> subListFinal = subList;
-			pool.execute(new Runnable(){
-				@Override
-				public void run() {
-					try {
-						getDataForStocksInternal(subListFinal);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				
-			});
+			getDataForStocksInternal(subList);
 		}
 		return;
 	}
@@ -120,13 +143,11 @@ public class StockDB {
 		List<String> stocksGettingData = new ArrayList<String>();
 		String stockURLParm = "";
 		for (StockData sd : stocks) {
-			if (dataExpired(sd.getStock().getDataDate())){
-				if (stockURLParm.length() > 0){
-					stockURLParm += "+";
-				}
-				stockURLParm += sd.getStock().getSymbol();
-				stocksGettingData.add(sd.getStock().getSymbol());
+			if (stockURLParm.length() > 0){
+				stockURLParm += "+";
 			}
+			stockURLParm += sd.getStock().getSymbol();
+			stocksGettingData.add(sd.getStock().getSymbol());
 		}
 		if (stocksGettingData.size() > 0) {
 			BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/d/quotes.csv?s=" +stockURLParm + "&f=npj1dyrr5x0");
@@ -145,10 +166,8 @@ public class StockDB {
 				String exchange = nextCSVLine[7];
 				
 				Stock s = null;
-				StockData sd = null;
 				for (StockData sdLoop : stocks){
 					if (sdLoop.getStock().getSymbol().equals(symbol)){
-						sd = sdLoop;
 						s = sdLoop.getStock();
 						break;
 					}
@@ -190,51 +209,31 @@ public class StockDB {
 				s.setDataDate(new java.sql.Date(new Date().getTime()));
 				
 				new StockDAO(con).update(s);
-				notifyAllStockDataChangeListeners(sd);
 				symLoop++;
 			}
 			reader.close();
-		}
-			
-		for (final StockData sd : stocks){
-			pool.execute(new Runnable(){
-				@Override
-				public void run() {
-					try {
-						getDivData(sd);
-						getFinData(sd);
-						StockDataUtil.calcRankings(sd);
-						notifyAllStockDataChangeListeners(sd);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				
-			});
 		}
 	}
 
 	public void getDivData(StockData sd) throws Exception {
 		if (dataExpired(sd.getStock().getDivDataDate())){
-			new DividendDAO(con).deleteForStock(sd.getStock().getSymbol());
-			insertDividends(sd);
+			insertNewDividends(sd);
 			sd.getStock().setDivDataDate(new java.sql.Date(new Date().getTime()));
 			new StockDAO(con).update(sd.getStock());
+			sd.setDivData(null)	;
 		}
-		
-		List<DivData> ddl = new DividendDAO(con).getDividendsForSymbol(sd.getStock().getSymbol());
-		Collections.sort(ddl, new Comparator<DivData>() {
-			@Override
-			public int compare(DivData dd1, DivData dd2) {
-				return dd2.getPaydate().compareTo(dd1.getPaydate());
-			}
-		});
-		sd.setDivData(ddl);
+		if (sd.getDivData() == null){	
+			List<DivData> ddl = new DividendDAO(con).getDividendsForSymbol(sd.getStock().getSymbol());
+			sd.setDivData(ddl);
+		}
 		StockDataUtil.crunchDividends(sd);
 	}
 
-	public void insertDividends(StockData sd) throws Exception {
+	public void insertNewDividends(StockData sd) throws Exception {
 		String symbol = sd.getStock().getSymbol();
+		
+		Date d = new DividendDAO(con).getLastDividendOnFileForSymbol(symbol);
+//		System.err.println(symbol + " got div date " + d);
 		
 		Calendar c = Calendar.getInstance();
 		int year = c.get(Calendar.YEAR);
@@ -254,23 +253,29 @@ public class StockDB {
 			}
 			StringTokenizer st = new StringTokenizer(sDiv, ",");
 			Date date = new SimpleDateFormat("yyyy-MM-dd").parse(st.nextToken());
+
 			BigDecimal div = new BigDecimal(st.nextToken());
 			if (div.compareTo(BigDecimal.ZERO) == 0){
 				continue;
+			}
+			
+//			System.err.println(symbol + " read div from yahoo  " + date + " " + div);
+			
+			if (d != null && (date.before(d) || date.equals(d))){
+				break;
 			}
 			DivData dd = new DivData();
 			dd.setSymbol(symbol);
 			dd.setPaydate(new java.sql.Date(date.getTime()));
 			dd.setDividend(div);
 			new DividendDAO(con).insert(dd);
+//			System.err.println(symbol + " inserted div from yahoo  " + date + " " + div);
 		}
-
 		br.close();
 		
 	}
 	
 	public void getFinData(StockData sd) throws Exception {
-		
 		if (dataExpired(sd.getStock().getFinDataDate())){
 			new FinDataDAO(con).deleteForStock(sd.getStock().getSymbol());
 			insertFinancials(sd);
@@ -303,7 +308,7 @@ public class StockDB {
 			if (symbol.endsWith(".DE")){
 				msExchange = "XFRA";
 			} else {
-				System.err.println("Could not map to morningstar exhange " + symbol + ":" + exchange);
+//				System.err.println("Could not map to morningstar exhange " + symbol + ":" + exchange);
 				return;
 			}
 		}
@@ -342,7 +347,7 @@ public class StockDB {
 			    			Integer year = Integer.valueOf(period.substring(0, 4));
 			    			fd.setYear(year);
 			    		} catch (Exception e){
-			    			System.err.println("could not read year: \""  + period + "\"");
+//			    			System.err.println("could not read year: \""  + period + "\"");
 			    			fd.setYear(null);
 			    		}
 		    		}
@@ -420,50 +425,51 @@ public class StockDB {
 	}
 	
 	
-	public void updateSectorAndIndustry(String sector, String industry){
-		if ("ALL".equals(industry)){
-			List<String> ilist = sir.getIndustriesForSector(sector);
-			for (String i : ilist){
-				if ("ALL".equals(i)){
-					continue;
-				}
-				final int id = sir.getIdForSectorIndustry(sector, i);
-				pool.submit(new Runnable(){
-					@Override
-					public void run() {
+	public void updateSectorAndIndustry(final String sector, final String industry){
+		industriesToUpdate = 0;
+		industriesUpdated = 0;
+		ExecutorService pool = Executors.newFixedThreadPool(1);
+		pool.submit(new Runnable(){
+			@Override
+			public void run() {
+				if ("ALL".equals(industry)){
+					List<String> ilist = sir.getIndustriesForSector(sector);
+					industriesToUpdate = ilist.size() - 1;
+					for (String i : ilist){
+						if ("ALL".equals(i)){
+							continue;
+						}
+						int id = sir.getIdForSectorIndustry(sector, i);
 						try {
-							List<StockData> list = getStocksForIndustryAndSector(id);
-							getDataForStocks(list);
+							getStocksForIndustryAndSector(id);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
+		
 					}
-				});
-			}
-		} else {
-			final int id = sir.getIdForSectorIndustry(sector, industry);
-			pool.submit(new Runnable(){
-				@Override
-				public void run() {
+				} else {
+					int id = sir.getIdForSectorIndustry(sector, industry);
+					industriesToUpdate = 1;
 					try {
-						List<StockData> list = getStocksForIndustryAndSector(id);
-						getDataForStocks(list);
+						getStocksForIndustryAndSector(id);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
+		
 				}
-			});
-		}
+			}
+		});
 	}
 
 
-	public List<StockData> getStocksForIndustryAndSector(int industryId) throws Exception {
+	public void getStocksForIndustryAndSector(int industryId) throws Exception {
+		notifyAllIndustryStockListeners(industryId, null, 0);
 		Date d = new IndustryDAO(con).getDataDateForIndustry(industryId);
+		
+		List<StockData> sdList = new ArrayList<StockData>();
 		
 		if (dataExpired(d)){
 			rebuildNameMap(industryId);
-			new StockDAO(con).deleteStocksForIndustry(industryId);
-			
 			BufferedReader br = YahooFinanceUtil.getYahooCSV("http://biz.yahoo.com/p/csv/" + industryId + "conameu.csv");
 			CSVReader reader = new CSVReader(br, ',');
 		    String [] nextLine;
@@ -507,49 +513,89 @@ public class StockDB {
 				String symbol = new NameMapDAO(con).getSymbolForName(nameLookup);
 				
 				if (symbol == null){
-					System.err.println("could not namemap look up " + nameLookup);
+//					System.err.println("could not namemap look up " + nameLookup);
 					continue;
 				}
 				
-				Stock s = new Stock();
-				s.setSymbol(symbol);
-				s.setMarketCap(marketCap);
-				s.setName(name);
-				s.setIndustryId(industryId);
-				
-				
-				try {
-					s.setPe(new BigDecimal(pe));
-				} catch (Exception e){
-					s.setPe(null);
+				Stock s = new StockDAO(con).select(symbol);
+				if (s == null){
+					s = new Stock();
+					s.setSymbol(symbol);
+					s.setMarketCap(marketCap);
+					s.setName(name);
+					s.setIndustryId(industryId);
+					try {
+						s.setPe(new BigDecimal(pe));
+					} catch (Exception e){
+						s.setPe(null);
+					}
+					try {
+						s.setYield(new BigDecimal(yield));
+					} catch (Exception e){
+						s.setYield(null);
+					}
+					new StockDAO(con).insert(s);
 				}
+				StockData sd = new StockData();
 				
-				try {
-					s.setYield(new BigDecimal(yield));
-				} catch (Exception e){
-					s.setYield(null);
-				}
-				
-				new StockDAO(con).insert(s);
+				sd.setStock(s);
+				sd.setIndustryName(sir.getIndustryName(s.getIndustryId()));
+				sd.setSectorName(sir.getSectorName(s.getIndustryId()));
+				sd.setWatched(new WatchListDAO(con).exists(symbol));
+				sdList.add(sd);
 			}
 		    reader.close();
 		    new IndustryDAO(con).setDataDateForIndustry(industryId, new Date());
+		} else {
+			List<Stock> sList = new StockDAO(con).getStocksForIndustry(industryId);
+			for (Stock s : sList){
+				StockData sd = new StockData();
+				sd.setStock(s);
+				sd.setIndustryName(sir.getIndustryName(s.getIndustryId()));
+				sd.setSectorName(sir.getSectorName(s.getIndustryId()));
+				sd.setWatched(new WatchListDAO(con).exists(s.getSymbol()));
+				sdList.add(sd);
+			}
 		}
 		
-		List<StockData> l = new ArrayList<StockData>();
+		getDataForStocks(sdList);
 		
-		List<Stock> stockList = new StockDAO(con).getStocksForIndustry(industryId);
+//		industryStockMap.put(industryId, sdList);
+		notifyAllIndustryStockListeners(industryId, sdList, 0);
 		
-		for (Stock s : stockList){
-			StockData sd = new StockData();
-			sd.setStock(s);
-			l.add(sd);
+		updateStockFineData(sdList);
+		
+		industriesUpdated ++;
+		notifyAllIndustryStockListeners(industryId, null, 1);
+		
+	}
+
+	public void updateStockFineData(List<StockData> sdList)
+			throws InterruptedException {
+		stocksToUpdate = 0;
+		stocksUpdated = 0;
+		
+		ExecutorService pool = Executors.newFixedThreadPool(16);
+		for (final StockData sd : sdList){
+			stocksToUpdate ++;
+			pool.submit(new Runnable(){
+				@Override
+				public void run() {
+					try {
+						getDivData(sd);
+						getFinData(sd);
+						StockDataUtil.calcRankings(sd);
+						stocksUpdated++;
+						notifyAllStockDataChangeListeners(sd);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
 		}
-
-		industryStockMap.put(industryId, l);
-		notifyAllIndustryStockListeners(industryId, l);
-
-		return l;
+		pool.shutdown();
+		pool.awaitTermination(30, TimeUnit.MINUTES);
+		notifyAllStockDataChangeListeners(null);
 	}
 
 	private void rebuildNameMap(int industryId) throws Exception {
@@ -640,6 +686,59 @@ public class StockDB {
 			return sb.substring(begix, endix);
 		}
 		return "";
-		
+	}
+	
+	public void addToWatchList(String symbol) throws Exception {
+		if (new WatchListDAO(con).exists(symbol)){
+			throw new Exception("already on watch list");
+		} else {
+			new WatchListDAO(con).insert(symbol);
+		}
+		refreshWatchList();
+	}
+	
+	public void refreshWatchList() throws Exception {
+		ExecutorService pool = Executors.newFixedThreadPool(1);
+		pool.submit(new Runnable(){
+			@Override
+			public void run() {
+				try {
+					List<String> list = new WatchListDAO(con).getWatchList();
+					List<StockData> sdList = new ArrayList<StockData>();
+					for (String symbol : list){
+						Stock s = new StockDAO(con).select(symbol);
+						StockData sd = new StockData(s);
+						sd.setIndustryName(sir.getIndustryName(s.getIndustryId()));
+						sd.setSectorName(sir.getSectorName(s.getIndustryId()));
+						sd.setWatched(new WatchListDAO(con).exists(symbol));
+						sdList.add(sd);
+					}
+					
+					getDataForStocks(sdList);
+					notifyAllWatchListListeners(sdList);
+					
+					updateStockFineData(sdList);
+				} catch (Exception e){
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	public void removeFromWatchList(String symbol) throws Exception {
+		new WatchListDAO(con).delete(symbol);
+		refreshWatchList();
+	}
+
+	public List<String> getAllSectors() {
+		return sir.getAllSectors();
+	}
+
+	public List<String> getIndustriesForSector(String sector) {
+		return sir.getIndustriesForSector(sector);
+	}
+
+	public String getIndustryName(int industry) {
+		return sir.getIndustryName(industry);
 	}
 }

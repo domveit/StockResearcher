@@ -7,6 +7,9 @@ import java.util.Map;
 public class StockData {
 	
 	Stock stock;
+	String industryName;
+	String sectorName;
+
 	int streak;
 	int skipped;
 	
@@ -29,6 +32,8 @@ public class StockData {
 	int finRank = 0;
 	double overAllRank = 0;
 	
+	boolean isWatched = false;
+	
 	List<DivData> divData;
 	Map<Integer, DivYearData> divYearData;
 
@@ -42,6 +47,11 @@ public class StockData {
 		super();
 		stock = new Stock();
 		stock.setSymbol(symbol);
+	}
+	
+	public StockData(Stock s) {
+		super();
+		stock = s;
 	}
 	
 	public boolean isRanksCalculated() {
@@ -169,7 +179,13 @@ public class StockData {
 		this.wildness = wildness;
 	}
 	
-	
+	public String getIndustryName() {
+		return industryName;
+	}
+
+	public void setIndustryName(String industryName) {
+		this.industryName = industryName;
+	}
 	
 	public Stock getStock() {
 		return stock;
@@ -177,6 +193,22 @@ public class StockData {
 
 	public void setStock(Stock stock) {
 		this.stock = stock;
+	}
+	
+	public boolean isWatched() {
+		return isWatched;
+	}
+
+	public void setWatched(boolean isWatched) {
+		this.isWatched = isWatched;
+	}
+	
+	public String getSectorName() {
+		return sectorName;
+	}
+
+	public void setSectorName(String sectorName) {
+		this.sectorName = sectorName;
 	}
 
 	public String toString(){
