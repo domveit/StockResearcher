@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
+import org.djv.stockresearcher.model.Portfolio;
+import org.djv.stockresearcher.model.PortfolioData;
 import org.djv.stockresearcher.model.Stock;
 import org.djv.stockresearcher.model.StockData;
 import org.eclipse.swt.widgets.Display;
@@ -53,6 +55,7 @@ public class StockDB {
             new DividendDAO(con).createTableIfNotExists();
             new FinDataDAO(con).createTableIfNotExists();
             new WatchListDAO(con).createTableIfNotExists();
+            new PortfolioDAO(con).createTableIfNotExists();
         }
         catch( Exception e ){
             e.printStackTrace();
@@ -740,5 +743,33 @@ public class StockDB {
 
 	public String getIndustryName(int industry) {
 		return sir.getIndustryName(industry);
+	}
+
+	public void createNewPortfolio(String text) throws Exception {
+		PortfolioDAO dao = new PortfolioDAO(con);
+		Portfolio p = new Portfolio();
+		p.setId(dao.getNextId());
+		p.setName(text);
+		dao.insert(p);
+	}
+	
+	public List<Portfolio> getPortfolioList() throws Exception {
+		PortfolioDAO dao = new PortfolioDAO(con);
+		return dao.getAll();
+	}
+
+	public PortfolioData getPortfolioData(String name) throws Exception {
+		PortfolioDAO dao = new PortfolioDAO(con);
+		Portfolio p = dao.selectByName(name);
+		
+		PortfolioData pData = new PortfolioData();
+		pData.setPortfolio(p);
+		
+		return pData;
+	}
+
+	public void deletePortfolio(String name) throws Exception {
+		PortfolioDAO dao = new PortfolioDAO(con);
+		dao.deleteByName(name);
 	}
 }

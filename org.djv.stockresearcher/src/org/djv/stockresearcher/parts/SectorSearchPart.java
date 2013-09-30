@@ -46,7 +46,6 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 	
 	@PostConstruct
 	public void postConstruct(final Composite parent) {
-		parent.getShell().setMaximized(true);
 		buildStockTable(parent);
 		db.addIndustryStockListener(this);
 		db.addStockDataChangeListener(this);

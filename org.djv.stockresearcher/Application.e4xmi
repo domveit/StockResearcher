@@ -6,6 +6,7 @@
         <children xsi:type="basic:PartSashContainer" xmi:id="_urcolwn1EeOInNDXYak8ig">
           <children xsi:type="basic:PartSashContainer" xmi:id="_QxSisAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partsashcontainer.1" horizontal="true">
             <children xsi:type="basic:PartStack" xmi:id="_urcomAn1EeOInNDXYak8ig">
+              <children xsi:type="basic:Part" xmi:id="_UdBZ0CkjEeO6SIX0VjHbbw" elementId="org.djv.stockresearcher.part.5" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.PortfolioPart" label="Portfolio"/>
               <children xsi:type="basic:Part" xmi:id="_4z3BkBHNEeOtdsOEIe2N7Q" elementId="org.djv.stockresearcher.part.3" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.WatchListPart" label="Watch List"/>
               <children xsi:type="basic:Part" xmi:id="_urcomQn1EeOInNDXYak8ig" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.SectorSearchPart" label="Sector Search"/>
             </children>
