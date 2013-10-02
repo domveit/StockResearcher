@@ -56,6 +56,7 @@ public class StockDB {
             new FinDataDAO(con).createTableIfNotExists();
             new WatchListDAO(con).createTableIfNotExists();
             new PortfolioDAO(con).createTableIfNotExists();
+            new TransactionDAO(con).createTableIfNotExists();
         }
         catch( Exception e ){
             e.printStackTrace();
@@ -760,9 +761,14 @@ public class StockDB {
 
 	public PortfolioData getPortfolioData(String name) throws Exception {
 		PortfolioDAO dao = new PortfolioDAO(con);
+		TransactionDAO tdao = new TransactionDAO(con);
 		Portfolio p = dao.selectByName(name);
+		if (p == null){
+			return null;
+		}
 		
 		PortfolioData pData = new PortfolioData();
+		pData.setTransactionList(tdao.getTransactionsForPortfolio(p.getId()));
 		pData.setPortfolio(p);
 		
 		return pData;
@@ -770,6 +776,12 @@ public class StockDB {
 
 	public void deletePortfolio(String name) throws Exception {
 		PortfolioDAO dao = new PortfolioDAO(con);
-		dao.deleteByName(name);
+		TransactionDAO tdao = new TransactionDAO(con);
+		Portfolio p = dao.selectByName(name);
+		if (p == null){
+			return;
+		}
+		tdao.deleteAllForPortfolio(p.getId());
+		dao.delete(p.getId());
 	}
 }
