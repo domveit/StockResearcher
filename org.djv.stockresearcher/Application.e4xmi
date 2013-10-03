@@ -8,13 +8,8 @@
             <children xsi:type="basic:PartStack" xmi:id="_urcomAn1EeOInNDXYak8ig">
               <children xsi:type="basic:Part" xmi:id="_UdBZ0CkjEeO6SIX0VjHbbw" elementId="org.djv.stockresearcher.part.5" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.PortfolioPart" label="Portfolio">
                 <handlers xmi:id="_uCrXACvkEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.handler.0" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.CreatePortfolioHandler" command="_xr6HgCvkEeOVBdWf47TnJA"/>
-                <toolbar xmi:id="_vumiwCvjEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.toolbar.0">
-                  <children xsi:type="menu:DirectToolItem" xmi:id="_C_rRMCvsEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.directtoolitem.0" label="Portfolios2">
-                    <menu xmi:id="_DyiRgCvsEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.menu.0" label="Test">
-                      <children xsi:type="menu:DirectMenuItem" xmi:id="_H-8nkCvsEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.directmenuitem.0" label="test" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.DirectMenuItem"/>
-                    </menu>
-                  </children>
-                  <children xsi:type="menu:HandledToolItem" xmi:id="_cIid8CvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.handledtoolitem.1" label="Portfolios">
+                <toolbar xmi:id="_vumiwCvjEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.toolbar.portfoliopart">
+                  <children xsi:type="menu:HandledToolItem" xmi:id="_cIid8CvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.handledtoolitem.1" label="Portfolios" command="_SQb3ICw8EeOYNsWurmmjdA">
                     <menu xmi:id="_dM9vYCvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.menu.1">
                       <children xsi:type="menu:DynamicMenuContribution" xmi:id="_eIF64CvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.dynamicmenucontribution.1" label="Portfolios" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.PortfolioMenuContribution"/>
                     </menu>
@@ -45,6 +40,7 @@
   <handlers xmi:id="_urcBkQn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.openCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.OpenHandler" command="_urcBkAn1EeOInNDXYak8ig"/>
   <handlers xmi:id="_urcBlAn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.saveCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.SaveHandler" command="_urcBkwn1EeOInNDXYak8ig"/>
   <handlers xmi:id="_urcBlwn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.aboutCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.AboutHandler" command="_urcBlgn1EeOInNDXYak8ig"/>
+  <handlers xmi:id="_DukTsCw9EeOYNsWurmmjdA" elementId="org.djv.stockresearcher.handler.1" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.SelectPortfolioHandler" command="_SQb3ICw8EeOYNsWurmmjdA"/>
   <bindingTables xmi:id="_urcBjgn1EeOInNDXYak8ig" bindingContext="_urcBiQn1EeOInNDXYak8ig">
     <bindings xmi:id="_urcBjwn1EeOInNDXYak8ig" keySequence="M1+Q" command="_urcBjAn1EeOInNDXYak8ig"/>
     <bindings xmi:id="_urcBkgn1EeOInNDXYak8ig" keySequence="M1+O" command="_urcBkAn1EeOInNDXYak8ig"/>
@@ -60,6 +56,9 @@
   <commands xmi:id="_urcBkwn1EeOInNDXYak8ig" elementId="org.eclipse.ui.file.save" commandName="saveCommand"/>
   <commands xmi:id="_urcBlgn1EeOInNDXYak8ig" elementId="org.eclipse.ui.help.aboutAction" commandName="aboutCommand"/>
   <commands xmi:id="_xr6HgCvkEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.command.createPortfolio" commandName="createPortfolio" description="Create a Portfolio"/>
+  <commands xmi:id="_SQb3ICw8EeOYNsWurmmjdA" elementId="org.djv.stockresearcher.command.selectPortfolio" commandName="selectPortfolio">
+    <parameters xmi:id="_7xrpwCxJEeOYNsWurmmjdA" elementId="org.djv.stockresearcher.commandparameter.0" name="portfolio"/>
+  </commands>
   <addons xmi:id="_urcBggn1EeOInNDXYak8ig" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
   <addons xmi:id="_urcBgwn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>
   <addons xmi:id="_urcBhAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.bindings.service" contributionURI="bundleclass://org.eclipse.e4.ui.bindings/org.eclipse.e4.ui.bindings.BindingServiceAddon"/>
