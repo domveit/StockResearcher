@@ -1,12 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmi:id="_urcBgAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ide.application" bindingContexts="_urcBiQn1EeOInNDXYak8ig">
+<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_urcBgAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ide.application" bindingContexts="_urcBiQn1EeOInNDXYak8ig">
   <children xsi:type="basic:TrimmedWindow" xmi:id="_urcBgQn1EeOInNDXYak8ig" label="org.djv.stockresearcher" width="500" height="400">
     <children xsi:type="advanced:PerspectiveStack" xmi:id="_urcolQn1EeOInNDXYak8ig">
       <children xsi:type="advanced:Perspective" xmi:id="_urcolgn1EeOInNDXYak8ig">
         <children xsi:type="basic:PartSashContainer" xmi:id="_urcolwn1EeOInNDXYak8ig">
           <children xsi:type="basic:PartSashContainer" xmi:id="_QxSisAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partsashcontainer.1" horizontal="true">
             <children xsi:type="basic:PartStack" xmi:id="_urcomAn1EeOInNDXYak8ig">
-              <children xsi:type="basic:Part" xmi:id="_UdBZ0CkjEeO6SIX0VjHbbw" elementId="org.djv.stockresearcher.part.5" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.PortfolioPart" label="Portfolio"/>
+              <children xsi:type="basic:Part" xmi:id="_UdBZ0CkjEeO6SIX0VjHbbw" elementId="org.djv.stockresearcher.part.5" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.PortfolioPart" label="Portfolio">
+                <handlers xmi:id="_uCrXACvkEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.handler.0" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.CreatePortfolioHandler" command="_xr6HgCvkEeOVBdWf47TnJA"/>
+                <toolbar xmi:id="_vumiwCvjEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.toolbar.0">
+                  <children xsi:type="menu:DirectToolItem" xmi:id="_C_rRMCvsEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.directtoolitem.0" label="Portfolios2">
+                    <menu xmi:id="_DyiRgCvsEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.menu.0" label="Test">
+                      <children xsi:type="menu:DirectMenuItem" xmi:id="_H-8nkCvsEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.directmenuitem.0" label="test" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.DirectMenuItem"/>
+                    </menu>
+                  </children>
+                  <children xsi:type="menu:HandledToolItem" xmi:id="_cIid8CvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.handledtoolitem.1" label="Portfolios">
+                    <menu xmi:id="_dM9vYCvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.menu.1">
+                      <children xsi:type="menu:DynamicMenuContribution" xmi:id="_eIF64CvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.dynamicmenucontribution.1" label="Portfolios" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.PortfolioMenuContribution"/>
+                    </menu>
+                  </children>
+                  <children xsi:type="menu:ToolBarSeparator" xmi:id="_lH6MsCvqEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.toolbarseparator.0"/>
+                  <children xsi:type="menu:HandledToolItem" xmi:id="_cRf-8CvlEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.handledtoolitem.0" label="Create Portfolio" iconURI="platform:/plugin/org.djv.stockresearcher/src/create_icon.png" command="_xr6HgCvkEeOVBdWf47TnJA"/>
+                </toolbar>
+              </children>
               <children xsi:type="basic:Part" xmi:id="_4z3BkBHNEeOtdsOEIe2N7Q" elementId="org.djv.stockresearcher.part.3" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.WatchListPart" label="Watch List"/>
               <children xsi:type="basic:Part" xmi:id="_urcomQn1EeOInNDXYak8ig" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.SectorSearchPart" label="Sector Search"/>
             </children>
@@ -43,6 +59,7 @@
   <commands xmi:id="_urcBkAn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.open" commandName="openCommand"/>
   <commands xmi:id="_urcBkwn1EeOInNDXYak8ig" elementId="org.eclipse.ui.file.save" commandName="saveCommand"/>
   <commands xmi:id="_urcBlgn1EeOInNDXYak8ig" elementId="org.eclipse.ui.help.aboutAction" commandName="aboutCommand"/>
+  <commands xmi:id="_xr6HgCvkEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.command.createPortfolio" commandName="createPortfolio" description="Create a Portfolio"/>
   <addons xmi:id="_urcBggn1EeOInNDXYak8ig" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
   <addons xmi:id="_urcBgwn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>
   <addons xmi:id="_urcBhAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.bindings.service" contributionURI="bundleclass://org.eclipse.e4.ui.bindings/org.eclipse.e4.ui.bindings.BindingServiceAddon"/>

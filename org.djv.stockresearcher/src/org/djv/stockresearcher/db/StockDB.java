@@ -23,6 +23,8 @@ import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
 import org.djv.stockresearcher.model.Stock;
 import org.djv.stockresearcher.model.StockData;
+import org.djv.stockresearcher.model.Transaction;
+import org.djv.stockresearcher.model.TransactionData;
 import org.eclipse.swt.widgets.Display;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -768,7 +770,46 @@ public class StockDB {
 		}
 		
 		PortfolioData pData = new PortfolioData();
-		pData.setTransactionList(tdao.getTransactionsForPortfolio(p.getId()));
+		List<Transaction> list = tdao.getTransactionsForPortfolio(p.getId());
+
+		List<String> slist = new ArrayList<String>();
+		for (Transaction t : list){
+			if (!slist.contains(t.getSymbol())){
+				slist.add(t.getSymbol());
+			}
+		}
+		
+		List<StockData> sdList = new ArrayList<StockData>();
+		for (String sym: slist){
+			Stock s = new StockDAO(con).select(sym);
+			if (s == null){
+				s = new Stock();
+				s.setSymbol(sym);
+				s.setMarketCap("");
+				s.setName("");
+				s.setIndustryId(0);
+				new StockDAO(con).insert(s);
+			}
+			sdList.add(new StockData(s));
+		}
+		
+		getDataForStocks(sdList);
+		
+		List<TransactionData> tdlist = new ArrayList<TransactionData>();
+		for (Transaction t : list){
+			for (StockData sd : sdList){
+				if (sd.getStock().getSymbol().equals(t.getSymbol())){
+					TransactionData td = new TransactionData();
+					td.setTransaction(t);
+					td.setStockData(sd);
+					tdlist.add(td);
+				}
+			}
+			if (!slist.contains(t.getSymbol())){
+				slist.add(t.getSymbol());
+			}
+		}
+		pData.setTransactionList(tdlist);
 		pData.setPortfolio(p);
 		
 		return pData;
@@ -783,5 +824,24 @@ public class StockDB {
 		}
 		tdao.deleteAllForPortfolio(p.getId());
 		dao.delete(p.getId());
+	}
+
+	public void createNewTransaction(String portfolioName, Transaction t) throws Exception {
+		PortfolioDAO dao = new PortfolioDAO(con);
+		TransactionDAO tdao = new TransactionDAO(con);
+		
+		Portfolio p = dao.selectByName(portfolioName);
+		if (p == null){
+			return;
+		}
+		
+		t.setPortId(p.getId());
+		t.setId(tdao.getNextId());
+		tdao.insert(t);
+	}
+
+	public void deleteTransaction(Integer id) throws Exception {
+		TransactionDAO tdao = new TransactionDAO(con);
+		tdao.delete(id);
 	}
 }

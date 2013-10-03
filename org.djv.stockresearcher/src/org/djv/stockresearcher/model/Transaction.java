@@ -59,4 +59,11 @@ public class Transaction {
 		this.tranDate = tranDate;
 	}
 	
+	public String getActionText(){
+		switch(action){
+			case "B": return "Buy";
+			case "S": return "Sell";
+			default: return "???";
+		}
+	}
 }

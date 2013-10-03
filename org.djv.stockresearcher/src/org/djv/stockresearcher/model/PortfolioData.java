@@ -5,7 +5,7 @@ import java.util.List;
 public class PortfolioData {
 	
 	Portfolio portfolio;
-	List<Transaction> transactionList;
+	List<TransactionData> transactionList;
 
 	public Portfolio getPortfolio() {
 		return portfolio;
@@ -15,14 +15,13 @@ public class PortfolioData {
 		this.portfolio = portfolio;
 	}
 
-	public List<Transaction> getTransactionList() {
+	public List<TransactionData> getTransactionList() {
 		return transactionList;
 	}
 
-	public void setTransactionList(List<Transaction> transactionList) {
+	public void setTransactionList(List<TransactionData> transactionList) {
 		this.transactionList = transactionList;
 	}
-	
-	
+
 	
 }

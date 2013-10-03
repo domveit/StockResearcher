@@ -33,7 +33,7 @@ public class TransactionDAO extends H2DAO{
 	
 	private static final String SELECT_PORT_SQL = 
 			SELECT_SQL
-			+ "WHERE PORT_ID = ?";
+			+ "WHERE PORT_ID = ? ORDER BY TRANDATE DESC";
 	
 	private static final String SELECT_ID_SQL = 
 			SELECT_SQL
@@ -90,6 +90,7 @@ public class TransactionDAO extends H2DAO{
 			t.setPrice(rs.getBigDecimal("PRICE"));
 			t.setShares(rs.getBigDecimal("SHARES"));
 			t.setAction(rs.getString("ACTION"));
+			t.setSymbol(rs.getString("SYMBOL"));
 			l.add(t);
 		}
 		return l;
@@ -108,6 +109,7 @@ public class TransactionDAO extends H2DAO{
 			t.setPrice(rs.getBigDecimal("PRICE"));
 			t.setShares(rs.getBigDecimal("SHARES"));
 			t.setAction(rs.getString("ACTION"));
+			t.setSymbol(rs.getString("SYMBOL"));
 		}
 		return t;
 	}

@@ -35,10 +35,10 @@ public class PortfolioDialog extends Dialog {
 		
 		nameLabel = new Label(container, SWT.NONE);
 		nameLabel.setText("Portfolio Name");
-		nameLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+		nameLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 		
-		nameText = new Text(container, SWT.NONE);
-		nameText.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+		nameText = new Text(container, SWT.BORDER);
+		nameText.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 		
 		return container;
 	}
@@ -61,7 +61,7 @@ public class PortfolioDialog extends Dialog {
 
 	@Override
 	protected Point getInitialSize() {
-		return new Point(300, 200);
+		return new Point(300, 150);
 	}
 
 } 
