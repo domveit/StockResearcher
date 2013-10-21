@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
+import org.djv.stockresearcher.model.Option;
 import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
 import org.djv.stockresearcher.model.Stock;
@@ -156,7 +157,7 @@ public class StockDB {
 			stocksGettingData.add(sd.getStock().getSymbol());
 		}
 		if (stocksGettingData.size() > 0) {
-			BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/d/quotes.csv?s=" +stockURLParm + "&f=npj1dyrr5x0");
+			BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/d/quotes.csv?s=" +stockURLParm + "&f=nl1j1dyrr5x0");
 			CSVReader reader = new CSVReader(br);
 			int symLoop = 0;
 			String [] nextCSVLine = null; 
@@ -843,5 +844,155 @@ public class StockDB {
 	public void deleteTransaction(Integer id) throws Exception {
 		TransactionDAO tdao = new TransactionDAO(con);
 		tdao.delete(id);
+	}
+
+	public List<Option> getOptions(String symbol) throws Exception {
+		//View By Expiration: <a href="/q/op?s=GOOG&amp;m=2013-10">Oct 13</a> | <a href="/q/op?s=GOOG&amp;m=2013-11">Nov 13</a> |
+		
+		List<Option> list = new ArrayList<Option>();
+		
+		List<String> perlist = new ArrayList<String>();
+		BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/q/op?s=" + symbol + "&m=0-0");
+		String s = null;
+		while((s = br.readLine()) != null){
+			int ix = s.indexOf("View By Expiration");
+			if (ix > -1){
+				int endix = s.indexOf("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\">", ix);
+				String options = s.substring(ix, endix);
+				int ixu = 0;
+				while((ixu = options.indexOf("<a href=\"", ixu)) > -1) {
+					int endixu = options.indexOf("</a>", ixu);
+					perlist.add(options.substring(endixu - 15, endixu - 8));
+					ixu = endixu;
+				}
+				break;
+			}
+		}
+		for (String per : perlist){
+			List<Option> options = getOptionCallsForPeriod(symbol, per);
+			list.addAll(options);
+		}
+		br.close();
+		return list;
+	}
+	
+	private List<Option> getOptionCallsForPeriod(String symbol, String period) throws Exception {
+		//<tr><td class="yfnc_h" nowrap><a href="/q/op?s=GOOG&amp;k=700.000000"><strong>700.00</strong></a></td><td class="yfnc_h"><a href="/q?s=GOOG131025C00700000">GOOG131025C00700000</a></td><td class="yfnc_h" align="right"><b>310.20</b></td><td class="yfnc_h" align="right"><span id="yfs_c10_goog131025c00700000"><img width="10" height="14" style="margin-right:-2px;" border="0" src="http://l.yimg.com/os/mit/media/m/base/images/transparent-1093278.png" class="pos_arrow" alt="Up"> <b style="color:#008800;">140.20</b></span></td><td class="yfnc_h" align="right">310.20</td><td class="yfnc_h" align="right">313.30</td><td class="yfnc_h" align="right">1</td><td class="yfnc_h" align="right">4</td></tr><tr><td class="yfnc_h" nowrap><a href="/q/op?s=GOOG&amp;k=725.000000"><strong>725.00</strong></a></td><td class="yfnc_h"><a href="/q?s=GOOG131025C00725000">GOOG131025C00725000</a></td><td class="yfnc_h" align="right"><b>154.30</b></td><td class="yfnc_h" align="right"
+		List<Option> list = new ArrayList<Option>();
+		BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/q/op?s=" + symbol + "&m=" + period);
+		String s = null;
+		while((s = br.readLine()) != null){
+			int ixc = s.indexOf("Call Options");
+			if (ixc > -1){
+				ixc = s.indexOf("Open Int</th></tr>", ixc) + 18;
+
+				int endixc = s.indexOf("</td></tr></table><table cellpadding=\"0\" cellspacing=\"0\" border=\"0\">", ixc);
+				String callTable = s.substring(ixc, endixc);
+//				System.err.println(callTable);
+
+				List<String> calls = new ArrayList<String>();
+				
+				int ixcc = 0;
+				int endixcc = -1;
+				while ((endixcc = callTable.indexOf("</tr>", ixcc)) > -1){
+					calls.add(callTable.substring(ixcc, endixcc + 5));
+					ixcc = endixcc + 5;
+				}
+				
+				for (String call : calls){
+//					System.err.println(str);
+					List<String> callTds = new ArrayList<String>();
+					int ixtd = 0;
+					int endixtd = -1;
+					while ((endixtd = call.indexOf("</td>", ixtd)) > -1){
+						callTds.add(call.substring(ixtd, endixtd + 5));
+						ixtd = endixtd + 5;
+					}
+					
+//					for (String td : callTds){
+//						System.err.println(td);
+//					}
+						
+					//<tr>
+					// strike		//<td class="yfnc_h" nowrap><a href="/q/op?s=GOOG&amp;k=700.000000"><strong>700.00</strong></a></td>
+					// symbol		//<td class="yfnc_h"><a href="/q?s=GOOG131025C00700000">GOOG131025C00700000</a></td>
+					// last			//<td class="yfnc_h" align="right"><b>310.20</b></td>
+					// chg			//<td class="yfnc_h" align="right"><span id="yfs_c10_goog131025c00700000"><img width="10" height="14" style="margin-right:-2px;" border="0" src="http://l.yimg.com/os/mit/media/m/base/images/transparent-1093278.png" class="pos_arrow" alt="Up"> <b style="color:#008800;">140.20</b></span></td>
+					// bid			//<td class="yfnc_h" align="right">310.20</td>
+					// ask   		//<td class="yfnc_h" align="right">313.30</td>
+					// volume		//<td class="yfnc_h" align="right">1</td>
+					// open int     //<td class="yfnc_h" align="right">4</td></tr>
+					
+//					System.err.println(callTds.get(0));
+					String ret = getNode(callTds.get(0), "<strong>", "</strong></a></td>");
+					BigDecimal strike = getBd(ret);
+					
+//					System.err.println(callTds.get(1));
+					String sym = getNode(callTds.get(1), "0\">", "</a></td>");
+					
+//					System.err.println(callTds.get(2));
+					String ret3 = getNode(callTds.get(2), "right\"><b>", "</b></td>");
+					if (ret3 == null){
+						 ret3 = getNode(callTds.get(2), "right\">", "</td>");
+					}
+					BigDecimal last = getBd(ret3);
+					
+//					System.err.println(callTds.get(3));
+					String ret4 = getNode(callTds.get(3), ";\">", "</b></span></td>");
+					BigDecimal chg = getBd(ret4);
+					
+//					System.err.println(callTds.get(4));
+					String ret5 = getNode(callTds.get(4), "align=\"right\">", "</td>");
+					BigDecimal bid = getBd(ret5);
+					
+//					System.err.println(callTds.get(5));
+					String ret6 = getNode(callTds.get(5), "align=\"right\">", "</td>");
+					BigDecimal ask = getBd(ret6);
+					
+					
+					//KMP1131116C00045000
+					
+					String date = "20" + sym.substring(sym.length() - 15, sym.length() - 9);
+					Date d = new SimpleDateFormat("yyyyMMdd").parse(date);
+					Option o = new Option();
+					o.setExpiration(d);
+					o.setStrike(strike);
+					o.setSymbol(sym);
+					o.setAsk(ask);
+					o.setBid(bid);
+					o.setLast(last);
+					list.add(o);
+					System.err.println("date=" + new SimpleDateFormat("MM/dd/yyyy").format(d) + " strike=" + strike + " sym=" + sym + " last=" + last + " chg=" + chg + " bid=" + bid + " ask=" + ask);
+				}
+				
+				break;
+			}
+		}
+		br.close();
+		return list;
+	}
+	
+	public BigDecimal getBd(String str) {
+		try {
+			return new BigDecimal(str.replace(",", ""));
+		} catch (Exception e){
+			return null;
+		}
+	}
+	
+	private String getNode(String str, String startStr, String endStr) {
+		int ix = str.indexOf(startStr, 0);
+		if (ix == -1){
+			System.err.println("did not find " + startStr);
+			return null;
+		}
+		int endix = str.indexOf(endStr, ix);
+		if (endix == -1){
+			System.err.println("did not find " + endStr);
+			return null;
+		}
+		String findStr = str.substring(ix + startStr.length(), endix);
+//		int end = endix + endStr.length();
+		return findStr;
 	}
 }

@@ -230,7 +230,7 @@ public class StockDataUtil {
 			}
 		}
 
-		if (sd.getStock().getPrice() != null){
+		if (sd.getStock().getPrice() != null && sd.getStock().getPrice().compareTo(BigDecimal.ZERO) > 0 ){
 			if (regularPayer > -1){
 				sd.setNormDividend(sd.getDivData().get(0).getDividend().multiply(new BigDecimal(regularPayer)));
 				sd.setNormYield(sd.getNormDividend().multiply(new BigDecimal(100)).divide(sd.getStock().getPrice(), RoundingMode.HALF_UP));

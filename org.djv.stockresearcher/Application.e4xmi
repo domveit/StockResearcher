@@ -25,6 +25,7 @@
           <children xsi:type="basic:PartSashContainer" xmi:id="_3cqAQAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partsashcontainer.0" horizontal="true">
             <children xsi:type="basic:PartStack" xmi:id="_5EuKQAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partstack.1">
               <children xsi:type="basic:Part" xmi:id="_5eHhsAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.1" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.StockChartPart" label="Chart"/>
+              <children xsi:type="basic:Part" xmi:id="_CH0hoDkdEeOmzZVyhl9r3g" elementId="org.djv.stockresearcher.part.6" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.widgets.OptionsPart" label="Options"/>
             </children>
             <children xsi:type="basic:PartStack" xmi:id="_7RAboAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partstack.2" selectedElement="_818ZIAz6EeO-noCWkd_QVw">
               <children xsi:type="basic:Part" xmi:id="_818ZIAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.2" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.DividendsPart" label="Dividends"/>
@@ -40,7 +41,7 @@
   <handlers xmi:id="_urcBkQn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.openCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.OpenHandler" command="_urcBkAn1EeOInNDXYak8ig"/>
   <handlers xmi:id="_urcBlAn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.saveCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.SaveHandler" command="_urcBkwn1EeOInNDXYak8ig"/>
   <handlers xmi:id="_urcBlwn1EeOInNDXYak8ig" elementId="org.djv.stockresearcher.handler.aboutCommand" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.AboutHandler" command="_urcBlgn1EeOInNDXYak8ig"/>
-  <handlers xmi:id="_DukTsCw9EeOYNsWurmmjdA" elementId="org.djv.stockresearcher.handler.1" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.SelectPortfolioHandler" command="_SQb3ICw8EeOYNsWurmmjdA"/>
+  <handlers xmi:id="_DukTsCw9EeOYNsWurmmjdA" elementId="org.djv.stockresearcher.handler.selectPortfolio" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.handlers.SelectPortfolioHandler" command="_SQb3ICw8EeOYNsWurmmjdA"/>
   <bindingTables xmi:id="_urcBjgn1EeOInNDXYak8ig" bindingContext="_urcBiQn1EeOInNDXYak8ig">
     <bindings xmi:id="_urcBjwn1EeOInNDXYak8ig" keySequence="M1+Q" command="_urcBjAn1EeOInNDXYak8ig"/>
     <bindings xmi:id="_urcBkgn1EeOInNDXYak8ig" keySequence="M1+O" command="_urcBkAn1EeOInNDXYak8ig"/>
@@ -57,7 +58,7 @@
   <commands xmi:id="_urcBlgn1EeOInNDXYak8ig" elementId="org.eclipse.ui.help.aboutAction" commandName="aboutCommand"/>
   <commands xmi:id="_xr6HgCvkEeOVBdWf47TnJA" elementId="org.djv.stockresearcher.command.createPortfolio" commandName="createPortfolio" description="Create a Portfolio"/>
   <commands xmi:id="_SQb3ICw8EeOYNsWurmmjdA" elementId="org.djv.stockresearcher.command.selectPortfolio" commandName="selectPortfolio">
-    <parameters xmi:id="_7xrpwCxJEeOYNsWurmmjdA" elementId="org.djv.stockresearcher.commandparameter.0" name="portfolio"/>
+    <parameters xmi:id="_7xrpwCxJEeOYNsWurmmjdA" elementId="portfolio.selection" name="portfolio"/>
   </commands>
   <addons xmi:id="_urcBggn1EeOInNDXYak8ig" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
   <addons xmi:id="_urcBgwn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>

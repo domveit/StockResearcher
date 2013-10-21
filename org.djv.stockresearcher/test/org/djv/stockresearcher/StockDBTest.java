@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.djv.stockresearcher.db.StockDB;
 import org.djv.stockresearcher.db.StockDataUtil;
-import org.djv.stockresearcher.db.YahooFinanceUtil;
+import org.djv.stockresearcher.model.Option;
 import org.djv.stockresearcher.model.StockData;
 import org.junit.Test;
 
@@ -81,6 +81,11 @@ public class StockDBTest {
 		db.getFinData(sd);
 		StockDataUtil.calcRankings(sd);
 		System.err.println(sd);
+	}
+	
+	@Test
+	public void test4() throws Exception {
+		List<Option> l = StockDB.getInstance().getOptions("KMP");
 	}
 	
 }
