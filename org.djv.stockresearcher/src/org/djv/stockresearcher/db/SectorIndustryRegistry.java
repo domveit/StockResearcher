@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.djv.stockresearcher.model.SectorIndustry;
-import org.eclipse.e4.core.di.annotations.Creatable;
 
 public class SectorIndustryRegistry {
 	
@@ -30,7 +29,7 @@ public class SectorIndustryRegistry {
 
 	public SectorIndustryRegistry(){
 		try {
-			InputStream is = getClass().getResourceAsStream("/org/djv/stockresearcher/db/sectorindustry.txt");
+			InputStream is = getClass().getResourceAsStream("/org/djv/stockresearcher/db/sectorIndustry.txt");
 			InputStreamReader isr = new InputStreamReader(is);
 			BufferedReader br = new BufferedReader(isr);
 			String s = br.readLine();
@@ -47,7 +46,6 @@ public class SectorIndustryRegistry {
 					List<String> l = industriesBySectorMap.get(sectorDesc);
 					if (l == null){
 						l = new ArrayList<String>();
-						l.add("ALL");
 						industriesBySectorMap.put(sectorDesc, l);
 						allSectors.add(sectorDesc);
 					} 
@@ -69,11 +67,19 @@ public class SectorIndustryRegistry {
 	}
 	
 	public String getIndustryName(int industryId){
-		return sectorIndustryMap2.get(industryId).getIndustryName();
+		SectorIndustry sectorIndustry = sectorIndustryMap2.get(industryId);
+		if (sectorIndustry == null){
+			return "Unknown";
+		}
+		return sectorIndustry.getIndustryName();
 	}
 	
 	public String getSectorName(int industryId){
-		return sectorIndustryMap2.get(industryId).getSectorName();
+		SectorIndustry sectorIndustry = sectorIndustryMap2.get(industryId);
+		if (sectorIndustry == null){
+			return "Unknown";
+		}
+		return sectorIndustry.getSectorName();
 	}
 	
 	public List<String> getAllSectors(){

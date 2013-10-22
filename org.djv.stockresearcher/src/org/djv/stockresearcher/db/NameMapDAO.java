@@ -7,10 +7,11 @@ import java.sql.ResultSet;
 
 public class NameMapDAO extends H2DAO{
 	
-	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS NAMEMAP (INDID INTEGER, NAME CHAR(100), SYMBOL CHAR(20))";
-	private static final String SELECT_SQL = "SELECT SYMBOL FROM NAMEMAP WHERE NAME = ?";
-	private static final String INSERT_SQL = "INSERT INTO NAMEMAP VALUES (?, ?, ?)";
-	private static final String DELETE_SQL = "DELETE FROM NAMEMAP WHERE INDID = ?";
+	private static final String CREATE_SQL 		= "CREATE TABLE IF NOT EXISTS NAMEMAP (INDID INTEGER, NAME CHAR(100), SYMBOL CHAR(20))";
+	private static final String SELECT_SQL 		= "SELECT SYMBOL FROM NAMEMAP WHERE NAME = ?";
+	private static final String SELECT_IND_SQL 	= "SELECT INDID FROM NAMEMAP WHERE SYMBOL = ?";
+	private static final String INSERT_SQL		= "INSERT INTO NAMEMAP VALUES (?, ?, ?)";
+	private static final String DELETE_SQL 		= "DELETE FROM NAMEMAP WHERE INDID = ?";
 	
 	
 	private static final String INDEX1_SQL = 
@@ -47,6 +48,19 @@ public class NameMapDAO extends H2DAO{
 		}
 		st.close();
 		return sym;
+	}
+	
+	
+	public Integer getIndustryForSymbol(String symbol) throws Exception {
+		PreparedStatement st = con.prepareStatement(SELECT_IND_SQL);
+		st.setString(1, symbol);
+		ResultSet rs = st.executeQuery();
+		Integer ind = 0;
+		if (rs.next()){
+			ind = rs.getInt("INDID");
+		}
+		st.close();
+		return ind;
 	}
 	
 	public void clearIndustry(int ind) throws Exception {

@@ -1,3 +1,5 @@
+0;Unknown;Unknown
+100;Basic Materials;ALL
 110;Basic Materials;Chemicals - Major Diversified
 111;Basic Materials;Synthetics
 112;Basic Materials;Agricultural Chemicals
@@ -15,7 +17,9 @@
 134;Basic Materials;Gold
 135;Basic Materials;Silver
 136;Basic Materials;Nonmetallic Mineral Mining
+200;Congolmerates;ALL
 210;Conglomerates;Conglomerates
+300;Consumer Goods;ALL
 310;Consumer Goods;Appliances
 311;Consumer Goods;Home Furnishings & Fixtures
 312;Consumer Goods;Housewares & Accessories
@@ -48,6 +52,7 @@
 348;Consumer Goods;Beverages - Soft Drinks
 350;Consumer Goods;Cigarettes
 351;Consumer Goods;Tobacco Products, Other
+400;Financial;ALL
 410;Financial;Money Center Banks
 411;Financial;Regional - Northeast Banks
 412;Financial;Regional - Mid-Atlantic Banks
@@ -81,6 +86,7 @@
 447;Financial;Mortgage Investment
 448;Financial;Property Management
 449;Financial;Real Estate Development
+500;Healthcare;ALL
 510;Healthcare;Drug Manufacturers - Major
 511;Healthcare;Drug Manufacturers - Other
 512;Healthcare;Drugs - Generic
@@ -97,6 +103,7 @@
 526;Healthcare;Home Health Care
 527;Healthcare;Medical Practitioners
 528;Healthcare;Specialized Health Services
+610;Industrial Goods;ALL
 610;Industrial Goods;Aerospace/Defense - Major Diversified
 611;Industrial Goods;Aerospace/Defense Products & Services
 620;Industrial Goods;Farm & Construction Machinery
@@ -116,6 +123,7 @@
 635;Industrial Goods;Heavy Construction
 636;Industrial Goods;General Contractors
 637;Industrial Goods;Waste Management
+700;Services;ALL
 710;Services;Lodging
 711;Services;Resorts & Casinos
 712;Services;Restaurants
@@ -176,6 +184,7 @@
 774;Services;Trucking
 775;Services;Shipping
 776;Services;Railroads
+800;Technology;ALL
 810;Technology;Diversified Computer Systems
 811;Technology;Personal Computers
 812;Technology;Computer Based Systems
@@ -208,6 +217,7 @@
 850;Technology;Internet Service Providers
 851;Technology;Internet Information Providers
 852;Technology;Internet Software & Services
+900;Utilities;ALL
 910;Utilities;Foreign Utilities
 911;Utilities;Electric Utilities
 912;Utilities;Gas Utilities
