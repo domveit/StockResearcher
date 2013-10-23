@@ -17,7 +17,7 @@
 134;Basic Materials;Gold
 135;Basic Materials;Silver
 136;Basic Materials;Nonmetallic Mineral Mining
-200;Congolmerates;ALL
+200;Conglomerates;ALL
 210;Conglomerates;Conglomerates
 300;Consumer Goods;ALL
 310;Consumer Goods;Appliances
@@ -103,7 +103,7 @@
 526;Healthcare;Home Health Care
 527;Healthcare;Medical Practitioners
 528;Healthcare;Specialized Health Services
-610;Industrial Goods;ALL
+600;Industrial Goods;ALL
 610;Industrial Goods;Aerospace/Defense - Major Diversified
 611;Industrial Goods;Aerospace/Defense Products & Services
 620;Industrial Goods;Farm & Construction Machinery

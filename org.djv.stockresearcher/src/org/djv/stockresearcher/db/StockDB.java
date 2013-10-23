@@ -3,6 +3,7 @@ package org.djv.stockresearcher.db;
 import java.io.BufferedReader;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.text.SimpleDateFormat;
@@ -780,6 +781,11 @@ public class StockDB {
 		}
 		
 		getDataForStocks(sdList);
+		for (StockData sd : sdList){
+			getDivData(sd);
+			getFinData(sd);
+			StockDataUtil.calcRankings(sd);
+		}
 		
 		Map<Integer, Map<String, Position>> bigMap = new HashMap<Integer, Map<String, Position>>();
 		
@@ -813,14 +819,17 @@ public class StockDB {
 			}
 			if ("B".equals(t.getAction())){
 				pos.setShares(pos.getShares().add(t.getShares()));
-				pos.setBasis(pos.getBasis().add(t.getShares().multiply(t.getPrice())));
+				pos.setCost(pos.getBasis().add(t.getShares().multiply(t.getPrice())));
 			} else if ("S".equals(t.getAction())){
 				pos.setShares(pos.getShares().subtract(t.getShares()));
-				pos.setBasis(pos.getBasis().subtract(t.getShares().multiply(t.getPrice())));				
+				pos.setCost(pos.getBasis().subtract(t.getShares().multiply(t.getPrice())));				
 			}
-			
+
 			if (pos.getShares().compareTo(BigDecimal.ZERO) == 0){
 				posMap.remove(currsd.getStock().getSymbol());
+			} else {
+				pos.setBasis(pos.getCost().divide(pos.getShares(), 2, RoundingMode.HALF_UP));
+				pos.setValue(currsd.getStock().getPrice().multiply(pos.getShares()));
 			}
 		}
 		

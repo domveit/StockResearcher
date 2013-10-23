@@ -32,8 +32,8 @@ public class SectorIndustryRegistry {
 			InputStream is = getClass().getResourceAsStream("/org/djv/stockresearcher/db/sectorIndustry.txt");
 			InputStreamReader isr = new InputStreamReader(is);
 			BufferedReader br = new BufferedReader(isr);
-			String s = br.readLine();
-			while (s != null) {
+			String s = null;
+			while ((s = br.readLine()) != null) {
 				StringTokenizer st = new StringTokenizer(s, ";");
 				try {
 					Integer id = Integer.valueOf(st.nextToken().trim());
@@ -54,9 +54,8 @@ public class SectorIndustryRegistry {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-	
-				s = br.readLine();
 			}
+			br.close();
 		} catch (Exception e){
 			e.printStackTrace();
 		}

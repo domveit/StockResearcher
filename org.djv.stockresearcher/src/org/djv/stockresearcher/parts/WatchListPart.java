@@ -12,10 +12,12 @@ import org.djv.stockresearcher.db.StockDB;
 import org.djv.stockresearcher.db.StockDataChangeListener;
 import org.djv.stockresearcher.db.WatchListListener;
 import org.djv.stockresearcher.model.StockData;
+import org.djv.stockresearcher.widgets.AddWatchDialog;
 import org.djv.stockresearcher.widgets.StockTable;
 import org.djv.stockresearcher.widgets.TextProgressBar;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -31,6 +33,7 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 	Map<String, TableItem> tableItemMap = new HashMap<String, TableItem>();
 	
 	Button refreshButton;
+	Button addButton;
 	Button removeButton;
 	private TextProgressBar stockProgressLabel;
 	
@@ -57,7 +60,7 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 	public void createStockTable(final Composite parent) {
 		Composite stockComboComposite = new Composite(parent, SWT.BORDER);
 		stockComboComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		stockComboComposite.setLayout(new GridLayout(3, false));
+		stockComboComposite.setLayout(new GridLayout(4, false));
 		
 		refreshButton = new Button(stockComboComposite, SWT.NONE);
 		refreshButton.setText("Refresh");
@@ -70,6 +73,27 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
+			}
+		});
+		
+		addButton = new Button(stockComboComposite, SWT.NONE);
+		addButton.setText("Add");
+		addButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
+		addButton.addSelectionListener(new SelectionAdapter(){
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+
+				AddWatchDialog pd = new AddWatchDialog(parent.getShell());
+				pd.create();
+				int result = pd.open();
+				if (result == Window.OK) {
+					try {
+						StockDB.getInstance().addToWatchList(pd.getSymbol());
+					} catch (Exception e1) {
+						MessageDialog.openError(parent.getShell(), "Error", e1.getMessage());
+					}
+				} 
+			
 			}
 		});
 		
@@ -98,7 +122,7 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		stockProgressLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		
 		table = new StockTable (stockComboComposite, SWT.NONE);
-		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1);
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1);
 		table.setLayoutData(data);
 		
 		table.addSelectionListener(new SelectionAdapter() {
