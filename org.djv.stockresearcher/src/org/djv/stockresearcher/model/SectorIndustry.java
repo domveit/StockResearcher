@@ -1,16 +1,20 @@
 package org.djv.stockresearcher.model;
 
+import java.sql.Date;
+
 public class SectorIndustry {
 	
+	Integer industryId;
 	String sectorName;
 	String industryName;
+	Date dataDate;
 	
-	public SectorIndustry(String sectorName, String industryName) {
-		super();
-		this.sectorName = sectorName;
-		this.industryName = industryName;
+	public Integer getIndustryId() {
+		return industryId;
 	}
-	
+	public void setIndustryId(Integer industryId) {
+		this.industryId = industryId;
+	}
 	public String getSectorName() {
 		return sectorName;
 	}
@@ -23,40 +27,11 @@ public class SectorIndustry {
 	public void setIndustryName(String industryName) {
 		this.industryName = industryName;
 	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((industryName == null) ? 0 : industryName.hashCode());
-		result = prime * result
-				+ ((sectorName == null) ? 0 : sectorName.hashCode());
-		return result;
+	public Date getDataDate() {
+		return dataDate;
 	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		SectorIndustry other = (SectorIndustry) obj;
-		if (industryName == null) {
-			if (other.industryName != null)
-				return false;
-		} else if (!industryName.equals(other.industryName))
-			return false;
-		if (sectorName == null) {
-			if (other.sectorName != null)
-				return false;
-		} else if (!sectorName.equals(other.sectorName))
-			return false;
-		return true;
+	public void setDataDate(Date dataDate) {
+		this.dataDate = dataDate;
 	}
-	
-	
 
 }

@@ -19,6 +19,10 @@
                name="appName"
                value="org.djv.stockresearcher">
          </property>
+          <property
+           name="lifeCycleURI"
+           value="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.util.LifeCycleManager">
+         </property>
       </product>
    </extension>
 

@@ -332,7 +332,7 @@ public class PortfolioPart {
 					if (firstRow){
 						Label sh1 = new Label(overview, SWT.NONE);
 						sh1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-						sh1.setText(StockDB.getInstance().getSectorName(sector));
+						sh1.setText(StockDB.getInstance().getIndustry(sector).getSectorName());
 						sh1.setBackground(new Color(Display.getDefault(), 153, 217, 234));
 						firstRow = false;
 					} else {

@@ -5,13 +5,13 @@ import java.sql.Date;
 
 public class Stock {
 	
-	Integer industryId;
+//	Integer industryId;
 	Date dataDate;
 	Date divDataDate;
 	Date finDataDate;
 	String symbol;
 	String exchange;
-	String name;
+//	String name;
 	BigDecimal price;
 	String marketCap;
 	BigDecimal dividend;
@@ -19,12 +19,12 @@ public class Stock {
 	BigDecimal pe;
 	BigDecimal peg;
 	
-	public Integer getIndustryId() {
-		return industryId;
-	}
-	public void setIndustryId(Integer industryId) {
-		this.industryId = industryId;
-	}
+//	public Integer getIndustryId() {
+//		return industryId;
+//	}
+//	public void setIndustryId(Integer industryId) {
+//		this.industryId = industryId;
+//	}
 	public Date getDataDate() {
 		return dataDate;
 	}
@@ -43,12 +43,12 @@ public class Stock {
 	public void setExchange(String exchange) {
 		this.exchange = exchange;
 	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
+//	public String getName() {
+//		return name;
+//	}
+//	public void setName(String name) {
+//		this.name = name;
+//	}
 	public BigDecimal getPrice() {
 		return price;
 	}

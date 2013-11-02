@@ -51,5 +51,6 @@
  	<module>../org.djv.stockresearcher.feature</module>
  	<module>../org.djv.stockresearcher.releng.p2</module>
  	<module>../org.djv.stockresearcher.product</module>
+ 	<module>../StockResearcherTests</module>
  </modules>
 </project>

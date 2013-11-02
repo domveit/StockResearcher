@@ -9,7 +9,6 @@ import java.sql.DriverManager;
 import java.util.List;
 
 import org.djv.stockresearcher.db.TransactionDAO;
-import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.Transaction;
 import org.junit.Test;
 
@@ -18,7 +17,7 @@ public class TransactionDAOTest {
 	@Test
 	public void test() throws Exception {
 		 Class.forName("org.h2.Driver");
-         Connection con = DriverManager.getConnection("jdbc:h2:~/stockDB/stockDB", "stockDB", "" );
+         Connection con = DriverManager.getConnection("jdbc:h2:~/stockDB/stockDBTest", "stockDB", "" );
          TransactionDAO dao = new TransactionDAO(con);
          
          dao.createTableIfNotExists();

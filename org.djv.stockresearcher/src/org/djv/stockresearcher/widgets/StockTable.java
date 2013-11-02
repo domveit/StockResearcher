@@ -87,8 +87,8 @@ public class StockTable extends Composite {
 		} else {
 			item.setText (0, sd.getStock().getSymbol());
 		}
-		item.setText (1, sd.getStock().getName());
-		item.setText (2, sd.getStock().getMarketCap());
+		item.setText (1, sd.getStockIndustry() == null ? "???" :  sd.getStockIndustry().getName());
+		item.setText (2, sd.getStock().getMarketCap() == null ? "N/A" : sd.getStock().getMarketCap());
 		item.setText (3, (sd.getStock().getPrice() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getPrice()));
 		
 		if (sd.getNormDividend() != null){
@@ -115,8 +115,8 @@ public class StockTable extends Composite {
 
 		item.setText (14, new DecimalFormat("0.00").format(sd.getOverAllRank()));
 		item.setText (15, (sd.getStock().getExchange() == null) ? "" : sd.getStock().getExchange());
-		item.setText (16, (sd.getIndustryName() == null) ? "" : sd.getIndustryName());
-		item.setText (17, (sd.getSectorName() == null) ? "" : sd.getSectorName());
+		item.setText (16, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getIndustryName());
+		item.setText (17, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getSectorName());
 		System.err.println("updated Item " + sd.getStock().getSymbol());
 	}
 
@@ -130,7 +130,7 @@ public class StockTable extends Composite {
 		item.setBackground(12, getColorForRank(sd.getFinRank()));
 		item.setBackground(13, getColorForRank(sd.getFinRank()));
 		
-		if (sd.getStock().getMarketCap().endsWith("M")){
+		if (sd.getStock().getMarketCap() == null || sd.getStock().getMarketCap().endsWith("M")){
 			item.setBackground(2, new Color(Display.getDefault(), 255, 0, 0));
 		}
 	};

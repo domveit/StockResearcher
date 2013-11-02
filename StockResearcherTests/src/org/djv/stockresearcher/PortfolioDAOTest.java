@@ -15,7 +15,7 @@ public class PortfolioDAOTest {
 	@Test
 	public void test() throws Exception {
 		 Class.forName("org.h2.Driver");
-         Connection con = DriverManager.getConnection("jdbc:h2:~/stockDB/stockDB", "stockDB", "" );
+         Connection con = DriverManager.getConnection("jdbc:h2:~/stockDB/stockDBTest", "stockDB", "" );
          PortfolioDAO dao = new PortfolioDAO(con);
          
          dao.createTableIfNotExists();

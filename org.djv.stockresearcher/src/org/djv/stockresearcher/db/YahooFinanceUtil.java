@@ -8,6 +8,20 @@ import java.net.URLConnection;
 
 public class YahooFinanceUtil {
 	
+	public static BufferedReader getYQLJson(String query) throws Exception {
+//		String rQuery = URLEncoder.encode(query, "UTF-8");
+		System.err.println(query);
+		String rQuery = query.replaceAll(" ", "%20");
+		rQuery = rQuery.replaceAll(",", "%2C");
+		rQuery = rQuery.replaceAll("\"", "%22");
+		String queryURL = "http://query.yahooapis.com/v1/public/yql?q="
+				+ rQuery
+				+ "&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
+//		System.err.println(queryURL);
+		return getYahooCSV(queryURL);
+	}
+	
+	
 	public static BufferedReader getYahooCSV(String urlString) throws Exception {
 		URL yahooDiv = new URL(urlString);
 		URLConnection urlConnectionDiv = yahooDiv.openConnection();

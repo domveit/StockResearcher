@@ -23,6 +23,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Table;
@@ -31,6 +32,7 @@ import org.eclipse.swt.widgets.TableItem;
 
 public class OptionsPart implements AppStateListener {
 	
+	Label label;
 	TabFolder folder;
 	StockData currentSd = null;
 	
@@ -41,6 +43,10 @@ public class OptionsPart implements AppStateListener {
 	@PostConstruct
 	public void postConstruct(Composite parent) {
 		parent.setLayout(new GridLayout());
+		
+		label = new Label(parent, SWT.NONE);
+		label.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+				
 		folder = new TabFolder(parent, SWT.NONE);
 		folder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		
@@ -63,6 +69,8 @@ public class OptionsPart implements AppStateListener {
 			item.dispose();
 		}
 		tabMap.clear();
+		
+		label.setText(sd.getStock().getSymbol() + " - " + sd.getStockIndustry() == null ? "???" :  sd.getStockIndustry().getName() + " - " + sd.getStock().getPrice() + " getting options data....");
 		Thread t = new Thread(new Runnable(){
 			@Override
 			public void run() {
@@ -132,6 +140,9 @@ public class OptionsPart implements AppStateListener {
 									col.pack();
 								}
 							}
+							
+							label.setText(sd.getStock().getSymbol() + " - " + sd.getStockIndustry() == null ? "???" :  sd.getStockIndustry().getName() + " - " + sd.getStock().getPrice());
+						
 						}
 					});
 				} catch (Exception e) {

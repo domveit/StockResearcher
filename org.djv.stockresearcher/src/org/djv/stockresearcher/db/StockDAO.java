@@ -106,7 +106,7 @@ public class StockDAO extends H2DAO{
 			s.setDividend(rs.getBigDecimal("DIVIDEND"));
 			s.setExchange(rs.getString("EXCHANGE"));
 			s.setMarketCap(rs.getString("MARKETCAP"));
-			s.setName(rs.getString("NAME"));
+//			s.setName(rs.getString("NAME"));
 			s.setPe(rs.getBigDecimal("PE"));
 			s.setPeg(rs.getBigDecimal("PEG"));
 			s.setPrice(rs.getBigDecimal("PRICE"));
@@ -114,7 +114,7 @@ public class StockDAO extends H2DAO{
 			s.setDataDate(rs.getDate("DATADATE"));
 			s.setDivDataDate(rs.getDate("DIVDATADATE"));
 			s.setFinDataDate(rs.getDate("FINDATADATE"));
-			s.setIndustryId(rs.getInt("INDID"));
+//			s.setIndustryId(rs.getInt("INDID"));
 			l.add(s);
 		}
 //		long end = System.currentTimeMillis();
@@ -144,7 +144,7 @@ public class StockDAO extends H2DAO{
 			s.setDividend(rs.getBigDecimal("DIVIDEND"));
 			s.setExchange(rs.getString("EXCHANGE"));
 			s.setMarketCap(rs.getString("MARKETCAP"));
-			s.setName(rs.getString("NAME"));
+//			s.setName(rs.getString("NAME"));
 			s.setPe(rs.getBigDecimal("PE"));
 			s.setPeg(rs.getBigDecimal("PEG"));
 			s.setPrice(rs.getBigDecimal("PRICE"));
@@ -152,7 +152,7 @@ public class StockDAO extends H2DAO{
 			s.setDataDate(rs.getDate("DATADATE"));
 			s.setDivDataDate(rs.getDate("DIVDATADATE"));
 			s.setFinDataDate(rs.getDate("FINDATADATE"));
-			s.setIndustryId(rs.getInt("INDID"));
+//			s.setIndustryId(rs.getInt("INDID"));
 		}
 		return s;
 	}
@@ -194,13 +194,13 @@ public class StockDAO extends H2DAO{
 	public void insert(Stock s) throws Exception {
 //		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(INSERT_SQL);
-		st.setInt(1, s.getIndustryId());
+		st.setInt(1, 0);
 		st.setDate(2, s.getDataDate());
 		st.setDate(3, s.getDivDataDate());
 		st.setDate(4, s.getFinDataDate());
 		st.setString(5, s.getSymbol());
 		st.setString(6, s.getExchange());
-		st.setString(7, s.getName());
+		st.setString(7, "");
 		st.setBigDecimal(8, s.getPrice());
 		st.setString(9, s.getMarketCap());
 		st.setBigDecimal(10, s.getDividend());
@@ -215,12 +215,12 @@ public class StockDAO extends H2DAO{
 	public void update(Stock s) throws Exception {
 //		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(UPDATE_SQL);
-		st.setInt(1, s.getIndustryId());
+		st.setInt(1, 0);
 		st.setDate(2, s.getDataDate());
 		st.setDate(3, s.getDivDataDate());
 		st.setDate(4, s.getFinDataDate());
 		st.setString(5, s.getExchange());
-		st.setString(6, s.getName());
+		st.setString(6, "");
 		st.setBigDecimal(7, s.getPrice());
 		st.setString(8, s.getMarketCap());
 		st.setBigDecimal(9, s.getDividend());

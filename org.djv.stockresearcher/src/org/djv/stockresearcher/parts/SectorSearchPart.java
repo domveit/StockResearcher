@@ -139,15 +139,24 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 	
 	private void refreshIndustryCombo() {
 		String sector = sectorCombo.getItem(sectorCombo.getSelectionIndex());
-		List<String> cl = db.getIndustriesForSector(sector);
-		industryCombo.removeAll();
-		industryCombo.setItems(cl.toArray(new String[0]));
+		List<String> cl;
+		try {
+			cl = db.getIndustriesForSector(sector);
+			industryCombo.removeAll();
+			industryCombo.setItems(cl.toArray(new String[0]));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		industryCombo.getParent().layout(true,  true);
 	}
 
 	private void refreshSectors() {
 		sectorCombo.removeAll();
-		sectorCombo.setItems(db.getAllSectors().toArray(new String[0]));
+		try {
+			sectorCombo.setItems(db.getAllSectors().toArray(new String[0]));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		sectorCombo.getParent().layout(true,  true);
 	}
 
@@ -156,16 +165,16 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 	}
 	
 	@Override
-	public void notifyChanged(final int industry, final List<StockData> sdList, final int industriesToUpdate, final int industriesUpdated, final int beginOrEnd) {
+	public void notifyChanged(final String industryName, final List<StockData> sdList, final int industriesToUpdate, final int industriesUpdated, final int beginOrEnd) {
 		if (!table.isDisposed()){
 			if (beginOrEnd == 0){
-				indProgressBar.setText("Updating \"" + db.getIndustryName(industry) + "\" (" + industriesUpdated + "/" + industriesToUpdate + ")");
+				indProgressBar.setText("Updating \"" + industryName + "\" (" + industriesUpdated + "/" + industriesToUpdate + ")");
 				indProgressBar.setMaximum(industriesToUpdate);
 				indProgressBar.setSelection(industriesUpdated);
 			}
 
 			if (beginOrEnd == 1){
-				indProgressBar.setText("Updated \"" + db.getIndustryName(industry) + "\" (" + industriesUpdated + "/" + industriesToUpdate + ")");
+				indProgressBar.setText("Updated \"" + industryName + "\" (" + industriesUpdated + "/" + industriesToUpdate + ")");
 				if (industriesUpdated == 1){
 					table.packColumns();
 				}
@@ -188,7 +197,7 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 
 	@Override
 	public void notifyChanged(final StockData sd, final int toUpdate, final int updated) {
-		if (sd == null){
+		if (sd == null || toUpdate == updated){
 			stockProgressLabel.setText("");
 			stockProgressLabel.setMaximum(0);
 			stockProgressLabel.setSelection(0);
@@ -196,6 +205,9 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 			stockProgressLabel.setMaximum(toUpdate);
 			stockProgressLabel.setSelection(updated);
 			stockProgressLabel.setText("Updating " + sd.getStock().getSymbol()  + "(" + updated + "/" + toUpdate + ")");
+		}
+		
+		if (sd != null){
 			if (sd.isRanksCalculated() && (sd.getGrowthRank() == 0.00 && sd.getYieldRank()==0.00)){
 				table.removeItem(sd);
 			} else {

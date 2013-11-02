@@ -145,18 +145,26 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 	}
 
 	@Override
-	public void notifyChanged(final List<StockData> sdList) {
+	public void notifyChanged(final List<StockData> sdList, boolean addedOrRemoved) {
 		if (!table.isDisposed()){
 			if (sdList!= null){
-				table.addOrUpdateItems(sdList, true);
-				table.packColumns();
+				if (addedOrRemoved){
+					for (StockData sd: sdList){
+						table.addOrUpdateItem(sd);
+					}
+					table.packColumns();
+				} else {
+					for (StockData sd: sdList){
+						table.removeItem(sd);
+					}
+				}
 			}
 		}
 	}
 
 	@Override
 	public void notifyChanged(final StockData sd, final int toUpdate, final int updated) {
-		if (sd == null){
+		if (sd == null ||  toUpdate == updated){
 			stockProgressLabel.setText("");
 			stockProgressLabel.setMaximum(0);
 			stockProgressLabel.setSelection(0);
@@ -164,8 +172,14 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 			stockProgressLabel.setMaximum(toUpdate);
 			stockProgressLabel.setSelection(updated);
 			stockProgressLabel.setText("Updating " + sd.getStock().getSymbol()  + "(" + updated + "/" + toUpdate + ")");
+		}
+		if (sd != null){
 			if (!table.isDisposed()){
-				table.updateItem(sd, true);
+				if (sd.isWatched()){
+					table.addOrUpdateItem(sd, true);
+				} else {
+					table.removeItem(sd);
+				}
 			}
 		}
 	}

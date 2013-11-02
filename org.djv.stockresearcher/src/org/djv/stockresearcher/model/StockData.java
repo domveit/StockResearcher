@@ -6,9 +6,10 @@ import java.util.Map;
 
 public class StockData {
 	
+	String symbol;
 	Stock stock;
-	String industryName;
-	String sectorName;
+	StockIndustry stockIndustry;
+	SectorIndustry sectorIndustry;
 
 	int streak;
 	int skipped;
@@ -179,14 +180,6 @@ public class StockData {
 		this.wildness = wildness;
 	}
 	
-	public String getIndustryName() {
-		return industryName;
-	}
-
-	public void setIndustryName(String industryName) {
-		this.industryName = industryName;
-	}
-	
 	public Stock getStock() {
 		return stock;
 	}
@@ -203,12 +196,28 @@ public class StockData {
 		this.isWatched = isWatched;
 	}
 	
-	public String getSectorName() {
-		return sectorName;
+	public String getSymbol() {
+		return symbol;
 	}
 
-	public void setSectorName(String sectorName) {
-		this.sectorName = sectorName;
+	public void setSymbol(String symbol) {
+		this.symbol = symbol;
+	}
+
+	public StockIndustry getStockIndustry() {
+		return stockIndustry;
+	}
+
+	public void setStockIndustry(StockIndustry stockIndustry) {
+		this.stockIndustry = stockIndustry;
+	}
+
+	public SectorIndustry getSectorIndustry() {
+		return sectorIndustry;
+	}
+
+	public void setSectorIndustry(SectorIndustry sectorIndustry) {
+		this.sectorIndustry = sectorIndustry;
 	}
 
 	public String toString(){

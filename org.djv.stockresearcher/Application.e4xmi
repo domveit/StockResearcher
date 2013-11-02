@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_urcBgAn1EeOInNDXYak8ig" elementId="org.eclipse.e4.ide.application" bindingContexts="_urcBiQn1EeOInNDXYak8ig">
-  <children xsi:type="basic:TrimmedWindow" xmi:id="_urcBgQn1EeOInNDXYak8ig" label="org.djv.stockresearcher" width="500" height="400">
+  <children xsi:type="basic:TrimmedWindow" xmi:id="_urcBgQn1EeOInNDXYak8ig" label="org.djv.stockresearcher" width="1440" height="900">
+    <tags>shellMaximized</tags>
     <children xsi:type="advanced:PerspectiveStack" xmi:id="_urcolQn1EeOInNDXYak8ig">
       <children xsi:type="advanced:Perspective" xmi:id="_urcolgn1EeOInNDXYak8ig">
         <children xsi:type="basic:PartSashContainer" xmi:id="_urcolwn1EeOInNDXYak8ig">
