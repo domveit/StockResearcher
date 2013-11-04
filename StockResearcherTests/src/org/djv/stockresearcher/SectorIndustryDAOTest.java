@@ -8,17 +8,17 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
-import org.djv.stockresearcher.db.IndustryDAO;
+import org.djv.stockresearcher.db.SectorIndustryDAO;
 import org.djv.stockresearcher.model.SectorIndustry;
 import org.junit.Test;
 
-public class IndustryDAOTest {
+public class SectorIndustryDAOTest {
 	
 	@Test
 	public void test() throws Exception {
 		 Class.forName("org.h2.Driver");
          Connection con = DriverManager.getConnection("jdbc:h2:~/stockDB/stockDBTest", "stockDB", "" );
-         IndustryDAO dao = new IndustryDAO(con);
+         SectorIndustryDAO dao = new SectorIndustryDAO(con);
          
          dao.createTableIfNotExists();
          

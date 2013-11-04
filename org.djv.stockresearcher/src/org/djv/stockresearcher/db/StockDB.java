@@ -75,7 +75,7 @@ public class StockDB {
         String dbURL = "jdbc:h2:~/stockDB/" +db+";AUTO_SERVER=TRUE";
         System.err.println("opening DB " + dbURL);
 		con = DriverManager.getConnection(dbURL, "stockDB", "" );
-        new IndustryDAO(con).createTableIfNotExists();
+        new SectorIndustryDAO(con).createTableIfNotExists();
         new StockIndustryDAO(con).createTableIfNotExists();
         new StockDAO(con).createTableIfNotExists();
         new DividendDAO(con).createTableIfNotExists();
@@ -471,7 +471,7 @@ public class StockDB {
 					notifyAllSectorIndustryListeners("Getting industry and sector data", 0);
 					
 					SectorDateDAO sdDAO = new SectorDateDAO(con);
-					final IndustryDAO iDAO = new IndustryDAO(con);
+					final SectorIndustryDAO iDAO = new SectorIndustryDAO(con);
 					Date d = sdDAO.select();
 					if (dataExpired(d)){
 						updateSectors(sdDAO, iDAO, d);
@@ -525,7 +525,7 @@ public class StockDB {
 	}
 
 	private boolean updateStockIndustryYQL(Integer ind) throws Exception {
-		StockIndustryDAO stockIndustryDAO = new StockIndustryDAO(con);
+		StockIndustryDAO stockSectorIndustryDAO = new StockIndustryDAO(con);
 		String YQLquery = "select * from yahoo.finance.industry where id=\"" +ind+ "\"";
 		BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
 		 JsonParser parser = new JsonParser();
@@ -541,37 +541,37 @@ public class StockDB {
 		 if (iEle.isJsonArray()){
 			 JsonArray companies = iEle.getAsJsonArray();
 			 for (JsonElement ce: companies){
-				handleCompany(ind, stockIndustryDAO, ce);
+				handleCompany(ind, stockSectorIndustryDAO, ce);
 			 }
 		 } else {
-			 handleCompany(ind, stockIndustryDAO, iEle);
+			 handleCompany(ind, stockSectorIndustryDAO, iEle);
 		 }
 		 br.close();
 		 return true;
 	}
 
-	public void handleCompany(Integer ind, StockIndustryDAO stockIndustryDAO,
+	public void handleCompany(Integer ind, StockIndustryDAO stockSectorIndustryDAO,
 			JsonElement ce) throws Exception {
 		JsonObject c = ce.getAsJsonObject();
 		String name = c.get("name").getAsString();
 		String symbol = c.get("symbol").getAsString();
 		 
-		StockIndustry si = stockIndustryDAO.select(symbol);
+		StockIndustry si = stockSectorIndustryDAO.select(symbol);
 		 if (si == null){
 			 si = new StockIndustry();
 			 si.setIndId(ind);
 			 si.setName(name);
 			 si.setSymbol(symbol);
-			 stockIndustryDAO.insert(si);
+			 stockSectorIndustryDAO.insert(si);
 		 } else {
 			 si.setIndId(ind);
 			 si.setName(name);
-			 stockIndustryDAO.update(si);
+			 stockSectorIndustryDAO.update(si);
 		 }
 	}
 	
 	private boolean updateStockIndustryHTML(int industryId) throws Exception {
-		StockIndustryDAO stockIndustryDAO = new StockIndustryDAO(con);
+		StockIndustryDAO stockSectorIndustryDAO = new StockIndustryDAO(con);
 		BufferedReader br = YahooFinanceUtil.getYahooCSVNice("http://biz.yahoo.com/p/" + industryId + "conameu.html");
 		if (br == null){
 			return false;
@@ -595,17 +595,17 @@ public class StockDB {
 				String symbol = chopped.substring(0, hIx).toUpperCase();
 				String name = chopped.substring(hIx + lookFor2.length());
 
-				StockIndustry si = stockIndustryDAO.select(symbol);
+				StockIndustry si = stockSectorIndustryDAO.select(symbol);
 				 if (si == null){
 					 si = new StockIndustry();
 					 si.setIndId(industryId);
 					 si.setName(name);
 					 si.setSymbol(symbol);
-					 stockIndustryDAO.insert(si);
+					 stockSectorIndustryDAO.insert(si);
 				 } else {
 					 si.setIndId(industryId);
 					 si.setName(name);
-					 stockIndustryDAO.update(si);
+					 stockSectorIndustryDAO.update(si);
 				 }
 				startIx = linkEnd + 4;
 			} else {
@@ -617,7 +617,7 @@ public class StockDB {
 		return true;
 	}
 
-	public void updateSectors(SectorDateDAO sdDAO, IndustryDAO iDAO, Date d)
+	public void updateSectors(SectorDateDAO sdDAO, SectorIndustryDAO iDAO, Date d)
 			throws Exception, IOException {
 		String YQLquery = "select * from yahoo.finance.sectors";
 		BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
@@ -651,7 +651,7 @@ public class StockDB {
 		 br.close();
 	}
 
-	public void handleIndustry(IndustryDAO iDAO, String sectorname, JsonElement industryEe, boolean first) throws Exception {
+	public void handleIndustry(SectorIndustryDAO iDAO, String sectorname, JsonElement industryEe, boolean first) throws Exception {
 		JsonObject industryO = industryEe.getAsJsonObject();
 		 Integer id = industryO.get("id").getAsInt();
 		 String iname = industryO.get("name").getAsString();
@@ -697,7 +697,7 @@ public class StockDB {
 			public void run() {
 				if ("ALL".equals(industry)){
 					try {
-						List<Integer> ilist = new IndustryDAO(con).getIndustriesForSector(sector);
+						List<Integer> ilist = new SectorIndustryDAO(con).getIndustriesForSector(sector);
 						industriesToUpdate = ilist.size() - 1;
 						for (Integer id : ilist){
 							getStocksForIndustryAndSector(id);
@@ -707,7 +707,7 @@ public class StockDB {
 					}
 				} else {
 					try {
-						int id = new IndustryDAO(con).getIdForSectorIndustry(sector, industry);
+						int id = new SectorIndustryDAO(con).getIdForSectorIndustry(sector, industry);
 						industriesToUpdate = 1;
 						getStocksForIndustryAndSector(id);
 					} catch (Exception e) {
@@ -751,7 +751,7 @@ public class StockDB {
 	}
 
 	public void getStocksForIndustryAndSector(int ind) throws Exception {
-		SectorIndustry si = new IndustryDAO(con).select(ind);
+		SectorIndustry si = new SectorIndustryDAO(con).select(ind);
 		notifyAllIndustryStockListeners(si.getIndustryName(), null, 0);
 		
 		List<StockData> sdList = new ArrayList<StockData>();
@@ -906,15 +906,15 @@ public class StockDB {
 	}
 
 	public List<String> getAllSectors() throws Exception {
-		return new IndustryDAO(con).getAllSectors();
+		return new SectorIndustryDAO(con).getAllSectors();
 	}
 
 	public List<String> getIndustriesForSector(String sector) throws Exception {
-		return new IndustryDAO(con).getIndustriesNameForSector(sector);
+		return new SectorIndustryDAO(con).getIndustriesNameForSector(sector);
 	}
 
 	public SectorIndustry getIndustry(int industry) throws Exception {
-		return new IndustryDAO(con).select(industry);
+		return new SectorIndustryDAO(con).select(industry);
 	}
 	
 	public void createNewPortfolio(String text) throws Exception {
@@ -945,7 +945,7 @@ public class StockDB {
 		
 		StockData sd = new StockData(s);
 		if (sti != null){
-			SectorIndustry seci = new IndustryDAO(con).select(sti.getIndId());
+			SectorIndustry seci = new SectorIndustryDAO(con).select(sti.getIndId());
 			sd.setSectorIndustry(seci);
 		}
 		sd.setSymbol(s.getSymbol());
