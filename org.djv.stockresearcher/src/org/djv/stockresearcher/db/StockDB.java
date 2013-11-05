@@ -856,19 +856,30 @@ public class StockDB {
 		return "";
 	}
 	
-	public void addToWatchList(String symbol) throws Exception {
-		if (new WatchListDAO(con).exists(symbol)){
-			throw new Exception("already on watch list");
-		} else {
-			new WatchListDAO(con).insert(symbol);
-		}
-		
-		List<StockData> sdList = new ArrayList<StockData>();
-		StockData sd = getStockData(symbol, null, false);
-		notifyAllStockDataChangeListeners(sd, 1, 1);
-		sdList.add(sd);
-		
-		notifyAllWatchListListeners(sdList, true);
+	public void addToWatchList(final String symbol) throws Exception {
+		pooledExecution(new Runnable(){
+			@Override
+			public void run() {
+				try {
+					if (new WatchListDAO(con).exists(symbol)){
+						throw new Exception("already on watch list");
+					} else {
+						new WatchListDAO(con).insert(symbol);
+					}
+					List<StockData> sdList = new ArrayList<StockData>();
+					StockData sd = getStockData(symbol, null, false);
+					notifyAllStockDataChangeListeners(sd, 1, 0);
+					sdList.add(sd);
+					
+					getDataForStocks(sdList);
+					updateStockFineData(sdList);
+					
+					notifyAllWatchListListeners(sdList, true);
+				} catch (Exception e){
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 	
 	public void refreshWatchList() throws Exception {
