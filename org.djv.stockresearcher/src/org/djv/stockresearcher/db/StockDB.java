@@ -202,7 +202,9 @@ public class StockDB {
 							+ "DividendYield, "
 							+ "PERatio, "
 							+ "PEGRatio, "
-							+ "StockExchange "
+							+ "StockExchange ,"
+							+ "YearLow,"
+							+ "YearHigh"
 							+ "from yahoo.finance.quotes "
 							+ "where symbol in (" + stockURLParm +")";
 
@@ -233,6 +235,8 @@ public class StockDB {
 		String marketCap = getString(c, "MarketCapitalization");
 		String dividend = getString(c, "DividendShare");
 		String yield = getString(c, "DividendYield");
+		String yrHigh = getString(c, "YearHigh");
+		String yrLow = getString(c, "YearLow");
 		String pe = getString(c, "PERatio");
 		String peg = getString(c, "PEGRatio");
 		String exchange = getString(c, "StockExchange");
@@ -257,6 +261,8 @@ public class StockDB {
 		s.setYield(convertBd(yield));
 		s.setMarketCap(marketCap);
 		s.setExchange(exchange);
+		s.setYearHigh(convertBd(yrHigh));
+		s.setYearLow(convertBd(yrLow));
 		s.setDataDate(new java.sql.Date(new Date().getTime()));
 
 		new StockDAO(con).update(s);
