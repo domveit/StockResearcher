@@ -29,7 +29,6 @@ class ForgivingBigDecimalComparator implements Comparator<String> {
 			try {
 				return new BigDecimal(s1.replace("%", " ").trim());
 			} catch (Exception e){
-//				System.err.println("could not convert " + s1 );
 				return BigDecimal.ZERO;
 			}
 		}

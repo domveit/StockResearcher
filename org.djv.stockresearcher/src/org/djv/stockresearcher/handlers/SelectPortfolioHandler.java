@@ -17,8 +17,6 @@ import org.eclipse.swt.widgets.Shell;
 				@Named(IServiceConstants.ACTIVE_PART) final MContribution contribution,
 				@Named("portfolio.selection") String portfolioName) {
 	    	
-	       System.err.println("Direct Menu Item selected");
-	       
 	       PortfolioPart pp = (PortfolioPart) contribution.getObject();
 			pp.updatePortfolioList();
 			pp.getPortfolioSelector().setText(portfolioName);

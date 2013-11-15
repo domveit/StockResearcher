@@ -78,7 +78,6 @@ public class FinDataDAO extends H2DAO{
 	}
 	
 	public List<FinPeriodData> getFinDataForStock(String symbol) throws Exception {
-//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(SELECT_SQL);
 		st.setString(1, symbol);
 		ResultSet rs = st.executeQuery();
@@ -109,13 +108,10 @@ public class FinDataDAO extends H2DAO{
 			fpd.setYear(rs.getInt("YEAR"));
 			l.add(fpd);
 		}
-//		long end = System.currentTimeMillis();
-//		System.err.println("FinDataDAO.getFinDataForStock " + (end-beg));
 		return l;
 	}
 	
 	public void insert(FinPeriodData fpd) throws Exception {
-//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(INSERT_SQL);
 		st.setString(1, fpd.getSymbol());
 		st.setString(2, fpd.getPeriod());
@@ -137,18 +133,11 @@ public class FinDataDAO extends H2DAO{
 		st.setBigDecimal(17, fpd.getFreeCashFlowPerShare());
 		st.setBigDecimal(18, fpd.getWorkingCapital());
 		st.executeUpdate();
-//		long end = System.currentTimeMillis();
-//		System.err.println("FinDataDAO.insert " + (end-beg));
 	}
 	
 	public void deleteForStock(String symbol) throws Exception {
-//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(DELETE_SQL);
 		st.setString(1, symbol);
 		st.executeUpdate();
-//		long end = System.currentTimeMillis();
-//		System.err.println("FinDataDAO.deleteForStock " + (end-beg));
 	}
-	
-	
 }

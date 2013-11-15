@@ -64,6 +64,19 @@ public class StockTable extends Composite {
 		return sd;
 	}
 	
+	public List<StockData> getSelectedStocks(){
+		int[] tsel = table.getSelectionIndices();
+		if (tsel== null || tsel.length ==0) {
+			return null;
+		}
+		List<StockData> sdList = new ArrayList<StockData>();
+		for (int i: tsel){
+			StockData sd = (StockData)table.getItem(i).getData("sd");
+			sdList.add(sd);
+		}
+		return sdList;
+	}
+	
 	public void packColumns(){
 		Display.getDefault().timerExec(500, packer);
 	}
@@ -117,7 +130,6 @@ public class StockTable extends Composite {
 		item.setText (15, (sd.getStock().getExchange() == null) ? "" : sd.getStock().getExchange());
 		item.setText (16, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getIndustryName());
 		item.setText (17, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getSectorName());
-		System.err.println("updated Item " + sd.getStock().getSymbol());
 	}
 
 	public void setColor(StockData sd, TableItem item) {
@@ -187,7 +199,6 @@ public class StockTable extends Composite {
 	public void addOrUpdateItem(StockData sd, boolean updateColors) {
 		TableItem item = tableItemMap.get(sd.getStock().getSymbol());
 		if (item == null){
-			System.err.println("adding Item " + sd.getStock().getSymbol());
 			item = new TableItem (table, SWT.NONE);
 			tableItemMap.put(sd.getStock().getSymbol(), item);
 		}
@@ -210,7 +221,6 @@ public class StockTable extends Composite {
 	public void removeItem(String s) {
 		TableItem item = tableItemMap.get(s);
 		if (item != null){
-			System.err.println("removing Item " + s);
 			tableItemMap.remove(s);
 			item.dispose();
 		}

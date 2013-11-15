@@ -99,10 +99,10 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 		addButton.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				StockData sd = table.getSelectedStock();
-				if(sd != null){
+				List<StockData> sdList = table.getSelectedStocks();
+				if(sdList != null){
 					try {
-						db.addToWatchList(sd.getStock().getSymbol());
+						db.addAllToWatchList(sdList);
 					} catch (Exception e1) {
 						e1.printStackTrace();
 					}

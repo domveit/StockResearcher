@@ -541,7 +541,6 @@ public class StockDB {
 		 JsonObject industry = results.get("industry").getAsJsonObject();
 		 JsonElement iEle = industry.get("company");
 		 if (iEle== null){
-			 System.err.println("YQL failed for industry" + ind);
 			 return false;
 		 }
 		 if (iEle.isJsonArray()){
@@ -728,12 +727,10 @@ public class StockDB {
 	
 	public void pooledExecution(Runnable runnable){
 		if (pool1 != null){
-			System.err.println("terminating pool1");
 			pool1.shutdownNow();
 			try {
 				pool1.awaitTermination(30, TimeUnit.MINUTES);
 				pool1 = null;
-				System.err.println("terminated pool1");
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -746,7 +743,6 @@ public class StockDB {
 				pool1.shutdown();
 				try {
 					pool1.awaitTermination(30, TimeUnit.MINUTES);
-					System.err.println("pool1 ended and nulled");
 					pool1 = null;
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -773,7 +769,6 @@ public class StockDB {
 				st = new Stock();
 				st.setSymbol(s.getSymbol());
 				new StockDAO(con).insert(st);
-				System.err.println("inserted " + st.getSymbol() );
 			} 
 			sd.setStock(st);
 			sdList.add(sd);
@@ -952,9 +947,6 @@ public class StockDB {
 			s = new Stock();
 			s.setSymbol(symbol);
 			s.setMarketCap("");
-			if (sti == null){
-				System.err.println("Stock " + s.getSymbol() + " does not exist");
-			}
 			if (insert){
 				new StockDAO(con).insert(s);
 			}
@@ -1228,5 +1220,26 @@ public class StockDB {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public void addAllToWatchList(final List<StockData> sdList) {
+		pooledExecution(new Runnable(){
+			@Override
+			public void run() {
+				try {
+					for (StockData sd: sdList){
+						if (!new WatchListDAO(con).exists(sd.getSymbol())){
+							new WatchListDAO(con).insert(sd.getSymbol());
+						}
+					}
+					getDataForStocks(sdList);
+					updateStockFineData(sdList);
+					
+					notifyAllWatchListListeners(sdList, true);
+				} catch (Exception e){
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 }

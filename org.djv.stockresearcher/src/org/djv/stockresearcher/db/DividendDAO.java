@@ -47,7 +47,6 @@ public class DividendDAO extends H2DAO{
 	}
 	
 	public List<DivData> getDividendsForSymbol(String symbol) throws Exception {
-//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(SELECT_SYMBOL_SQL);
 		st.setString(1, symbol);
 		ResultSet rs = st.executeQuery();
@@ -59,13 +58,10 @@ public class DividendDAO extends H2DAO{
 			dd.setDividend(rs.getBigDecimal("DIVIDEND"));
 			l.add(dd);
 		}
-//		long end = System.currentTimeMillis();
-//		System.err.println("DividendDAO.getDividendsForSymbol " + (end-beg));
 		return l;
 	}
 	
 	public Date getLastDividendOnFileForSymbol(String symbol) throws Exception {
-//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(SELECT_SYMBOL_SQL);
 		st.setString(1, symbol);
 		ResultSet rs = st.executeQuery();
@@ -73,47 +69,22 @@ public class DividendDAO extends H2DAO{
 		if (rs.next()){
 			d  = rs.getDate("PAYDATE");
 		}
-//		long end = System.currentTimeMillis();
-//		System.err.println("DividendDAO.getLastDividendOnFileForSymbol " + (end-beg));
 		return d;
 	}
 	
 	public void deleteForStock(String symbol) throws Exception {
-//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(DELETE_SQL);
 		st.setString(1, symbol);
 		st.executeUpdate();
-//		long end = System.currentTimeMillis();
-//		System.err.println("DividendDAO.deleteForStock " + (end-beg));
 	}
 
 	public void insert(DivData dd) throws Exception {
-//		long beg = System.currentTimeMillis();
 		PreparedStatement st = con.prepareStatement(INSERT_SQL);
 		st.setString(1, dd.getSymbol());
 		st.setDate(2, dd.getPaydate());
 		st.setBigDecimal(3, dd.getDividend());
 		st.executeUpdate();
-//		long end = System.currentTimeMillis();
-//		System.err.println("DividendDAO.insert " + (end-beg));
 	}
-	
-//	public void update(Stock s) throws Exception {
-//		PreparedStatement st = con.prepareStatement(UPDATE_SQL);
-//		st.setInt(1, s.getIndustryId());
-//		st.setDate(2, s.getDataDate());
-//		st.setString(3, s.getExchange());
-//		st.setString(4, s.getName());
-//		st.setBigDecimal(5, s.getPrice());
-//		st.setString(6, s.getMarketCap());
-//		st.setBigDecimal(7, s.getDividend());
-//		st.setBigDecimal(8, s.getYield());
-//		st.setBigDecimal(9, s.getPe());
-//		st.setBigDecimal(10, s.getPeg());
-//		
-//		st.setString(11, s.getSymbol());
-//		st.executeUpdate();
-//	}
 	
 
 }
