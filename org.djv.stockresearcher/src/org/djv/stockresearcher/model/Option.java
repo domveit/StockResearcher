@@ -48,7 +48,5 @@ public class Option {
 	public void setAsk(BigDecimal ask) {
 		this.ask = ask;
 	}
-	
-//	System.err.println("strike=" + strike + " sym=" + sym + " last=" + last + " chg=" + chg + " bid=" + bid + " ask=" + ask);
 
 }

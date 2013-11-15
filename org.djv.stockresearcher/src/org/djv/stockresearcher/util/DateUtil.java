@@ -30,7 +30,6 @@ public class DateUtil {
 				(c.get(Calendar.DATE) != c2.get(Calendar.DATE))){
 			c.add(Calendar.DATE, 1);
 			days++;
-//			System.err.println(new SimpleDateFormat("MM/dd/yyyy").format(c.getTime()) + " " + new SimpleDateFormat("MM/dd/yyyy").format(c2.getTime()) + " " + days);
 		}
 		return days;
 	}
