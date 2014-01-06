@@ -49,7 +49,7 @@ public class StockDAO extends H2DAO{
 			+ "DIVIDEND = ?, "
 			+ "YIELD = ?, "
 			+ "PE = ?, "
-			+ "PEG = ? "
+			+ "PEG = ?, "
 			+ "YRHIGH = ?, "
 			+ "YRLOW = ? "
 			+ "WHERE SYMBOL = ?";

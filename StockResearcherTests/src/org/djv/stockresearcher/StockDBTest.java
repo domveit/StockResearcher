@@ -31,7 +31,7 @@ public class StockDBTest {
 	@Test
 	public void test0() throws Exception {
 		StockDB db = new StockDB("stockDBTest");
-		db.updateSectorAndIndustry("Basic Materials", "ALL");
+		
 		db.addSectorIndustryListener(new SectorIndustryListener() {
 			public void notifyChanged(String industryName, int industriesToUpdate,
 					int industriesUpdated, int beginOrEnd) {
@@ -44,6 +44,7 @@ public class StockDBTest {
 			System.err.println(sd.getStockIndustry().getName() + " " + updated + " / " + toUpdate);
 			}
 		});
+		db.updateSectorAndIndustry("Basic Materials", "ALL");
 		db.waitFor();
 	}
 		

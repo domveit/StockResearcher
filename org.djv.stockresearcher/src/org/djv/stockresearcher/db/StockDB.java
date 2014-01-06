@@ -202,28 +202,41 @@ public class StockDB {
 							+ "DividendYield, "
 							+ "PERatio, "
 							+ "PEGRatio, "
-							+ "StockExchange ,"
-							+ "YearLow,"
-							+ "YearHigh"
+							+ "StockExchange, "
+							+ "YearLow, "
+							+ "YearHigh "
 							+ "from yahoo.finance.quotes "
 							+ "where symbol in (" + stockURLParm +")";
 
 			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-			JsonParser parser = new JsonParser();
-			JsonObject json = parser.parse(br).getAsJsonObject();
-			JsonObject query = json.get("query").getAsJsonObject();
-			JsonObject results = query.get("results").getAsJsonObject();
-			
-			JsonElement quoteEle = results.get("quote");
-			if (quoteEle.isJsonArray()){
-				JsonArray quote = results.get("quote").getAsJsonArray();
-				for (JsonElement ce: quote){
-					handleQuoteElement(stocks, ce);
+			if (br == null){
+				if (stocks.size() > 1){
+					System.err.println("failed to get stock data for list " + stockURLParm + " getting data one at a time.");
+					for (StockData sd : stocks){
+						List<StockData> oneStock = new ArrayList<StockData>();
+						oneStock.add(sd);
+						getDataForStocksInternal(oneStock);
+					}
+				} else {
+					System.err.println("failed to get stock data for " + stocks.get(0).getSymbol() + ".");
 				}
 			} else {
-				handleQuoteElement(stocks, quoteEle);
+				JsonParser parser = new JsonParser();
+				JsonObject json = parser.parse(br).getAsJsonObject();
+				JsonObject query = json.get("query").getAsJsonObject();
+				JsonObject results = query.get("results").getAsJsonObject();
+				
+				JsonElement quoteEle = results.get("quote");
+				if (quoteEle.isJsonArray()){
+					JsonArray quote = results.get("quote").getAsJsonArray();
+					for (JsonElement ce: quote){
+						handleQuoteElement(stocks, ce);
+					}
+				} else {
+					handleQuoteElement(stocks, quoteEle);
+				}
+				br.close();
 			}
-			br.close();
 		}
 	}
 
@@ -530,29 +543,38 @@ public class StockDB {
 		});
 	}
 
-	private boolean updateStockIndustryYQL(Integer ind) throws Exception {
-		StockIndustryDAO stockSectorIndustryDAO = new StockIndustryDAO(con);
-		String YQLquery = "select * from yahoo.finance.industry where id=\"" +ind+ "\"";
-		BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-		 JsonParser parser = new JsonParser();
-		 JsonObject json = parser.parse(br).getAsJsonObject();
-		 JsonObject query = json.get("query").getAsJsonObject();
-		 JsonObject results = query.get("results").getAsJsonObject();
-		 JsonObject industry = results.get("industry").getAsJsonObject();
-		 JsonElement iEle = industry.get("company");
-		 if (iEle== null){
-			 return false;
-		 }
-		 if (iEle.isJsonArray()){
-			 JsonArray companies = iEle.getAsJsonArray();
-			 for (JsonElement ce: companies){
-				handleCompany(ind, stockSectorIndustryDAO, ce);
-			 }
-		 } else {
-			 handleCompany(ind, stockSectorIndustryDAO, iEle);
-		 }
-		 br.close();
-		 return true;
+	private boolean updateStockIndustryYQL(Integer ind) {
+		boolean ret = false;
+		try {
+			StockIndustryDAO stockSectorIndustryDAO = new StockIndustryDAO(con);
+			String YQLquery = "select * from yahoo.finance.industry where id=\""
+					+ ind + "\"";
+			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
+			if (br != null) {
+				JsonParser parser = new JsonParser();
+				JsonObject json = parser.parse(br).getAsJsonObject();
+				JsonObject query = json.get("query").getAsJsonObject();
+				JsonObject results = query.get("results").getAsJsonObject();
+				JsonObject industry = results.get("industry").getAsJsonObject();
+				JsonElement iEle = industry.get("company");
+				if (iEle == null) {
+					return false;
+				}
+				if (iEle.isJsonArray()) {
+					JsonArray companies = iEle.getAsJsonArray();
+					for (JsonElement ce : companies) {
+						handleCompany(ind, stockSectorIndustryDAO, ce);
+					}
+				} else {
+					handleCompany(ind, stockSectorIndustryDAO, iEle);
+				}
+				br.close();
+				ret = true;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return ret;
 	}
 
 	public void handleCompany(Integer ind, StockIndustryDAO stockSectorIndustryDAO,

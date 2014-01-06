@@ -15,6 +15,7 @@ import org.djv.stockresearcher.db.StockDB;
 import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
 import org.djv.stockresearcher.model.Position;
+import org.djv.stockresearcher.model.SectorIndustry;
 import org.djv.stockresearcher.model.Transaction;
 import org.djv.stockresearcher.model.TransactionData;
 import org.djv.stockresearcher.widgets.PortfolioDialog;
@@ -332,7 +333,8 @@ public class PortfolioPart {
 					if (firstRow){
 						Label sh1 = new Label(overview, SWT.NONE);
 						sh1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-						sh1.setText(StockDB.getInstance().getIndustry(sector).getSectorName());
+						SectorIndustry industry = StockDB.getInstance().getIndustry(sector);
+						sh1.setText(industry == null ? "" : industry.getSectorName());
 						sh1.setBackground(new Color(Display.getDefault(), 153, 217, 234));
 						firstRow = false;
 					} else {

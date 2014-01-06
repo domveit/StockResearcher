@@ -9,4 +9,5 @@
   	<relativePath>../org.djv.stockresearcher.releng</relativePath>
   </parent>
   <version>1.0.0-SNAPSHOT</version>
+  <groupId>org.djv</groupId>
 </project>
