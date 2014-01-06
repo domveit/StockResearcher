@@ -5,26 +5,20 @@ import java.sql.Date;
 
 public class Stock {
 	
-//	Integer industryId;
 	Date dataDate;
 	Date divDataDate;
 	Date finDataDate;
 	String symbol;
 	String exchange;
-//	String name;
 	BigDecimal price;
 	String marketCap;
 	BigDecimal dividend;
 	BigDecimal yield;
 	BigDecimal pe;
 	BigDecimal peg;
+	BigDecimal yearHigh;
+	BigDecimal yearLow;
 	
-//	public Integer getIndustryId() {
-//		return industryId;
-//	}
-//	public void setIndustryId(Integer industryId) {
-//		this.industryId = industryId;
-//	}
 	public Date getDataDate() {
 		return dataDate;
 	}
@@ -43,12 +37,6 @@ public class Stock {
 	public void setExchange(String exchange) {
 		this.exchange = exchange;
 	}
-//	public String getName() {
-//		return name;
-//	}
-//	public void setName(String name) {
-//		this.name = name;
-//	}
 	public BigDecimal getPrice() {
 		return price;
 	}
@@ -96,6 +84,18 @@ public class Stock {
 	}
 	public void setFinDataDate(Date finDataDate) {
 		this.finDataDate = finDataDate;
+	}
+	public BigDecimal getYearHigh() {
+		return yearHigh;
+	}
+	public void setYearHigh(BigDecimal yearHigh) {
+		this.yearHigh = yearHigh;
+	}
+	public BigDecimal getYearLow() {
+		return yearLow;
+	}
+	public void setYearLow(BigDecimal yearLow) {
+		this.yearLow = yearLow;
 	}
 
 }

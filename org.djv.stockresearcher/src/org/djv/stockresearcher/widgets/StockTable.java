@@ -1,5 +1,7 @@
 package org.djv.stockresearcher.widgets;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +24,7 @@ public class StockTable extends Composite {
 	Map<String, TableItem> tableItemMap = new HashMap<String, TableItem>();
 	TableSortListener sortListener = new TableSortListener(this);
 	
-	String[] titles = {"Stock", "Name", "MCap", "Price", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg 4yr", "dg 8yr", "rg 4yr", "rg 8yr", "Rank", "Exchange", "Industry", "Sector"};
+	String[] titles = {"Stock", "Name", "MCap", "Price", "Yr Range", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg 4yr", "dg 8yr", "rg 4yr", "rg 8yr", "Rank", "Exchange", "Industry", "Sector", "Yr High diff"};
 	Table table;
 
 	public Table getTable() {
@@ -104,43 +106,59 @@ public class StockTable extends Composite {
 		item.setText (2, sd.getStock().getMarketCap() == null ? "N/A" : sd.getStock().getMarketCap());
 		item.setText (3, (sd.getStock().getPrice() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getPrice()));
 		
+		String yrRange = ((sd.getStock().getYearLow() == null) ? "???" :  new DecimalFormat("0.00").format(sd.getStock().getYearLow()))
+				 + "-" + 
+				 ((sd.getStock().getYearHigh() == null) ? "???" :  new DecimalFormat("0.00").format(sd.getStock().getYearHigh()));
+		item.setText (4, yrRange);
+		
 		if (sd.getNormDividend() != null){
-			item.setText (4,  String.valueOf(sd.getNormDividend()));
+			item.setText (5,  String.valueOf(sd.getNormDividend()));
 		} else {
-			item.setText (4, (sd.getStock().getDividend() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getDividend()));
+			item.setText (5, (sd.getStock().getDividend() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getDividend()));
 		}
 		
 		if (sd.getNormYield() != null){
-			item.setText (5, new DecimalFormat("0.00").format(sd.getNormYield()));
+			item.setText (6, new DecimalFormat("0.00").format(sd.getNormYield()));
 		} else {
-			item.setText (5, (sd.getStock().getYield() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getYield()));
+			item.setText (6, (sd.getStock().getYield() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getYield()));
 		}
 		
-		item.setText (6, (sd.getStock().getPe() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getPe()));
-		item.setText (7, (sd.getStock().getPeg() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getStock().getPeg()));
-		item.setText (8, String.valueOf(sd.getStreak()));
-		item.setText (9,  String.valueOf(sd.getSkipped()));
-		item.setText (10, (sd.getDg4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg4()) + "%");
-		item.setText (11, (sd.getDg8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg8()) + "%");
+		item.setText (7, (sd.getStock().getPe() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getPe()));
+		item.setText (8, (sd.getStock().getPeg() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getStock().getPeg()));
+		item.setText (9, String.valueOf(sd.getStreak()));
+		item.setText (10,  String.valueOf(sd.getSkipped()));
+		item.setText (11, (sd.getDg4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg4()) + "%");
+		item.setText (12, (sd.getDg8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg8()) + "%");
 		
-		item.setText (12, (sd.getEps4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps4()) + "%");
-		item.setText (13, (sd.getEps8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps8()) + "%");
+		item.setText (13, (sd.getEps4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps4()) + "%");
+		item.setText (14, (sd.getEps8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps8()) + "%");
 
-		item.setText (14, new DecimalFormat("0.00").format(sd.getOverAllRank()));
-		item.setText (15, (sd.getStock().getExchange() == null) ? "" : sd.getStock().getExchange());
-		item.setText (16, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getIndustryName());
-		item.setText (17, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getSectorName());
+		item.setText (15, new DecimalFormat("0.00").format(sd.getOverAllRank()));
+		item.setText (16, (sd.getStock().getExchange() == null) ? "" : sd.getStock().getExchange());
+		item.setText (17, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getIndustryName());
+		item.setText (18, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getSectorName());
+		
+		BigDecimal yrHighDiff = null;
+		if (sd.getStock().getYearHigh() != null && sd.getStock().getYearLow() != null){
+			BigDecimal scale = sd.getStock().getYearHigh().subtract(sd.getStock().getYearLow());
+			if (scale.compareTo(new BigDecimal(0)) != 0){
+				BigDecimal rank = sd.getStock().getPrice().subtract(sd.getStock().getYearLow());
+				yrHighDiff = rank.divide(scale, 4, RoundingMode.HALF_UP);
+				yrHighDiff = new BigDecimal(10).subtract(yrHighDiff.multiply(new BigDecimal(10)));
+			}
+		}
+		item.setText (19, (yrHighDiff == null) ? "" : new DecimalFormat("0.00").format(yrHighDiff) + "%");
 	}
 
 	public void setColor(StockData sd, TableItem item) {
-		item.setBackground(14, getColorForRank(sd.getOverAllRank()));
-		item.setBackground(8, getColorForRank(sd.getStalwartRank()));
+		item.setBackground(15, getColorForRank(sd.getOverAllRank()));
 		item.setBackground(9, getColorForRank(sd.getStalwartRank()));
-		item.setBackground(5, getColorForRank(sd.getYieldRank()));
-		item.setBackground(10, getColorForRank(sd.getGrowthRank()));
+		item.setBackground(10, getColorForRank(sd.getStalwartRank()));
+		item.setBackground(6, getColorForRank(sd.getYieldRank()));
 		item.setBackground(11, getColorForRank(sd.getGrowthRank()));
-		item.setBackground(12, getColorForRank(sd.getFinRank()));
+		item.setBackground(12, getColorForRank(sd.getGrowthRank()));
 		item.setBackground(13, getColorForRank(sd.getFinRank()));
+		item.setBackground(14, getColorForRank(sd.getFinRank()));
 		
 		if (sd.getStock().getMarketCap() == null || sd.getStock().getMarketCap().endsWith("M")){
 			item.setBackground(2, new Color(Display.getDefault(), 255, 0, 0));

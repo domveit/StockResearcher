@@ -15,7 +15,7 @@ public class YahooFinanceUtil {
 		String queryURL = "http://query.yahooapis.com/v1/public/yql?q="
 				+ rQuery
 				+ "&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
-		return getYahooCSV(queryURL);
+		return getYahooCSVNice(queryURL);
 	}
 	
 	

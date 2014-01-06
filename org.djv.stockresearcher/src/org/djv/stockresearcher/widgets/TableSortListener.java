@@ -82,6 +82,7 @@ class TableSortListener implements Listener {
         	case 10:
         	case 11:
         	case 12:
+        	case 19:
         		 comp = new ForgivingBigDecimalComparator(sortDir);
         		 break;
         	default:

@@ -39,3 +39,4 @@ Export-Package: org.h2,
  org.h2.upgrade,
  org.h2.util,
  org.h2.value
+Bundle-ClassPath: h2-1.3.173.jar

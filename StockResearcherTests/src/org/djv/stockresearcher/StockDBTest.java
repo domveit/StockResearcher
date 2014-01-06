@@ -6,6 +6,7 @@ import java.util.List;
 import org.djv.stockresearcher.db.SectorDateDAO;
 import org.djv.stockresearcher.db.SectorIndustryListener;
 import org.djv.stockresearcher.db.StockDB;
+import org.djv.stockresearcher.db.StockDataChangeListener;
 import org.djv.stockresearcher.db.StockDataUtil;
 import org.djv.stockresearcher.model.Option;
 import org.djv.stockresearcher.model.StockData;
@@ -30,6 +31,19 @@ public class StockDBTest {
 	@Test
 	public void test0() throws Exception {
 		StockDB db = new StockDB("stockDBTest");
+		
+		db.addSectorIndustryListener(new SectorIndustryListener() {
+			public void notifyChanged(String industryName, int industriesToUpdate,
+					int industriesUpdated, int beginOrEnd) {
+			System.err.println((beginOrEnd == 0 ? "BEGIN" : "END") + " " + industryName + " " + industriesUpdated + " / " + industriesToUpdate);
+			}
+		});
+		
+		db.addStockDataChangeListener(new StockDataChangeListener() {
+			public void notifyChanged(StockData sd, int toUpdate, int updated) {
+			System.err.println(sd.getStockIndustry().getName() + " " + updated + " / " + toUpdate);
+			}
+		});
 		db.updateSectorAndIndustry("Basic Materials", "ALL");
 		db.waitFor();
 	}
