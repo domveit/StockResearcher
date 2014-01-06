@@ -208,7 +208,12 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 		}
 		
 		if (sd != null){
-			if (sd.isRanksCalculated() && (sd.getGrowthRank() == 0.00 && sd.getYieldRank()==0.00)){
+			if (
+					(sd.isRanksCalculated() && (sd.getGrowthRank() == 0.00 && sd.getYieldRank()==0.00))
+					||
+					( !"NYSE".equals(sd.getStock().getExchange()) && !"NasdaqNM".equals(sd.getStock().getExchange()) && !"AMEX".equals(sd.getStock().getExchange()))
+			
+					){
 				table.removeItem(sd);
 			} else {
 				if (!table.isDisposed()){

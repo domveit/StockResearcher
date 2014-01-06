@@ -160,9 +160,6 @@ public class StockDB {
 		List<StockData> sdUpdateList = new ArrayList<StockData>();
 		for (StockData sd : sdList) {
 			if (dataExpired(sd.getStock().getDataDate())){
-				if ("HSK.AX".equals(sd.getSymbol())){
-					continue;
-				}
 				sdUpdateList.add(sd);
 			} 
 		}
@@ -1249,15 +1246,20 @@ public class StockDB {
 			@Override
 			public void run() {
 				try {
+					List<StockData> newsdList = new ArrayList<StockData>();
 					for (StockData sd: sdList){
 						if (!new WatchListDAO(con).exists(sd.getSymbol())){
 							new WatchListDAO(con).insert(sd.getSymbol());
 						}
+						StockData newsd = getStockData(sd.getSymbol(), null, false);
+						notifyAllStockDataChangeListeners(sd, 1, 0);
+						newsdList.add(newsd);
 					}
-					getDataForStocks(sdList);
-					updateStockFineData(sdList);
 					
-					notifyAllWatchListListeners(sdList, true);
+					getDataForStocks(newsdList);
+					updateStockFineData(newsdList);
+					
+					notifyAllWatchListListeners(newsdList, true);
 				} catch (Exception e){
 					e.printStackTrace();
 				}
