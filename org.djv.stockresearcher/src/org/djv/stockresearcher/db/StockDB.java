@@ -158,14 +158,16 @@ public class StockDB {
 	
 	public void getDataForStocks(final List<StockData> sdList) throws Exception {
 		List<StockData> sdUpdateList = new ArrayList<StockData>();
+		List<StockData> sdUpdateListPo = new ArrayList<StockData>();
 		for (StockData sd : sdList) {
 			if (dataExpired(sd.getStock().getDataDate())){
 				sdUpdateList.add(sd);
-			} 
+			} else {
+				sdUpdateListPo.add(sd);
+			}
 		}
 				
 		int nbrStocks = sdUpdateList.size();
-		
 		int nbrGroups = (nbrStocks - 1) /MAX_STOCKS + 1;
 		for (int i = 1; i <= nbrGroups; i ++){
 			List<StockData> subList = null;
@@ -176,7 +178,102 @@ public class StockDB {
 			}
 			getDataForStocksInternal(subList);
 		}
+		
+		int nbrStocksPo = sdUpdateListPo.size();
+		int nbrGroupsPo = (nbrStocksPo - 1) /MAX_STOCKS + 1;
+		for (int i = 1; i <= nbrGroupsPo; i ++){
+			List<StockData> subList = null;
+			if (i == nbrGroupsPo){
+				subList = sdUpdateListPo.subList(MAX_STOCKS * (i-1), sdUpdateListPo.size());
+			} else {
+				subList = sdUpdateListPo.subList(MAX_STOCKS * (i-1), MAX_STOCKS * i);
+			}
+			getDataForStocksInternalPo(subList);
+		}
+		
 		return;
+	}
+	
+	public void getDataForStocksInternalPo(List<StockData> stocks) throws Exception {
+		List<String> stocksGettingData = new ArrayList<String>();
+		String stockURLParm = "";
+		for (StockData sd : stocks) {
+			if (stockURLParm.length() > 0){
+				stockURLParm += ",";
+			}
+			stockURLParm += ("\"" + sd.getSymbol() + "\"");
+			stocksGettingData.add(sd.getSymbol());
+		}
+		if (stocksGettingData.size() > 0) {
+			String YQLquery = 
+					"select "
+							+ "symbol, "
+							+ "LastTradePriceOnly "
+							+ "from yahoo.finance.quotes "
+							+ "where symbol in (" + stockURLParm +")";
+
+			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
+			if (br == null){
+				if (stocks.size() > 1){
+					System.err.println("failed to get stock price data for list " + stockURLParm + " getting data one at a time.");
+					for (StockData sd : stocks){
+						List<StockData> oneStock = new ArrayList<StockData>();
+						oneStock.add(sd);
+						getDataForStocksInternalPo(oneStock);
+					}
+				} else {
+					System.err.println("failed to get stock price data for " + stocks.get(0).getSymbol() + ".");
+				}
+			} else {
+				JsonParser parser = new JsonParser();
+				JsonObject json = parser.parse(br).getAsJsonObject();
+				JsonObject query = json.get("query").getAsJsonObject();
+				JsonElement jsonElement = query.get("results");
+				if (jsonElement != null){
+					try {
+					JsonObject results = jsonElement.getAsJsonObject();
+					
+					JsonElement quoteEle = results.get("quote");
+					if (quoteEle.isJsonArray()){
+						JsonArray quote = results.get("quote").getAsJsonArray();
+						for (JsonElement ce: quote){
+							handleQuoteElementPo(stocks, ce);
+						}
+					} else {
+						handleQuoteElementPo(stocks, quoteEle);
+					}
+					} catch (Exception e){
+						System.err.println("error with element " + jsonElement);
+					}
+				}
+				br.close();
+			}
+		}
+	}
+
+	
+	public void handleQuoteElementPo(List<StockData> stocks, JsonElement ce)
+			throws Exception {
+		JsonObject c = ce.getAsJsonObject();
+		String symbol = getString(c, "symbol");
+		String price = getString(c, "LastTradePriceOnly");
+
+		Stock s = null;
+		for (StockData sdLoop : stocks){
+			if (sdLoop.getSymbol().equals(symbol)){
+				s = sdLoop.getStock();
+				break;
+			}
+		}
+		
+		if (s == null){
+			System.err.println("Stock not found " + symbol);
+			return;
+		}
+		s.setPrice(convertBd(price));
+		s.setDataDate(new java.sql.Date(new Date().getTime()));
+
+		new StockDAO(con).update(s);
 	}
 
 	public void getDataForStocksInternal(List<StockData> stocks) throws Exception {
