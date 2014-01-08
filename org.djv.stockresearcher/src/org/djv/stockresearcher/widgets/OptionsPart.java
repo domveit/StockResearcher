@@ -70,7 +70,7 @@ public class OptionsPart implements AppStateListener {
 		}
 		tabMap.clear();
 		
-		label.setText(sd.getStock().getSymbol() + " - " + sd.getStockIndustry() == null ? "???" :  sd.getStockIndustry().getName() + " - " + sd.getStock().getPrice() + " getting options data....");
+		label.setText(sd.getStock().getSymbol() + " - " + (sd.getStockIndustry() == null ? "???" :  (sd.getStockIndustry().getName() + " - " + sd.getStock().getPrice())) + " getting options data....");
 		Thread t = new Thread(new Runnable(){
 			@Override
 			public void run() {
