@@ -225,7 +225,11 @@ public class StockDataUtil {
 		DivYearData lastYear3 = divYearData.get(currYYYY - 3);
 		
 		if (lastYear != null && lastYear2 != null && lastYear3 != null){
-			if (lastYear.getDivDetail().size() == lastYear2.getDivDetail().size() && lastYear2.getDivDetail().size() == lastYear3.getDivDetail().size()){
+			if (lastYear.getDivDetail().size() == lastYear2.getDivDetail().size() 
+					&& lastYear.getDiv().equals(lastYear2.getNormalizedDiv())
+				&& lastYear2.getDivDetail().size() == lastYear3.getDivDetail().size()
+				&& lastYear2.getDiv().equals(lastYear3.getNormalizedDiv())
+					){
 				regularPayer = lastYear.getDivDetail().size();
 			}
 		}
@@ -532,7 +536,6 @@ public class StockDataUtil {
 		while (revNow == null && nbrTimes < 3){
 			nbrTimes ++;
 			currYYYY = currYYYY - 1;
-			System.err.println(stockData.getSymbol() + " " + currYYYY + " " + nbrTimes);
 			year4 = currYYYY - 4;
 			year8 = currYYYY - 8;
 
@@ -540,7 +543,6 @@ public class StockDataUtil {
 				BigDecimal rev = stockData.getFinData().get(s).getRevenue();
 				if (s.contains(String.valueOf(currYYYY)) && rev != null){
 					revNow = rev.doubleValue();
-					System.err.println(stockData.getSymbol() + " revNow = " + revNow);
 				}
 			}
 		}
@@ -553,12 +555,10 @@ public class StockDataUtil {
 			
 			if (s.contains(String.valueOf(year4)) && rev != null){
 				rev4yr = rev.doubleValue();
-				System.err.println(stockData.getSymbol() + " rev4yr = " + rev4yr);
 			}
 			
 			if (s.contains(String.valueOf(year8)) && rev != null){
 				rev8yr = rev.doubleValue();
-				System.err.println(stockData.getSymbol() + " rev8yr = " + rev8yr);
 			}
 		}
 
@@ -568,14 +568,12 @@ public class StockDataUtil {
 				double pow = Math.pow(d, (1.0 / 4.0));
 				double e4y = (pow - 1) * 100;
 				stockData.setEps4(e4y);
-				System.err.println(stockData.getSymbol() + " eps4yr = " + e4y);
 			}
 			if (rev8yr != null && rev8yr > 0){
 				double d = revNow / rev8yr;
 				double pow = Math.pow(d, (1.0 / 8.0));
 				double e8y = (pow - 1) * 100;
 				stockData.setEps8(e8y);
-				System.err.println(stockData.getSymbol() + " eps8yr = " + e8y);
 			} 
 		}
 		
