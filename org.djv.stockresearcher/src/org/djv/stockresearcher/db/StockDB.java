@@ -213,7 +213,29 @@ public class StockDB {
 							+ "where symbol in (" + stockURLParm +")";
 
 			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-			if (br == null){
+			try {
+				if (br == null){
+					throw new IllegalStateException ("br is null");
+				} else {
+					JsonParser parser = new JsonParser();
+					JsonObject json = parser.parse(br).getAsJsonObject();
+					JsonObject query = json.get("query").getAsJsonObject();
+					JsonElement jsonElement = query.get("results");
+					if (jsonElement != null){
+						JsonObject results = jsonElement.getAsJsonObject();
+						JsonElement quoteEle = results.get("quote");
+						if (quoteEle.isJsonArray()){
+							JsonArray quote = results.get("quote").getAsJsonArray();
+							for (JsonElement ce: quote){
+								handleQuoteElementPo(stocks, ce);
+							}
+						} else {
+							handleQuoteElementPo(stocks, quoteEle);
+						}
+					}
+					
+				}
+			} catch (Exception e){
 				if (stocks.size() > 1){
 					System.err.println("failed to get stock price data for list " + stockURLParm + " getting data one at a time.");
 					for (StockData sd : stocks){
@@ -224,28 +246,7 @@ public class StockDB {
 				} else {
 					System.err.println("failed to get stock price data for " + stocks.get(0).getSymbol() + ".");
 				}
-			} else {
-				JsonParser parser = new JsonParser();
-				JsonObject json = parser.parse(br).getAsJsonObject();
-				JsonObject query = json.get("query").getAsJsonObject();
-				JsonElement jsonElement = query.get("results");
-				if (jsonElement != null){
-					try {
-					JsonObject results = jsonElement.getAsJsonObject();
-					
-					JsonElement quoteEle = results.get("quote");
-					if (quoteEle.isJsonArray()){
-						JsonArray quote = results.get("quote").getAsJsonArray();
-						for (JsonElement ce: quote){
-							handleQuoteElementPo(stocks, ce);
-						}
-					} else {
-						handleQuoteElementPo(stocks, quoteEle);
-					}
-					} catch (Exception e){
-						System.err.println("error with element " + jsonElement);
-					}
-				}
+			} finally {
 				br.close();
 			}
 		}
@@ -303,7 +304,28 @@ public class StockDB {
 							+ "where symbol in (" + stockURLParm +")";
 
 			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-			if (br == null){
+			try {
+				if (br == null){
+					throw new IllegalStateException("br is null");
+				} else {
+					JsonParser parser = new JsonParser();
+					JsonObject json = parser.parse(br).getAsJsonObject();
+					JsonObject query = json.get("query").getAsJsonObject();
+					JsonElement jsonElement = query.get("results");
+						
+						JsonObject results = jsonElement.getAsJsonObject();
+						JsonElement quoteEle = results.get("quote");
+						if (quoteEle.isJsonArray()){
+							JsonArray quote = results.get("quote").getAsJsonArray();
+							for (JsonElement ce: quote){
+								handleQuoteElement(stocks, ce);
+							}
+						} else {
+							handleQuoteElement(stocks, quoteEle);
+						}
+					
+				}
+			} catch (Exception e){
 				if (stocks.size() > 1){
 					System.err.println("failed to get stock data for list " + stockURLParm + " getting data one at a time.");
 					for (StockData sd : stocks){
@@ -314,21 +336,7 @@ public class StockDB {
 				} else {
 					System.err.println("failed to get stock data for " + stocks.get(0).getSymbol() + ".");
 				}
-			} else {
-				JsonParser parser = new JsonParser();
-				JsonObject json = parser.parse(br).getAsJsonObject();
-				JsonObject query = json.get("query").getAsJsonObject();
-				JsonObject results = query.get("results").getAsJsonObject();
-				
-				JsonElement quoteEle = results.get("quote");
-				if (quoteEle.isJsonArray()){
-					JsonArray quote = results.get("quote").getAsJsonArray();
-					for (JsonElement ce: quote){
-						handleQuoteElement(stocks, ce);
-					}
-				} else {
-					handleQuoteElement(stocks, quoteEle);
-				}
+			} finally {
 				br.close();
 			}
 		}
