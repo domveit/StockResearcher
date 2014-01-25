@@ -390,9 +390,25 @@ public class StockDataUtil {
 				fr = 10;
 			} 
 		}
+		
+		BigDecimal yrHighDiff = null;
+		if (stockData.getStock().getYearHigh() != null && stockData.getStock().getYearLow() != null){
+			BigDecimal scale = stockData.getStock().getYearHigh().subtract(stockData.getStock().getYearLow());
+			if (scale.compareTo(new BigDecimal(0)) != 0){
+				BigDecimal rank = stockData.getStock().getPrice().subtract(stockData.getStock().getYearLow());
+				yrHighDiff = rank.divide(scale, 4, RoundingMode.HALF_UP);
+				yrHighDiff = new BigDecimal(10).subtract(yrHighDiff.multiply(new BigDecimal(10)));
+			}
+		}
+		
+		int vr = 5;
+		stockData.setYrHighDiff(yrHighDiff);
+		if (yrHighDiff != null){
+			vr =yrHighDiff.setScale(0, RoundingMode.HALF_UP).intValue();
+		}
 
-		double overall = (yr + sr + gr + fr);
-		double nbrDiv = 4.0;
+		double overall = (yr + sr + gr + fr + vr);
+		double nbrDiv = 5.0;
 		if (yr == 1 || yr == 10){
 			overall += (.5* yr);
 			nbrDiv += 0.5;
@@ -436,6 +452,7 @@ public class StockDataUtil {
 		stockData.setStalwartRank(sr);
 		stockData.setGrowthRank(gr);
 		stockData.setFinRank(fr);
+		stockData.setValueRank(vr);
 		stockData.setOverAllRank(rank);
 		stockData.setRanksCalculated(true);
 	}

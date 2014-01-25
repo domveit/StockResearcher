@@ -25,12 +25,15 @@ public class StockData {
 	Double eps4 = 0d;
 	Double eps8 = 0d;
 
+	BigDecimal yrHighDiff;
+	
 	boolean ranksCalculated = false;
 
 	int yieldRank = 0;
 	int stalwartRank = 0;
 	int growthRank = 0;
 	int finRank = 0;
+	int valueRank = 0;
 	double overAllRank = 0;
 	
 	boolean isWatched = false;
@@ -62,6 +65,14 @@ public class StockData {
 		this.ranksCalculated = ranksCalculated;
 	}
 	
+	public int getValueRank() {
+		return valueRank;
+	}
+
+	public void setValueRank(int valueRank) {
+		this.valueRank = valueRank;
+	}
+	
 	public int getFinRank() {
 		return finRank;
 	}
@@ -69,6 +80,14 @@ public class StockData {
 		this.finRank = finRank;
 	}
 	
+	public BigDecimal getYrHighDiff() {
+		return yrHighDiff;
+	}
+
+	public void setYrHighDiff(BigDecimal yrHighDiff) {
+		this.yrHighDiff = yrHighDiff;
+	}
+
 	public Double getEps4() {
 		return eps4;
 	}

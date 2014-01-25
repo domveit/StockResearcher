@@ -103,12 +103,17 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		removeButton.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				StockData sd = table.getSelectedStock();
-				if(sd != null){
-					boolean result = MessageDialog.openConfirm(shell, "Are you sure?", "Remove \"" + sd.getStock().getSymbol() + "\". Are you sure?");
+				List<StockData> sdList = table.getSelectedStocks();
+				
+				if(sdList != null && sdList.size() > 0){
+					String list = "";
+					for (StockData sd : sdList){
+						list += sd.getSymbol() + " ";
+					}
+					boolean result = MessageDialog.openConfirm(shell, "Are you sure?", "Remove " + list+ ". Are you sure?");
 					if (result){
 						try {
-							db.removeFromWatchList(sd.getStock().getSymbol());
+							db.removeAllFromWatchList(sdList);
 						} catch (Exception e1) {
 							e1.printStackTrace();
 						}

@@ -1040,6 +1040,18 @@ public class StockDB {
 		
 		notifyAllWatchListListeners(sdList, false);
 	}
+	
+	public void removeAllFromWatchList(List<StockData> sdList) throws Exception {
+		List<StockData> sdList2 = new ArrayList<StockData>();
+		for (StockData sd : sdList){
+			new WatchListDAO(con).delete(sd.getSymbol());
+			sd = getStockData(sd.getSymbol(), null, false);
+			notifyAllStockDataChangeListeners(sd, 1, 1);
+			sdList2.add(sd);
+		}
+		
+		notifyAllWatchListListeners(sdList2, false);
+	}
 
 	public List<String> getAllSectors() throws Exception {
 		return new SectorIndustryDAO(con).getAllSectors();
