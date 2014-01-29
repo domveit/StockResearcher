@@ -60,8 +60,8 @@ public class StockDataUtil {
 		int skipped = 0;
 		
 		Double divNow = null;
-		Double div4yr = null;
-		Double div8yr = null;
+		Double div5yr = null;
+		Double div10yr = null;
 		
 		for (Integer y = currYYYY; y > 1960; y --){
 			if (y == currYYYY){
@@ -78,12 +78,12 @@ public class StockDataUtil {
 				divNow = currDiv.doubleValue();
 			}
 			
-			if (y == currYYYY - 5){
-				div4yr = currDiv.doubleValue();
+			if (y == currYYYY - 6){
+				div5yr = currDiv.doubleValue();
 			}
 			
-			if (y == currYYYY - 9){
-				div8yr = currDiv.doubleValue();
+			if (y == currYYYY - 11){
+				div10yr = currDiv.doubleValue();
 			}
 			
 			DivYearData dydPrevYr = divYearData.get(y-1);
@@ -113,17 +113,17 @@ public class StockDataUtil {
 		}
 		
 		if (divNow != null){
-			if (div4yr != null && div4yr > 0){
-				double d = divNow / div4yr;
-				double pow = Math.pow(d, (1.0 / 4.0));
-				double gr4y = (pow - 1) * 100;
-				stockData.setDg4(gr4y);
+			if (div5yr != null && div5yr > 0){
+				double d = divNow / div5yr;
+				double pow = Math.pow(d, (1.0 / 5.0));
+				double gr5y = (pow - 1) * 100;
+				stockData.setDg5(gr5y);
 			}
-			if (div8yr != null && div8yr > 0){
-				double d = divNow / div8yr;
-				double pow = Math.pow(d, (1.0 / 8.0));
-				double gr8y = (pow - 1) * 100;
-				stockData.setDg8(gr8y);
+			if (div10yr != null && div10yr > 0){
+				double d = divNow / div10yr;
+				double pow = Math.pow(d, (1.0 / 10.0));
+				double gr10y = (pow - 1) * 100;
+				stockData.setDg10(gr10y);
 			} 
 		}
 				
@@ -324,35 +324,35 @@ public class StockDataUtil {
 		} 		
 		
 		int gr = 0;
-		if (stockData.getDg4() != null && stockData.getDg8() != null){
-			if (stockData.getDg4() >= .5){
+		if (stockData.getDg5() != null && stockData.getDg10() != null){
+			if (stockData.getDg5() >= .5){
 				gr = 1;
 			} 
-			if (stockData.getDg4() >= 1){
+			if (stockData.getDg5() >= 1){
 				gr = 2;
 			} 
-			if (stockData.getDg4() >= 2 && stockData.getDg8() >=0){
+			if (stockData.getDg5() >= 2 && stockData.getDg10() >=0){
 				gr = 3;
 			} 
-			if (stockData.getDg4() >= 3 && stockData.getDg8() >=0){
+			if (stockData.getDg5() >= 3 && stockData.getDg10() >=0){
 				gr = 4;
 			} 
-			if (stockData.getDg4() >= 4 && stockData.getDg8() >=0){
+			if (stockData.getDg5() >= 4 && stockData.getDg10() >=0){
 				gr = 5;
 			} 
-			if (stockData.getDg4() >= 6 && stockData.getDg8() >=0){
+			if (stockData.getDg5() >= 6 && stockData.getDg10() >=0){
 				gr = 6;
 			} 
-			if ((stockData.getDg4() >= 8 && stockData.getDg8() >=3) || stockData.getDg4() >= 10){
+			if ((stockData.getDg5() >= 8 && stockData.getDg10() >=3) || stockData.getDg5() >= 10){
 				gr = 7;
 			} 
-			if ((stockData.getDg4() >= 10 && stockData.getDg8() >=4) || stockData.getDg4() >= 13){
+			if ((stockData.getDg5() >= 10 && stockData.getDg10() >=4) || stockData.getDg5() >= 13){
 				gr = 8;
 			} 
-			if ((stockData.getDg4() >= 12 && stockData.getDg8() >=5) || stockData.getDg4() >= 15){
+			if ((stockData.getDg5() >= 12 && stockData.getDg10() >=5) || stockData.getDg5() >= 15){
 				gr = 9;
 			} 
-			if ((stockData.getDg4() >= 15 && stockData.getDg8() >=6) || stockData.getDg4() >= 20){
+			if ((stockData.getDg5() >= 15 && stockData.getDg10() >=6) || stockData.getDg5() >= 20){
 				gr = 10;
 			} 
 		}

@@ -17,8 +17,8 @@ public class StockData {
 	BigDecimal normDividend;
 	BigDecimal normYield;
 	
-	Double dg4 = 0d;
-	Double dg8 = 0d;
+	Double dg5 = 0d;
+	Double dg10 = 0d;
 	double stdDev = 0;
 	double wildness = 0d;
 	
@@ -172,19 +172,6 @@ public class StockData {
 		this.divYearData = divYearData;
 	}
 	
-	public Double getDg4() {
-		return dg4;
-	}
-	public void setDg4(Double dg4) {
-		this.dg4 = dg4;
-	}
-	public Double getDg8() {
-		return dg8;
-	}
-	public void setDg8(Double dg8) {
-		this.dg8 = dg8;
-	}
-
 	public double getStdDev() {
 		return stdDev;
 	}
@@ -239,14 +226,30 @@ public class StockData {
 		this.sectorIndustry = sectorIndustry;
 	}
 
+	public Double getDg5() {
+		return dg5;
+	}
+
+	public void setDg5(Double dg5) {
+		this.dg5 = dg5;
+	}
+
+	public Double getDg10() {
+		return dg10;
+	}
+
+	public void setDg10(Double dg10) {
+		this.dg10 = dg10;
+	}
+
 	public String toString(){
 		String s = "==== stock ====\n";
 		s+= stock+ "\n";
 
 		s+= "streak= " + streak + "\n";
 		s+= "skipped= " + skipped + "\n";
-		s+= "divGrowthRate5yr= " + dg4 + "\n";
-		s+= "divGrowthRate10yr= " + dg8 + "\n";
+		s+= "divGrowthRate5yr= " + dg5 + "\n";
+		s+= "divGrowthRate10yr= " + dg10 + "\n";
 		s+= "stdDev= " + stdDev + "\n";
 		
 		if (divYearData != null){
