@@ -1,7 +1,6 @@
 package org.djv.stockresearcher.widgets;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +23,7 @@ public class StockTable extends Composite {
 	Map<String, TableItem> tableItemMap = new HashMap<String, TableItem>();
 	TableSortListener sortListener = new TableSortListener(this);
 	
-	String[] titles = {"Stock", "Name", "MCap", "Price", "Yr Range", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg 4yr", "dg 8yr", "rg 4yr", "rg 8yr", "Rank", "Exchange", "Industry", "Sector", "Yr High diff"};
+	String[] titles = {"Stock", "Name", "MCap", "Price", "Yr Range", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg5", "dg10", "rg4", "rg8", "Rank", "Exchange", "Industry", "Sector", "Value score", "chowder"};
 	Table table;
 
 	public Table getTable() {
@@ -127,8 +126,8 @@ public class StockTable extends Composite {
 		item.setText (8, (sd.getStock().getPeg() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getStock().getPeg()));
 		item.setText (9, String.valueOf(sd.getStreak()));
 		item.setText (10,  String.valueOf(sd.getSkipped()));
-		item.setText (11, (sd.getDg4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg4()) + "%");
-		item.setText (12, (sd.getDg8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg8()) + "%");
+		item.setText (11, (sd.getDg5() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg5()) + "%");
+		item.setText (12, (sd.getDg10() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg10()) + "%");
 		
 		item.setText (13, (sd.getEps4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps4()) + "%");
 		item.setText (14, (sd.getEps8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps8()) + "%");
@@ -138,16 +137,20 @@ public class StockTable extends Composite {
 		item.setText (17, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getIndustryName());
 		item.setText (18, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getSectorName());
 		
-		BigDecimal yrHighDiff = null;
-		if (sd.getStock().getYearHigh() != null && sd.getStock().getYearLow() != null){
-			BigDecimal scale = sd.getStock().getYearHigh().subtract(sd.getStock().getYearLow());
-			if (scale.compareTo(new BigDecimal(0)) != 0){
-				BigDecimal rank = sd.getStock().getPrice().subtract(sd.getStock().getYearLow());
-				yrHighDiff = rank.divide(scale, 4, RoundingMode.HALF_UP);
-				yrHighDiff = new BigDecimal(10).subtract(yrHighDiff.multiply(new BigDecimal(10)));
-			}
-		}
-		item.setText (19, (yrHighDiff == null) ? "" : new DecimalFormat("0.00").format(yrHighDiff) + "%");
+
+		item.setText (19, (sd.getYrHighDiff() == null) ? "" : new DecimalFormat("0.00").format(sd.getYrHighDiff()) + "%");
+		
+		BigDecimal chowder = null;
+		if (sd.getNormYield() != null){
+			if (sd.getDg5() != null){
+				chowder = sd.getNormYield().add(new BigDecimal(sd.getDg5()));
+			} 
+		} else if (sd.getStock().getYield()!= null){
+			if (sd.getDg5() != null){
+				chowder = sd.getStock().getYield().add(new BigDecimal(sd.getDg5()));
+			} 
+		} 
+		item.setText (20, (chowder == null) ? "" : new DecimalFormat("0.00").format(chowder) + "%");
 	}
 
 	public void setColor(StockData sd, TableItem item) {
@@ -160,6 +163,8 @@ public class StockTable extends Composite {
 		item.setBackground(13, getColorForRank(sd.getFinRank()));
 		item.setBackground(14, getColorForRank(sd.getFinRank()));
 		
+		item.setBackground(19, getColorForRank(sd.getValueRank()));
+		
 		if (sd.getStock().getMarketCap() == null || sd.getStock().getMarketCap().endsWith("M")){
 			item.setBackground(2, new Color(Display.getDefault(), 255, 0, 0));
 		}
@@ -168,12 +173,16 @@ public class StockTable extends Composite {
 	public Color getColorForRank(double rank) {
 		if (rank >= 5){
 			int nongreenness = 255 - (int)((Math.pow((rank - 5), 1.5) * 255) / Math.pow(5, 1.5));
-			return new Color(Display.getDefault(), nongreenness, 255, nongreenness);
+			nongreenness = Math.max(nongreenness, 0);
+			nongreenness = Math.min(nongreenness, 255);
+			return new Color(Display.getDefault(), nongreenness, 255, 0);
 		}
 		
 		if (rank <= 5){
 			int nonredness = 255 - (int)((Math.pow((5 - rank), 1.5) * 255) / Math.pow(5, 1.5));
-			return new Color(Display.getDefault(), 255, nonredness, nonredness);
+			nonredness = Math.max(nonredness, 0);
+			nonredness = Math.min(nonredness, 255);
+			return new Color(Display.getDefault(), 255, nonredness, 0);
 		}
 		return null;
 	}

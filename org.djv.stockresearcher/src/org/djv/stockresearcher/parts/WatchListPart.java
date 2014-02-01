@@ -1,6 +1,7 @@
  
 package org.djv.stockresearcher.parts;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
@@ -31,6 +33,8 @@ import org.eclipse.swt.widgets.TableItem;
 public class WatchListPart implements StockDataChangeListener, WatchListListener{
 	
 	Map<String, TableItem> tableItemMap = new HashMap<String, TableItem>();
+	
+	private Combo sectorCombo;
 	
 	Button refreshButton;
 	Button addButton;
@@ -54,13 +58,26 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
 	}
 
 	public void createStockTable(final Composite parent) {
 		Composite stockComboComposite = new Composite(parent, SWT.BORDER);
 		stockComboComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		stockComboComposite.setLayout(new GridLayout(4, false));
+		stockComboComposite.setLayout(new GridLayout(5, false));
+		
+		sectorCombo = new Combo(stockComboComposite, SWT.NONE);
+		sectorCombo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
+		sectorCombo.addSelectionListener(new SelectionAdapter(){
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					db.refreshWatchList();
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
+		refreshSectors();
 		
 		refreshButton = new Button(stockComboComposite, SWT.NONE);
 		refreshButton.setText("Refresh");
@@ -82,7 +99,6 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		addButton.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-
 				AddWatchDialog pd = new AddWatchDialog(parent.getShell());
 				pd.create();
 				int result = pd.open();
@@ -103,12 +119,17 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		removeButton.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				StockData sd = table.getSelectedStock();
-				if(sd != null){
-					boolean result = MessageDialog.openConfirm(shell, "Are you sure?", "Remove \"" + sd.getStock().getSymbol() + "\". Are you sure?");
+				List<StockData> sdList = table.getSelectedStocks();
+				
+				if(sdList != null && sdList.size() > 0){
+					String list = "";
+					for (StockData sd : sdList){
+						list += sd.getSymbol() + " ";
+					}
+					boolean result = MessageDialog.openConfirm(shell, "Are you sure?", "Remove " + list+ ". Are you sure?");
 					if (result){
 						try {
-							db.removeFromWatchList(sd.getStock().getSymbol());
+							db.removeAllFromWatchList(sdList);
 						} catch (Exception e1) {
 							e1.printStackTrace();
 						}
@@ -122,7 +143,7 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		stockProgressLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		
 		table = new StockTable (stockComboComposite, SWT.NONE);
-		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1);
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true, 5, 1);
 		table.setLayoutData(data);
 		
 		table.addSelectionListener(new SelectionAdapter() {
@@ -132,6 +153,25 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		});
 		table.packColumns();
 	}
+	
+	protected void refreshWatchList() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void refreshSectors() {
+		sectorCombo.removeAll();
+		try {
+			List<String> sectorList = new ArrayList<String>();
+			sectorList.add("ALL");
+			sectorList.addAll(db.getAllSectors());
+			sectorCombo.setItems(sectorList.toArray(new String[0]));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		sectorCombo.getParent().layout(true,  true);
+	}
+
 	
 	@Focus
 	public void onFocus() {
@@ -146,11 +186,21 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 
 	@Override
 	public void notifyChanged(final List<StockData> sdList, boolean addedOrRemoved) {
+		String sector = "ALL";
+		int ix = sectorCombo.getSelectionIndex();
+		if (ix > -1){
+			sector = sectorCombo.getItem(ix);
+		}
+		
 		if (!table.isDisposed()){
 			if (sdList!= null){
 				if (addedOrRemoved){
 					for (StockData sd: sdList){
-						table.addOrUpdateItem(sd);
+						if ("".equals(sector) || "ALL".equals(sector) || sd.getSectorIndustry().getSectorName().equals(sector)){
+							table.addOrUpdateItem(sd);
+						} else {
+							table.removeItem(sd);
+						}
 					}
 					table.packColumns();
 				} else {
@@ -164,6 +214,12 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 
 	@Override
 	public void notifyChanged(final StockData sd, final int toUpdate, final int updated) {
+		String sector = "ALL";
+		int ix = sectorCombo.getSelectionIndex();
+		if (ix > -1){
+			sector = sectorCombo.getItem(ix);
+		}
+		
 		if (sd == null ||  toUpdate == updated){
 			stockProgressLabel.setText("");
 			stockProgressLabel.setMaximum(0);
@@ -176,7 +232,11 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		if (sd != null){
 			if (!table.isDisposed()){
 				if (sd.isWatched()){
-					table.addOrUpdateItem(sd, true);
+					if ("".equals(sector) || "ALL".equals(sector) || sd.getSectorIndustry().getSectorName().equals(sector)){
+						table.addOrUpdateItem(sd,true);
+					} else {
+						table.removeItem(sd);
+					}
 				} else {
 					table.removeItem(sd);
 				}

@@ -49,7 +49,7 @@ public class DividendsPart implements AppStateListener {
 	
 	@PostConstruct
 	public void postConstruct(Composite parent) {
-		parent.setLayout(new GridLayout(2, true));
+		parent.setLayout(new GridLayout(2, false));
 		this.parent = parent;
 		divChartLabel = new Label(parent, SWT.NONE);
 		divChartLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
@@ -57,7 +57,7 @@ public class DividendsPart implements AppStateListener {
 		divTable = new Table(parent, SWT.BORDER |SWT.V_SCROLL);
 		divTable.setLinesVisible(true);
 		divTable.setHeaderVisible(true);
-		GridData data2 = new GridData(SWT.FILL, SWT.FILL, true, true);
+		GridData data2 = new GridData(SWT.FILL, SWT.FILL, false, true);
 		divTable.setLayoutData(data2);
 		
 		for (int i=0; i < divTitles.length; i++) {
