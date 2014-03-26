@@ -18,7 +18,14 @@ public class Stock {
 	BigDecimal peg;
 	BigDecimal yearHigh;
 	BigDecimal yearLow;
+	BigDecimal oneYrTargetPrice;
 	
+	public BigDecimal getOneYrTargetPrice() {
+		return oneYrTargetPrice;
+	}
+	public void setOneYrTargetPrice(BigDecimal oneYrTargetPrice) {
+		this.oneYrTargetPrice = oneYrTargetPrice;
+	}
 	public Date getDataDate() {
 		return dataDate;
 	}

@@ -1,17 +1,10 @@
-package org.djv.stockresearcher.widgets;
+package org.djv.stockresearcher.widgets.support;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 
 import org.eclipse.swt.SWT;
 
-class MarketCapComparator implements Comparator<String> {
-		int sortDir;
-		
-		public MarketCapComparator(int sortDir) {
-			super();
-			this.sortDir = sortDir;
-		}
+class MarketCapComparator extends SortDirComparator {
 
 		@Override
 		public int compare(String s1, String s2) {

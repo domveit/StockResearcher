@@ -196,7 +196,7 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 			if (sdList!= null){
 				if (addedOrRemoved){
 					for (StockData sd: sdList){
-						if ("".equals(sector) || "ALL".equals(sector) || sd.getSectorIndustry().getSectorName().equals(sector)){
+						if ("".equals(sector) || "ALL".equals(sector) || (sd.getSectorIndustry() != null && sd.getSectorIndustry().getSectorName().equals(sector))){
 							table.addOrUpdateItem(sd);
 						} else {
 							table.removeItem(sd);
@@ -231,9 +231,13 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		}
 		if (sd != null){
 			if (!table.isDisposed()){
-				if (sd.isWatched()){
-					if ("".equals(sector) || "ALL".equals(sector) || sd.getSectorIndustry().getSectorName().equals(sector)){
-						table.addOrUpdateItem(sd,true);
+				if ("*".equals(sd.getWatched())){
+					if ("".equals(sector) || "ALL".equals(sector) || (sd.getSectorIndustry() != null && sd.getSectorIndustry().getSectorName().equals(sector))){
+						if (sd.getRanksCalculated()){
+							table.addOrUpdateItem(sd,true);
+						} else {
+							table.addOrUpdateItem(sd,false);
+						}
 					} else {
 						table.removeItem(sd);
 					}

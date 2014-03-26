@@ -23,11 +23,12 @@ public class StockDAO extends H2DAO{
 			+ "PE DECIMAL(9, 2), "
 			+ "PEG DECIMAL(9,2), "
 			+ "YRHIGH DECIMAL(11, 4), "
-			+ "YRLOW DECIMAL(11, 4) "
+			+ "YRLOW DECIMAL(11, 4), "
+			+ "OYTPRICE DECIMAL(11, 4) "
 			+ ")";
 	
 	private static final String SELECT_SQL = 
-			"SELECT SYMBOL, DATADATE, DIVDATADATE, FINDATADATE, EXCHANGE, PRICE, MARKETCAP, DIVIDEND, YIELD, PE, PEG, YRHIGH, YRLOW FROM STOCK ";
+			"SELECT SYMBOL, DATADATE, DIVDATADATE, FINDATADATE, EXCHANGE, PRICE, MARKETCAP, DIVIDEND, YIELD, PE, PEG, YRHIGH, YRLOW, OYTPRICE FROM STOCK ";
 	
 	private static final String INDEX2_SQL = 
 			"CREATE UNIQUE INDEX IF NOT EXISTS STOCKIX2 ON STOCK (SYMBOL ASC) ";
@@ -36,7 +37,7 @@ public class StockDAO extends H2DAO{
 			SELECT_SQL
 			+ "WHERE SYMBOL = ?";
 	
-	private static final String INSERT_SQL = "INSERT INTO STOCK VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	private static final String INSERT_SQL = "INSERT INTO STOCK VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	
 	private static final String UPDATE_SQL = 
 			"UPDATE STOCK SET "
@@ -51,7 +52,8 @@ public class StockDAO extends H2DAO{
 			+ "PE = ?, "
 			+ "PEG = ?, "
 			+ "YRHIGH = ?, "
-			+ "YRLOW = ? "
+			+ "YRLOW = ?, "
+			+ "OYTPRICE = ? "
 			+ "WHERE SYMBOL = ?";
 	
 	public StockDAO(Connection con) {
@@ -88,6 +90,7 @@ public class StockDAO extends H2DAO{
 			s.setFinDataDate(rs.getDate("FINDATADATE"));
 			s.setYearHigh(rs.getBigDecimal("YRHIGH"));
 			s.setYearLow(rs.getBigDecimal("YRLOW"));
+			s.setOneYrTargetPrice(rs.getBigDecimal("OYTPRICE"));
 		}
 		return s;
 	}
@@ -107,6 +110,7 @@ public class StockDAO extends H2DAO{
 		st.setBigDecimal(11, s.getPeg());
 		st.setBigDecimal(12, s.getYearHigh());
 		st.setBigDecimal(13, s.getYearLow());
+		st.setBigDecimal(14, s.getOneYrTargetPrice());
 		st.executeUpdate();
 	}
 	
@@ -124,8 +128,9 @@ public class StockDAO extends H2DAO{
 		st.setBigDecimal(10, s.getPeg());
 		st.setBigDecimal(11, s.getYearHigh());
 		st.setBigDecimal(12, s.getYearLow());
+		st.setBigDecimal(13, s.getOneYrTargetPrice());
 		
-		st.setString(13, s.getSymbol());
+		st.setString(14, s.getSymbol());
 		st.executeUpdate();
 	}
 	

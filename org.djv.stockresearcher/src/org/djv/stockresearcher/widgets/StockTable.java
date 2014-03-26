@@ -1,5 +1,6 @@
 package org.djv.stockresearcher.widgets;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -8,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.djv.stockresearcher.model.StockData;
+import org.djv.stockresearcher.widgets.support.StockTableColumn;
+import org.djv.stockresearcher.widgets.support.StockTableConfig;
+import org.djv.stockresearcher.widgets.support.TableSortListener;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
@@ -23,8 +27,17 @@ public class StockTable extends Composite {
 	Map<String, TableItem> tableItemMap = new HashMap<String, TableItem>();
 	TableSortListener sortListener = new TableSortListener(this);
 	
-	String[] titles = {"Stock", "Name", "MCap", "Price", "Yr Range", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg5", "dg10", "rg4", "rg8", "Rank", "Exchange", "Industry", "Sector", "Value score", "chowder"};
+	
+	StockTableConfig stockTableConfig;
 	Table table;
+
+	public StockTableConfig getStockTableConfig() {
+		return stockTableConfig;
+	}
+
+	public void setStockTableConfig(StockTableConfig stockTableConfig) {
+		this.stockTableConfig = stockTableConfig;
+	}
 
 	public Table getTable() {
 		return table;
@@ -34,20 +47,31 @@ public class StockTable extends Composite {
 		return tableItemMap;
 	}
 
-	public String[] getTitles() {
-		return titles;
-	}
-
 	public StockTable(Composite parent, int style) {
 		super(parent, style);
+		stockTableConfig = new StockTableConfig();
+		stockTableConfig.getColumns().add(StockTableColumn.WATCHED);
+		stockTableConfig.getColumns().add(StockTableColumn.STOCK);
+		stockTableConfig.getColumns().add(StockTableColumn.NAME);
+		stockTableConfig.getColumns().add(StockTableColumn.EXCHANGE);
+		stockTableConfig.getColumns().add(StockTableColumn.SECTOR);
+		stockTableConfig.getColumns().add(StockTableColumn.INDUSTRY);
+		stockTableConfig.getColumns().add(StockTableColumn.PRICE);
+		
+		stockTableConfig.getColumns().add(StockTableColumn.YIELD);
+		stockTableConfig.getColumns().add(StockTableColumn.NORM_YIELD);
+		stockTableConfig.getColumns().add(StockTableColumn.DIVIDEND);
+		stockTableConfig.getColumns().add(StockTableColumn.NORM_DIVIDEND);
+		stockTableConfig.getColumns().add(StockTableColumn.YIELD_RANK);
+		
 		this.setLayout(new FillLayout());
 		table = new Table (this, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
 		table.setLinesVisible (true);
 		table.setHeaderVisible (true);
 		
-		for (int i=0; i<titles.length; i++) {
+		for (StockTableColumn col: stockTableConfig.getColumns()) {
 			TableColumn column = new TableColumn (table, SWT.NONE);
-			column.setText (titles [i]);
+			column.setText (col.getDescription());
 			column.addListener(SWT.Selection, sortListener);
 		}	
 	}
@@ -90,83 +114,121 @@ public class StockTable extends Composite {
 	}
 	
 	public void updateItem(final StockData sd, TableItem item, boolean setColors) {
+		System.err.println("processing sd= " + sd.getSymbol());
 		if (item.isDisposed()){
 			return;
 		}
-		if (setColors){
-			setColor(sd, item);
+		int i = 0;
+		for (StockTableColumn col : stockTableConfig.getColumns()){
+			System.err.println("processing col = "+ col.getDescription());
+			String itemText = null;
+			if (sd != null){
+				Object val = getColValue(sd, col.getSource());
+				if (val != null){
+					if (val instanceof String){
+						itemText = (String)val;
+						System.err.println("String itemText = "+ itemText);
+					} else if (val instanceof BigDecimal){
+						BigDecimal valBd = (BigDecimal) val;
+						if (col.getDecimalFormat() == null){
+							itemText = valBd.toString();
+						} else {
+							 itemText = new DecimalFormat(col.getDecimalFormat()).format(valBd);
+						}
+						System.err.println("BD itemText = "+ itemText);
+					} else if (val instanceof Double){
+						Double valBd = (Double) val;
+						if (col.getDecimalFormat() == null){
+							itemText = valBd.toString();
+						} else {
+							 itemText = new DecimalFormat(col.getDecimalFormat()).format(valBd);
+						}
+						System.err.println("Double itemText = "+ itemText);
+					} else if (val instanceof Integer){
+						Integer valBd = (Integer) val;
+						if (col.getDecimalFormat() == null){
+							itemText = valBd.toString();
+						} else {
+							 itemText = new DecimalFormat(col.getDecimalFormat()).format(valBd);
+						}
+						System.err.println("Integer itemText = "+ itemText);
+					} else {
+						System.err.println("unknown type "+ val.getClass());
+					}
+				}
+			}
+			if (itemText == null){
+				itemText = col.getNullDisplay();
+			} else {
+				if (col.isPercentile()){
+					itemText += "%";
+				}
+			}
+			
+			item.setText (i, itemText);
+			
+			if (setColors){
+				setColor(sd, item, col, i);
+			}
+			i++;
 		}
-		if (sd.isWatched()){
-			item.setText (0, "* " + sd.getStock().getSymbol());
-		} else {
-			item.setText (0, sd.getStock().getSymbol());
-		}
-		item.setText (1, sd.getStockIndustry() == null ? "???" :  sd.getStockIndustry().getName());
-		item.setText (2, sd.getStock().getMarketCap() == null ? "N/A" : sd.getStock().getMarketCap());
-		item.setText (3, (sd.getStock().getPrice() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getPrice()));
-		
-		String yrRange = ((sd.getStock().getYearLow() == null) ? "???" :  new DecimalFormat("0.00").format(sd.getStock().getYearLow()))
-				 + "-" + 
-				 ((sd.getStock().getYearHigh() == null) ? "???" :  new DecimalFormat("0.00").format(sd.getStock().getYearHigh()));
-		item.setText (4, yrRange);
-		
-		if (sd.getNormDividend() != null){
-			item.setText (5,  String.valueOf(sd.getNormDividend()));
-		} else {
-			item.setText (5, (sd.getStock().getDividend() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getDividend()));
-		}
-		
-		if (sd.getNormYield() != null){
-			item.setText (6, new DecimalFormat("0.00").format(sd.getNormYield()));
-		} else {
-			item.setText (6, (sd.getStock().getYield() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getYield()));
-		}
-		
-		item.setText (7, (sd.getStock().getPe() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getPe()));
-		item.setText (8, (sd.getStock().getPeg() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getStock().getPeg()));
-		item.setText (9, String.valueOf(sd.getStreak()));
-		item.setText (10,  String.valueOf(sd.getSkipped()));
-		item.setText (11, (sd.getDg5() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg5()) + "%");
-		item.setText (12, (sd.getDg10() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg10()) + "%");
-		
-		item.setText (13, (sd.getEps4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps4()) + "%");
-		item.setText (14, (sd.getEps8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps8()) + "%");
-
-		item.setText (15, new DecimalFormat("0.00").format(sd.getOverAllRank()));
-		item.setText (16, (sd.getStock().getExchange() == null) ? "" : sd.getStock().getExchange());
-		item.setText (17, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getIndustryName());
-		item.setText (18, (sd.getSectorIndustry() == null) ? "" : sd.getSectorIndustry().getSectorName());
-		
-
-		item.setText (19, (sd.getYrHighDiff() == null) ? "" : new DecimalFormat("0.00").format(sd.getYrHighDiff()) + "%");
-		
-		BigDecimal chowder = null;
-		if (sd.getNormYield() != null){
-			if (sd.getDg5() != null){
-				chowder = sd.getNormYield().add(new BigDecimal(sd.getDg5()));
-			} 
-		} else if (sd.getStock().getYield()!= null){
-			if (sd.getDg5() != null){
-				chowder = sd.getStock().getYield().add(new BigDecimal(sd.getDg5()));
-			} 
-		} 
-		item.setText (20, (chowder == null) ? "" : new DecimalFormat("0.00").format(chowder) + "%");
 	}
 
-	public void setColor(StockData sd, TableItem item) {
-		item.setBackground(15, getColorForRank(sd.getOverAllRank()));
-		item.setBackground(9, getColorForRank(sd.getStalwartRank()));
-		item.setBackground(10, getColorForRank(sd.getStalwartRank()));
-		item.setBackground(6, getColorForRank(sd.getYieldRank()));
-		item.setBackground(11, getColorForRank(sd.getGrowthRank()));
-		item.setBackground(12, getColorForRank(sd.getGrowthRank()));
-		item.setBackground(13, getColorForRank(sd.getFinRank()));
-		item.setBackground(14, getColorForRank(sd.getFinRank()));
-		
-		item.setBackground(19, getColorForRank(sd.getValueRank()));
-		
-		if (sd.getStock().getMarketCap() == null || sd.getStock().getMarketCap().endsWith("M")){
-			item.setBackground(2, new Color(Display.getDefault(), 255, 0, 0));
+	private Object getColValue(final StockData sd, String source) {
+		Object val = null;
+		if (source.startsWith("stock.")){
+			if (sd.getStock() != null){
+				String fieldName = source.substring("stock.".length());
+				val = getFieldValue(sd.getStock(), fieldName);
+				System.err.println("got stock Value = " + val);
+			}
+		} else if (source.startsWith("stockIndustry.")){
+			if (sd.getStockIndustry() != null){
+				String fieldName = source.substring("stockIndustry.".length());
+				val = getFieldValue(sd.getStockIndustry(), fieldName);
+				System.err.println("got stockIndustry Value = " + val);
+			}
+		} else if (source.startsWith("sectorIndustry.")){
+			if (sd.getSectorIndustry() != null){
+				String fieldName = source.substring("sectorIndustry.".length());
+				val = getFieldValue(sd.getSectorIndustry(), fieldName);
+				System.err.println("got sectorIndustry Value = " + val);
+			}
+		} else {
+			val = getFieldValue(sd, source);
+			System.err.println("got sd Value = " + val);
+		}
+		return val;
+	}
+	
+	private Object getFieldValue(Object o, String fieldName){
+		Field field;
+		Object val = null;
+		try {
+			field = o.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			val = field.get(o);
+		} catch (NoSuchFieldException | SecurityException | IllegalAccessException e) {
+			System.err.println("could not get field " + fieldName + " in SectorIndustry class");
+		}
+		return val;
+	}
+
+	public void setColor(StockData sd, TableItem item, StockTableColumn col, int index) {
+		if (col.getColorSource() != null){
+			Object val = getColValue(sd, col.getColorSource());
+			if (val != null){
+				Double colorRank = null;
+				if (val instanceof BigDecimal){
+					BigDecimal valBd = (BigDecimal) val;
+					colorRank = valBd.doubleValue();
+				} else if (val instanceof Double){
+					colorRank = (Double) val;
+				} else if (val instanceof Integer){
+					colorRank = new Double((Integer) val);
+				} 
+				item.setBackground(index, getColorForRank(colorRank));
+			}
 		}
 	};
 	
@@ -256,9 +318,17 @@ public class StockTable extends Composite {
 	private Runnable packer = new Runnable() {
 		@Override
 		public void run() {
-			for (int i=0; i< titles.length; i++) {
+			for (int i=0; i< stockTableConfig.getColumns().size(); i++) {
 				table.getColumn (i).pack ();
 			}
 		}
 	};
+
+	public void setAllColors(StockData sd, TableItem item) {
+		int i = 0;
+		for (StockTableColumn col : stockTableConfig.getColumns()){
+			setColor(sd, item, col, i);
+			i++;
+		}
+	}
 }

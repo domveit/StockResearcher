@@ -156,7 +156,12 @@ public class StockDB {
 	
 	public static final int MAX_STOCKS = 50;
 	
+	volatile int stocksToUpdateCoarse = 0;
+	volatile int stocksUpdatedCoarse = 0;
+		
 	public void getDataForStocks(final List<StockData> sdList) throws Exception {
+		stocksToUpdateCoarse = 0;
+		stocksUpdatedCoarse = 0;
 		List<StockData> sdUpdateList = new ArrayList<StockData>();
 		List<StockData> sdUpdateListPo = new ArrayList<StockData>();
 		for (StockData sd : sdList) {
@@ -167,8 +172,17 @@ public class StockDB {
 			}
 		}
 				
+		ExecutorService pool = Executors.newFixedThreadPool(16);
+		
+		stocksUpdatedCoarse = 0;
+		
 		int nbrStocks = sdUpdateList.size();
 		int nbrGroups = (nbrStocks - 1) /MAX_STOCKS + 1;
+		int nbrStocksPo = sdUpdateListPo.size();
+		int nbrGroupsPo = (nbrStocksPo - 1) /MAX_STOCKS + 1;
+		
+		stocksToUpdateCoarse = nbrStocks + nbrStocksPo;
+		
 		for (int i = 1; i <= nbrGroups; i ++){
 			List<StockData> subList = null;
 			if (i == nbrGroups){
@@ -176,11 +190,18 @@ public class StockDB {
 			} else {
 				subList = sdUpdateList.subList(MAX_STOCKS * (i-1), MAX_STOCKS * i);
 			}
-			getDataForStocksInternal(subList);
+			final List<StockData> finalSubList = subList;
+			pool.submit(new Runnable(){
+				@Override
+				public void run() {
+					try {
+						getDataForStocksInternal(finalSubList);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
 		}
-		
-		int nbrStocksPo = sdUpdateListPo.size();
-		int nbrGroupsPo = (nbrStocksPo - 1) /MAX_STOCKS + 1;
 		for (int i = 1; i <= nbrGroupsPo; i ++){
 			List<StockData> subList = null;
 			if (i == nbrGroupsPo){
@@ -188,8 +209,22 @@ public class StockDB {
 			} else {
 				subList = sdUpdateListPo.subList(MAX_STOCKS * (i-1), MAX_STOCKS * i);
 			}
-			getDataForStocksInternalPo(subList);
+			final List<StockData> finalSubList = subList;
+			pool.submit(new Runnable(){
+				@Override
+				public void run() {
+					try {
+						getDataForStocksInternalPo(finalSubList);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
 		}
+
+		pool.shutdown();
+		pool.awaitTermination(30, TimeUnit.MINUTES);
+		notifyAllStockDataChangeListeners(null, stocksToUpdateCoarse, stocksUpdatedCoarse);
 		
 		return;
 	}
@@ -245,6 +280,8 @@ public class StockDB {
 					}
 				} else {
 					System.err.println("failed to get stock price data for " + stocks.get(0).getSymbol() + ".");
+					stocksUpdatedCoarse++;
+					notifyAllStockDataChangeListeners(stocks.get(0), stocksToUpdateCoarse, stocksUpdatedCoarse);
 				}
 			} finally {
 				br.close();
@@ -259,22 +296,25 @@ public class StockDB {
 		String symbol = getString(c, "symbol");
 		String price = getString(c, "LastTradePriceOnly");
 
-		Stock s = null;
+		StockData sd = null;
 		for (StockData sdLoop : stocks){
 			if (sdLoop.getSymbol().equals(symbol)){
-				s = sdLoop.getStock();
+				sd = sdLoop;
 				break;
 			}
 		}
 		
-		if (s == null){
+		if (sd.getStock() == null){
 			System.err.println("Stock not found " + symbol);
 			return;
 		}
+		Stock s = sd.getStock();
 		s.setPrice(convertBd(price));
 		s.setDataDate(new java.sql.Date(new Date().getTime()));
 
 		new StockDAO(con).update(s);
+		stocksUpdatedCoarse++;
+		notifyAllStockDataChangeListeners(sd, stocksToUpdateCoarse, stocksUpdatedCoarse);
 	}
 
 	public void getDataForStocksInternal(List<StockData> stocks) throws Exception {
@@ -299,7 +339,8 @@ public class StockDB {
 							+ "PEGRatio, "
 							+ "StockExchange, "
 							+ "YearLow, "
-							+ "YearHigh "
+							+ "YearHigh, "
+							+ "OneyrTargetPrice "
 							+ "from yahoo.finance.quotes "
 							+ "where symbol in (" + stockURLParm +")";
 
@@ -335,6 +376,8 @@ public class StockDB {
 					}
 				} else {
 					System.err.println("failed to get stock data for " + stocks.get(0).getSymbol() + ".");
+					stocksUpdatedCoarse++;
+					notifyAllStockDataChangeListeners(stocks.get(0), stocksToUpdateCoarse, stocksUpdatedCoarse);
 				}
 			} finally {
 				br.close();
@@ -355,20 +398,22 @@ public class StockDB {
 		String pe = getString(c, "PERatio");
 		String peg = getString(c, "PEGRatio");
 		String exchange = getString(c, "StockExchange");
+		String oneYrTargetPrice = getString(c, "OneyrTargetPrice");
 
-		Stock s = null;
+		StockData sd = null;
 		for (StockData sdLoop : stocks){
 			if (sdLoop.getSymbol().equals(symbol)){
-				s = sdLoop.getStock();
+				sd = sdLoop;
 				break;
 			}
 		}
 		
-		if (s == null){
+		if (sd.getStock() == null){
 			System.err.println("Stock not found " + symbol);
 			return;
 		}
 
+		Stock s = sd.getStock();
 		s.setDividend(convertBd(dividend));
 		s.setPe(convertBd(pe));
 		s.setPeg(convertBd(peg));
@@ -378,9 +423,12 @@ public class StockDB {
 		s.setExchange(exchange);
 		s.setYearHigh(convertBd(yrHigh));
 		s.setYearLow(convertBd(yrLow));
+		s.setOneYrTargetPrice(convertBd(oneYrTargetPrice));
 		s.setDataDate(new java.sql.Date(new Date().getTime()));
 
 		new StockDAO(con).update(s);
+		stocksUpdatedCoarse++;
+		notifyAllStockDataChangeListeners(sd, stocksToUpdateCoarse, stocksUpdatedCoarse);
 	}
 
 	private String getString(JsonObject c, String string) {
@@ -887,7 +935,7 @@ public class StockDB {
 			sd.setSymbol(s.getSymbol());
 			sd.setStockIndustry(s);
 			sd.setSectorIndustry(si);
-			sd.setWatched(new WatchListDAO(con).exists(s.getSymbol()));
+			sd.setWatched((new WatchListDAO(con).exists(s.getSymbol()) ? "*" : ""));
 			Stock st = new StockDAO(con).select(s.getSymbol());
 			if (st == null){
 				st = new Stock();
@@ -1096,7 +1144,7 @@ public class StockDB {
 		sd.setSymbol(s.getSymbol());
 		sd.setStockIndustry(sti);
 		
-		sd.setWatched(new WatchListDAO(con).exists(sd.getStock().getSymbol()));
+		sd.setWatched((new WatchListDAO(con).exists(s.getSymbol()) ? "*" : ""));
 		return sd;
 	}
 	

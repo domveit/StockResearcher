@@ -11,32 +11,34 @@ public class StockData {
 	StockIndustry stockIndustry;
 	SectorIndustry sectorIndustry;
 
-	int streak;
-	int skipped;
+	Integer streak;
+	Integer skipped;
 	
 	BigDecimal normDividend;
 	BigDecimal normYield;
 	
 	Double dg5 = 0d;
 	Double dg10 = 0d;
-	double stdDev = 0;
-	double wildness = 0d;
+	Double stdDev = 0d;
+	Double wildness = 0d;
 	
 	Double eps4 = 0d;
 	Double eps8 = 0d;
 
 	BigDecimal yrHighDiff;
 	
-	boolean ranksCalculated = false;
-
-	int yieldRank = 0;
-	int stalwartRank = 0;
-	int growthRank = 0;
-	int finRank = 0;
-	int valueRank = 0;
-	double overAllRank = 0;
+	BigDecimal oytUpside;
 	
-	boolean isWatched = false;
+	Boolean ranksCalculated = false;
+
+	Integer yieldRank = 0;
+	Integer stalwartRank = 0;
+	Integer growthRank = 0;
+	Integer finRank = 0;
+	Integer valueRank = 0;
+	Double overAllRank = 0d;
+	
+	String watched = "";
 	
 	List<DivData> divData;
 	Map<Integer, DivYearData> divYearData;
@@ -58,28 +60,110 @@ public class StockData {
 		stock = s;
 	}
 	
-	public boolean isRanksCalculated() {
-		return ranksCalculated;
+	public Double getStdDev() {
+		return stdDev;
 	}
-	public void setRanksCalculated(boolean ranksCalculated) {
-		this.ranksCalculated = ranksCalculated;
+
+	public void setStdDev(Double stdDev) {
+		this.stdDev = stdDev;
+	}
+
+	public Double getWildness() {
+		return wildness;
+	}
+
+	public void setWildness(Double wildness) {
+		this.wildness = wildness;
+	}
+
+	public BigDecimal getOytUpside() {
+		return oytUpside;
+	}
+
+	public void setOytUpside(BigDecimal oytUpside) {
+		this.oytUpside = oytUpside;
 	}
 	
-	public int getValueRank() {
+	public Integer getStreak() {
+		return streak;
+	}
+
+	public Boolean getRanksCalculated() {
+		return ranksCalculated;
+	}
+
+	public void setRanksCalculated(Boolean ranksCalculated) {
+		this.ranksCalculated = ranksCalculated;
+	}
+
+	public Integer getYieldRank() {
+		return yieldRank;
+	}
+
+	public void setYieldRank(Integer yieldRank) {
+		this.yieldRank = yieldRank;
+	}
+
+	public Integer getStalwartRank() {
+		return stalwartRank;
+	}
+
+	public void setStalwartRank(Integer stalwartRank) {
+		this.stalwartRank = stalwartRank;
+	}
+
+	public Integer getGrowthRank() {
+		return growthRank;
+	}
+
+	public void setGrowthRank(Integer growthRank) {
+		this.growthRank = growthRank;
+	}
+
+	public Integer getFinRank() {
+		return finRank;
+	}
+
+	public void setFinRank(Integer finRank) {
+		this.finRank = finRank;
+	}
+
+	public Integer getValueRank() {
 		return valueRank;
 	}
 
-	public void setValueRank(int valueRank) {
+	public void setValueRank(Integer valueRank) {
 		this.valueRank = valueRank;
 	}
-	
-	public int getFinRank() {
-		return finRank;
+
+	public Double getOverAllRank() {
+		return overAllRank;
 	}
-	public void setFinRank(int finRank) {
-		this.finRank = finRank;
+
+	public void setOverAllRank(Double overAllRank) {
+		this.overAllRank = overAllRank;
 	}
-	
+
+	public String getWatched() {
+		return watched;
+	}
+
+	public void setWatched(String watched) {
+		this.watched = watched;
+	}
+
+	public void setStreak(Integer streak) {
+		this.streak = streak;
+	}
+
+	public Integer getSkipped() {
+		return skipped;
+	}
+
+	public void setSkipped(Integer skipped) {
+		this.skipped = skipped;
+	}
+
 	public BigDecimal getYrHighDiff() {
 		return yrHighDiff;
 	}
@@ -123,47 +207,11 @@ public class StockData {
 		this.finData = finData;
 	}
 
-	public int getYieldRank() {
-		return yieldRank;
-	}
-	public void setYieldRank(int yieldRank) {
-		this.yieldRank = yieldRank;
-	}
-	public int getStalwartRank() {
-		return stalwartRank;
-	}
-	public void setStalwartRank(int stalwartRank) {
-		this.stalwartRank = stalwartRank;
-	}
-	public int getGrowthRank() {
-		return growthRank;
-	}
-	public void setGrowthRank(int growthRank) {
-		this.growthRank = growthRank;
-	}
-	public double getOverAllRank() {
-		return overAllRank;
-	}
-	public void setOverAllRank(double overAllRank) {
-		this.overAllRank = overAllRank;
-	}
 	public List<DivData> getDivData() {
 		return divData;
 	}
 	public void setDivData(List<DivData> divData) {
 		this.divData = divData;
-	}
-	public int getStreak() {
-		return streak;
-	}
-	public void setStreak(int streak) {
-		this.streak = streak;
-	}
-	public int getSkipped() {
-		return skipped;
-	}
-	public void setSkipped(int skipped) {
-		this.skipped = skipped;
 	}
 	public Map<Integer, DivYearData> getDivYearData() {
 		return divYearData;
@@ -172,34 +220,12 @@ public class StockData {
 		this.divYearData = divYearData;
 	}
 	
-	public double getStdDev() {
-		return stdDev;
-	}
-	public void setStdDev(double stdDev) {
-		this.stdDev = stdDev;
-	}
-	
-	public double getWildness() {
-		return wildness;
-	}
-	public void setWildness(double wildness) {
-		this.wildness = wildness;
-	}
-	
 	public Stock getStock() {
 		return stock;
 	}
 
 	public void setStock(Stock stock) {
 		this.stock = stock;
-	}
-	
-	public boolean isWatched() {
-		return isWatched;
-	}
-
-	public void setWatched(boolean isWatched) {
-		this.isWatched = isWatched;
 	}
 	
 	public String getSymbol() {
@@ -250,7 +276,6 @@ public class StockData {
 		s+= "skipped= " + skipped + "\n";
 		s+= "divGrowthRate5yr= " + dg5 + "\n";
 		s+= "divGrowthRate10yr= " + dg10 + "\n";
-		s+= "stdDev= " + stdDev + "\n";
 		
 		if (divYearData != null){
 			s+= "===== divData ===== \n";
