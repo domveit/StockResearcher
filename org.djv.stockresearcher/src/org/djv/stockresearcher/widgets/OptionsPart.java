@@ -113,7 +113,9 @@ public class OptionsPart implements AppStateListener {
 								if (o.getBid() != null){
 									tValue = o.getBid().subtract(iValue);
 									retrn = tValue.multiply(new BigDecimal(100)).divide(basis, 2, RoundingMode.HALF_UP);
-									annRet = retrn.multiply(new BigDecimal(360)).divide(new BigDecimal(days), 2, RoundingMode.HALF_UP);
+									if (days > 0){
+										annRet = retrn.multiply(new BigDecimal(360)).divide(new BigDecimal(days), 2, RoundingMode.HALF_UP);
+									}
 								}
 								
 //								item.setText (0, new SimpleDateFormat("MM/dd/yyyy").format(o.getExpiration()));
@@ -141,7 +143,7 @@ public class OptionsPart implements AppStateListener {
 								}
 							}
 							
-							label.setText(sd.getStock().getSymbol() + " - " + sd.getStockIndustry() == null ? "???" :  sd.getStockIndustry().getName() + " - " + sd.getStock().getPrice());
+							label.setText(sd.getStock().getSymbol() + " - " + (sd.getStockIndustry() == null ? "???" :  sd.getStockIndustry().getName()) + " - " + sd.getStock().getPrice());
 						
 						}
 					});

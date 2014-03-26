@@ -25,7 +25,7 @@ import org.eclipse.swt.widgets.Label;
 
 public class StockChartPart implements AppStateListener {
 	
-	String [] chartItems = {"1d", "5d", "3m", "6m", "1y", "2y", "5y", "my"};
+	String [] chartItems = {"1d", "5d", "1m", "3m", "6m", "1y", "2y", "5y", "my"};
 	private Label chartLabel;
 	
 	private AppState appState = AppState.getInstance();

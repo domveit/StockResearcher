@@ -1,18 +1,11 @@
-package org.djv.stockresearcher.widgets;
+package org.djv.stockresearcher.widgets.support;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 
 import org.eclipse.swt.SWT;
 
-class ForgivingBigDecimalComparator implements Comparator<String> {
-		int sortDir;
+class ForgivingBigDecimalComparator extends SortDirComparator {
 		
-		public ForgivingBigDecimalComparator(int sortDir) {
-			super();
-			this.sortDir = sortDir;
-		}
-
 		@Override
 		public int compare(String s1, String s2)  {
 			if (sortDir == SWT.UP){

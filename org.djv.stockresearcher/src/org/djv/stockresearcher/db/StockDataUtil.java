@@ -404,11 +404,43 @@ public class StockDataUtil {
 				yrHighDiff = new BigDecimal(10).subtract(yrHighDiff.multiply(new BigDecimal(10)));
 			}
 		}
-		
-		int vr = 5;
 		stockData.setYrHighDiff(yrHighDiff);
+		
+		BigDecimal oytUpside = null;
+		if (stockData.getStock().getOneYrTargetPrice() != null && stockData.getStock().getPrice() != null){
+			oytUpside = stockData.getStock().getOneYrTargetPrice().subtract(stockData.getStock().getPrice()).multiply(new BigDecimal(100)).divide(stockData.getStock().getPrice(), 2, RoundingMode.HALF_UP);
+			stockData.setOytUpside(oytUpside);
+		}
+		
+		int vrNbr = 0;
+		int vrDiv = 0;
+		
 		if (yrHighDiff != null){
-			vr =yrHighDiff.setScale(0, RoundingMode.HALF_UP).intValue();
+			if (yrHighDiff.compareTo(new BigDecimal("10")) > 0){
+				vrNbr+= 10;
+			} else if (yrHighDiff.compareTo(new BigDecimal("0")) < 0){
+				vrNbr+= 0;
+			} else {
+				vrNbr+= yrHighDiff.setScale(0, RoundingMode.HALF_UP).intValue();
+			}
+			vrDiv++;
+		}
+		
+		if (oytUpside != null){
+			if (oytUpside.compareTo(new BigDecimal("10")) > 0){
+				vrNbr += 10;
+			} else if (oytUpside.compareTo(new BigDecimal("0")) < 0){
+				vrNbr += 0;
+			} else {
+				vrNbr = oytUpside.setScale(0, RoundingMode.HALF_UP).intValue();
+			}
+		}
+		
+		int vr = 0;
+		if (vrDiv == 0){
+			vr = 5;
+		} else {
+			vr = vrNbr/ vrDiv;
 		}
 
 		double overall = (yr + sr + gr + fr + vr);

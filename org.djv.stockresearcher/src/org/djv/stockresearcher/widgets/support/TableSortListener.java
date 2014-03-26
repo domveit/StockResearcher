@@ -1,15 +1,16 @@
-package org.djv.stockresearcher.widgets;
+package org.djv.stockresearcher.widgets.support;
 
 import java.util.Comparator;
 
 import org.djv.stockresearcher.model.StockData;
+import org.djv.stockresearcher.widgets.StockTable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
-class TableSortListener implements Listener {
+public class TableSortListener implements Listener {
 	/**
 	 * 
 	 */
@@ -18,7 +19,7 @@ class TableSortListener implements Listener {
 	/**
 	 * @param sectorSearchPart
 	 */
-	TableSortListener(StockTable table) {
+	public TableSortListener(StockTable table) {
 		this.stockTable = table;
 	}
 
@@ -45,8 +46,8 @@ class TableSortListener implements Listener {
             for (int j = 0; j < i; j++) {
                 String value2 = items[j].getText(index);
                 if (comp.compare(value1, value2) < 0) {
-                    String[] values = new String[this.stockTable.getTitles().length];
-                    for (int k = 0; k < this.stockTable.getTitles().length; k ++){
+                    String[] values = new String[this.stockTable.getStockTableConfig().getColumns().size()];
+                    for (int k = 0; k < values.length; k ++){
                     	values[k] = items[i].getText(k);
                     }
                     StockData sd = (StockData) items[i].getData("sd");
@@ -56,7 +57,7 @@ class TableSortListener implements Listener {
                     this.stockTable.getTableItemMap().put(sd.getStock().getSymbol(), item);
                     item.setData("sd", sd);
                     item.setText(values);
-                    stockTable.setColor(sd, item);
+                    stockTable.setAllColors(sd, item);
                     items = this.stockTable.getTable().getItems();
                     break;
                 }
@@ -67,28 +68,14 @@ class TableSortListener implements Listener {
     }
 
 	public Comparator<String> getComparator(int sortDir, int index) {
-		Comparator<String> comp = null;
-        switch(index){
-        	case 2:
-        		 comp = new MarketCapComparator(sortDir);
-        		 break;
-        	case 3:
-        	case 4:
-        	case 5:
-        	case 6:
-        	case 7:
-        	case 8:
-        	case 9:
-        	case 10:
-        	case 11:
-        	case 12:
-        	case 19:
-        	case 20:
-        		 comp = new ForgivingBigDecimalComparator(sortDir);
-        		 break;
-        	default:
-        		 comp = new StringComparator(sortDir);
-        }
-		return comp;
+		StockTableColumn col = this.stockTable.getStockTableConfig().getColumns().get(index);
+		try {
+			SortDirComparator comp = col.getComparatorClass().newInstance();
+			comp.setSortDir(sortDir);
+			return comp;
+		} catch (InstantiationException | IllegalAccessException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
