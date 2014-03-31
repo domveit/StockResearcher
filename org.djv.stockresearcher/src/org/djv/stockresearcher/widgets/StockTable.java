@@ -27,7 +27,6 @@ public class StockTable extends Composite {
 	Map<String, TableItem> tableItemMap = new HashMap<String, TableItem>();
 	TableSortListener sortListener = new TableSortListener(this);
 	
-	
 	StockTableConfig stockTableConfig;
 	Table table;
 
@@ -37,6 +36,17 @@ public class StockTable extends Composite {
 
 	public void setStockTableConfig(StockTableConfig stockTableConfig) {
 		this.stockTableConfig = stockTableConfig;
+		
+		for (TableColumn tc : table.getColumns()){
+			tc.dispose();
+		}
+		
+		for (StockTableColumn col: stockTableConfig.getColumns()) {
+			TableColumn column = new TableColumn (table, SWT.NONE);
+			column.setData(col);
+			column.setText (col.getDescription());
+			column.addListener(SWT.Selection, sortListener);
+		}
 	}
 
 	public Table getTable() {
@@ -49,31 +59,11 @@ public class StockTable extends Composite {
 
 	public StockTable(Composite parent, int style) {
 		super(parent, style);
-		stockTableConfig = new StockTableConfig();
-		stockTableConfig.getColumns().add(StockTableColumn.WATCHED);
-		stockTableConfig.getColumns().add(StockTableColumn.STOCK);
-		stockTableConfig.getColumns().add(StockTableColumn.NAME);
-		stockTableConfig.getColumns().add(StockTableColumn.EXCHANGE);
-		stockTableConfig.getColumns().add(StockTableColumn.SECTOR);
-		stockTableConfig.getColumns().add(StockTableColumn.INDUSTRY);
-		stockTableConfig.getColumns().add(StockTableColumn.PRICE);
-		
-		stockTableConfig.getColumns().add(StockTableColumn.YIELD);
-		stockTableConfig.getColumns().add(StockTableColumn.NORM_YIELD);
-		stockTableConfig.getColumns().add(StockTableColumn.DIVIDEND);
-		stockTableConfig.getColumns().add(StockTableColumn.NORM_DIVIDEND);
-		stockTableConfig.getColumns().add(StockTableColumn.YIELD_RANK);
 		
 		this.setLayout(new FillLayout());
 		table = new Table (this, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
 		table.setLinesVisible (true);
 		table.setHeaderVisible (true);
-		
-		for (StockTableColumn col: stockTableConfig.getColumns()) {
-			TableColumn column = new TableColumn (table, SWT.NONE);
-			column.setText (col.getDescription());
-			column.addListener(SWT.Selection, sortListener);
-		}	
 	}
 	
 	public void addSelectionListener(SelectionListener l){
@@ -114,20 +104,17 @@ public class StockTable extends Composite {
 	}
 	
 	public void updateItem(final StockData sd, TableItem item, boolean setColors) {
-		System.err.println("processing sd= " + sd.getSymbol());
 		if (item.isDisposed()){
 			return;
 		}
 		int i = 0;
 		for (StockTableColumn col : stockTableConfig.getColumns()){
-			System.err.println("processing col = "+ col.getDescription());
 			String itemText = null;
 			if (sd != null){
 				Object val = getColValue(sd, col.getSource());
 				if (val != null){
 					if (val instanceof String){
 						itemText = (String)val;
-						System.err.println("String itemText = "+ itemText);
 					} else if (val instanceof BigDecimal){
 						BigDecimal valBd = (BigDecimal) val;
 						if (col.getDecimalFormat() == null){
@@ -135,7 +122,6 @@ public class StockTable extends Composite {
 						} else {
 							 itemText = new DecimalFormat(col.getDecimalFormat()).format(valBd);
 						}
-						System.err.println("BD itemText = "+ itemText);
 					} else if (val instanceof Double){
 						Double valBd = (Double) val;
 						if (col.getDecimalFormat() == null){
@@ -143,7 +129,6 @@ public class StockTable extends Composite {
 						} else {
 							 itemText = new DecimalFormat(col.getDecimalFormat()).format(valBd);
 						}
-						System.err.println("Double itemText = "+ itemText);
 					} else if (val instanceof Integer){
 						Integer valBd = (Integer) val;
 						if (col.getDecimalFormat() == null){
@@ -151,9 +136,7 @@ public class StockTable extends Composite {
 						} else {
 							 itemText = new DecimalFormat(col.getDecimalFormat()).format(valBd);
 						}
-						System.err.println("Integer itemText = "+ itemText);
 					} else {
-						System.err.println("unknown type "+ val.getClass());
 					}
 				}
 			}
@@ -180,23 +163,19 @@ public class StockTable extends Composite {
 			if (sd.getStock() != null){
 				String fieldName = source.substring("stock.".length());
 				val = getFieldValue(sd.getStock(), fieldName);
-				System.err.println("got stock Value = " + val);
 			}
 		} else if (source.startsWith("stockIndustry.")){
 			if (sd.getStockIndustry() != null){
 				String fieldName = source.substring("stockIndustry.".length());
 				val = getFieldValue(sd.getStockIndustry(), fieldName);
-				System.err.println("got stockIndustry Value = " + val);
 			}
 		} else if (source.startsWith("sectorIndustry.")){
 			if (sd.getSectorIndustry() != null){
 				String fieldName = source.substring("sectorIndustry.".length());
 				val = getFieldValue(sd.getSectorIndustry(), fieldName);
-				System.err.println("got sectorIndustry Value = " + val);
 			}
 		} else {
 			val = getFieldValue(sd, source);
-			System.err.println("got sd Value = " + val);
 		}
 		return val;
 	}
@@ -209,7 +188,6 @@ public class StockTable extends Composite {
 			field.setAccessible(true);
 			val = field.get(o);
 		} catch (NoSuchFieldException | SecurityException | IllegalAccessException e) {
-			System.err.println("could not get field " + fieldName + " in SectorIndustry class");
 		}
 		return val;
 	}

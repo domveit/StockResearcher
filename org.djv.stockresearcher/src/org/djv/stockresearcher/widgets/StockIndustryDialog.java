@@ -40,12 +40,16 @@ public class StockIndustryDialog extends Dialog {
 				Display.getDefault().asyncExec(new Runnable() {
 					@Override
 					public void run() {
-						if (beginOrEnd == 1){
-							okPressed();
-						} else {
-							progressBar.setSelection(industriesUpdated);
-							progressBar.setMaximum(industriesToUpdate);
-							progressBar.setText(industryName);
+						try {
+							if (beginOrEnd == 1){
+								okPressed();
+							} else {
+								progressBar.setSelection(industriesUpdated);
+								progressBar.setMaximum(industriesToUpdate);
+								progressBar.setText(industryName);
+							}
+						} catch (Exception e){
+							e.printStackTrace();
 						}
 					}
 				});

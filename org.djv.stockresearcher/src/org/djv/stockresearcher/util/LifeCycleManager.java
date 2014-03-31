@@ -14,6 +14,7 @@ public class LifeCycleManager {
 
 	  @PostContextCreate
 	  void postContextCreate(IApplicationContext appContext, Display display) {
+		  try{
 	    final Shell shell = new Shell(SWT.TOOL | SWT.NO_TRIM);
 	    StockIndustryDialog dialog = new StockIndustryDialog(shell);
 
@@ -27,6 +28,9 @@ public class LifeCycleManager {
 	      // close the application
 	      System.exit(-1);
 	    }
+		  } catch (Exception e){
+			  e.printStackTrace();
+		  }
 	  }
 
 	  private void setLocation(Display display, Shell shell) {

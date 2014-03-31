@@ -2,30 +2,6 @@ package org.djv.stockresearcher.widgets.support;
 
 public enum StockTableColumn {
 	
-	
-//	String[] titles = {"Stock", "Name", "MCap", "Price", "Yr Range", "Div", "Yield", "PE", "PEG", "Strk", "Skip", "dg5", "dg10", "rg4", "rg8", "Rank", "Exchange", "Industry", "Sector", "Value score", "chowder", "OYT Price", "OYT upside"};
-
-//String yrRange = ((sd.getStock().getYearLow() == null) ? "???" :  new DecimalFormat("0.00").format(sd.getStock().getYearLow()))
-//		 + "-" + 
-//		 ((sd.getStock().getYearHigh() == null) ? "???" :  new DecimalFormat("0.00").format(sd.getStock().getYearHigh()));
-//item.setText (4, yrRange);
-//
-
-//item.setText (7, (sd.getStock().getPe() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getPe()));
-//item.setText (8, (sd.getStock().getPeg() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getStock().getPeg()));
-//item.setText (9, String.valueOf(sd.getStreak()));
-//item.setText (10,  String.valueOf(sd.getSkipped()));
-//item.setText (11, (sd.getDg5() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg5()) + "%");
-//item.setText (12, (sd.getDg10() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getDg10()) + "%");
-//
-//item.setText (13, (sd.getEps4() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps4()) + "%");
-//item.setText (14, (sd.getEps8() == null) ? "N/A" : new DecimalFormat("0.00").format(sd.getEps8()) + "%");
-//
-//item.setText (15, new DecimalFormat("0.00").format(sd.getOverAllRank()));
-//
-//
-//item.setText (19, (sd.getYrHighDiff() == null) ? "" : new DecimalFormat("0.00").format(sd.getYrHighDiff()) + "%");
-//
 //BigDecimal chowder = null;
 //if (sd.getNormYield() != null){
 //	if (sd.getDg5() != null){
@@ -37,21 +13,6 @@ public enum StockTableColumn {
 //	} 
 //} 
 //item.setText (20, (chowder == null) ? "" : new DecimalFormat("0.00").format(chowder) + "%");
-//item.setText (21, (sd.getStock().getOneYrTargetPrice() == null) ? "" : new DecimalFormat("0.00").format(sd.getStock().getOneYrTargetPrice()));
-//item.setText (22, (sd.getOytUpside() == null) ? "" : new DecimalFormat("0.00").format(sd.getOytUpside()) + "%");
-	
-	//if (sd.getNormDividend() != null){
-//	item.setText (5,  String.valueOf(sd.getNormDividend()));
-//} else {
-//	item.setText (5, (sd.getStock().getDividend() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getDividend()));
-//}
-//
-//if (sd.getNormYield() != null){
-//	item.setText (6, new DecimalFormat("0.00").format(sd.getNormYield()));
-//} else {
-//	item.setText (6, (sd.getStock().getYield() == null) ? "N/A" :  new DecimalFormat("0.00").format(sd.getStock().getYield()));
-//}
-//
 	
 //  NAME  		("description",	"source", 				DecimalFormat, 	null disp, 	percent?, 	"color source", Comparator.class),
 	WATCHED			("", 			"watched", 				null, 			"???", 		false,		null, 			StringComparator.class),
@@ -62,11 +23,38 @@ public enum StockTableColumn {
 	EXCHANGE		("Exchange", 	"stock.exchange", 		null, 			"???", 		false, 		null, 			StringComparator.class),
 	INDUSTRY		("Industry", 	"sectorIndustry.industryName",null, 	"???", 		false, 		null, 			StringComparator.class),
 	SECTOR			("Sector", 		"sectorIndustry.sectorName",null, 		"???", 		false, 		null,	  		StringComparator.class),
+	PE				("PE", 			"stock.pe",				"0.00", 		"N/A", 		false, 		null,			ForgivingBigDecimalComparator.class),
+	PEG				("PEG", 		"stock.peg",			"0.00", 		"N/A", 		false, 		null,			ForgivingBigDecimalComparator.class),
+	
 	YIELD			("Yield", 		"stock.yield", 			"0.00",			"N/A", 		true, 		"yieldRank",	ForgivingBigDecimalComparator.class),
 	NORM_YIELD		("NYield", 		"normYield",	 		"0.00", 		"N/A", 		true, 		"yieldRank", 	ForgivingBigDecimalComparator.class),
 	DIVIDEND		("Div", 		"stock.dividend",		"0.0000", 		"N/A", 		false, 		"yieldRank", 	ForgivingBigDecimalComparator.class),
 	NORM_DIVIDEND	("NDiv", 		"normDividend",			"0.0000", 		"N/A", 		false, 		"yieldRank",	ForgivingBigDecimalComparator.class),
 	YIELD_RANK		("YRank", 		"yieldRank",			null, 			"N/A", 		false, 		"yieldRank",	ForgivingBigDecimalComparator.class),
+	
+	YRHIGH			("Yr High",		"stock.yearHigh",	 	"0.00", 		"N/A", 		false, 		"valueRank", 	ForgivingBigDecimalComparator.class),
+	YRLOW			("Yr Low", 		"stock.yearLow",		"0.00", 		"N/A", 		false, 		"valueRank", 	ForgivingBigDecimalComparator.class),
+	YR_TARGET_PRICE ("Yr Tgt Price","stock.oneYrTargetPrice","0.00", 		"N/A", 		false, 		"valueRank", 	ForgivingBigDecimalComparator.class),
+	YR_UPSIDE		("Yr Upside", 	"oytUpside",			"0.00", 		"N/A", 		true, 		"valueRank", 	ForgivingBigDecimalComparator.class),
+	YRRANK			("Yr Rank", 	"yrHighDiff",			"0.00", 		"N/A", 		true, 		"valueRank", 	ForgivingBigDecimalComparator.class),
+	VALUE_RANK		("VRank", 		"valueRank",			null, 			"N/A", 		false, 		"valueRank",	ForgivingBigDecimalComparator.class),
+	
+	STREAK			("Streak",		"streak",			 	null, 			"N/A", 		false, 		"stalwartRank", ForgivingBigDecimalComparator.class),
+	SKIPPED			("Skipped", 	"skipped",				null, 			"N/A", 		false, 		"stalwartRank", ForgivingBigDecimalComparator.class),
+	STALWART_RANK	("SRank", 		"stalwartRank",			null, 			"N/A", 		false, 		"stalwartRank",	ForgivingBigDecimalComparator.class),
+	
+	DG5 			("dg5",			"dg5",					"0.00", 		"N/A", 		true, 		"growthRank", 	ForgivingBigDecimalComparator.class),
+	DG10			("dg10", 		"dg10",					"0.00", 		"N/A", 		true, 		"growthRank", 	ForgivingBigDecimalComparator.class),
+	GROWTH_RANK		("GRank", 		"growthRank",			null, 			"N/A", 		false, 		"growthRank",	ForgivingBigDecimalComparator.class),
+	
+	RG5				("rg5",		 	"rg5",					"0.00", 		"N/A", 		true, 		"finRank", 		ForgivingBigDecimalComparator.class),
+	RG10			("rg10", 		"rg10",					"0.00", 		"N/A", 		true, 		"finRank",		ForgivingBigDecimalComparator.class),
+	FIN_RANK		("FRank", 		"finRank",				null, 			"N/A", 		false, 		"finRank",		ForgivingBigDecimalComparator.class),
+	
+	CHOWDER			("Chowder", 	"chowder",				"0.00", 		"N/A", 		true, 		null,			ForgivingBigDecimalComparator.class),
+
+	OVERALL_RANK	("RANK", 		"overAllRank",			"0.00", 		"N/A", 		false, 		"overAllRank",		ForgivingBigDecimalComparator.class),
+
 	;
 	
 	private final String description;

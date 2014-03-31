@@ -21,6 +21,8 @@ import org.djv.stockresearcher.db.StockDataChangeListener;
 import org.djv.stockresearcher.model.StockData;
 import org.djv.stockresearcher.widgets.StockTable;
 import org.djv.stockresearcher.widgets.TextProgressBar;
+import org.djv.stockresearcher.widgets.support.StockTableColumn;
+import org.djv.stockresearcher.widgets.support.StockTableConfig;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -127,7 +129,51 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 				tableRowSelect();
 			}
 		});
+		table.setStockTableConfig(getStockTableConfig());
 		table.packColumns();
+	}
+	
+	private StockTableConfig getStockTableConfig() {
+		StockTableConfig stockTableConfig = new StockTableConfig();
+		stockTableConfig.getColumns().add(StockTableColumn.WATCHED);
+		stockTableConfig.getColumns().add(StockTableColumn.STOCK);
+		stockTableConfig.getColumns().add(StockTableColumn.NAME);
+		stockTableConfig.getColumns().add(StockTableColumn.MARKET_CAP);
+		stockTableConfig.getColumns().add(StockTableColumn.EXCHANGE);
+		stockTableConfig.getColumns().add(StockTableColumn.SECTOR);
+		stockTableConfig.getColumns().add(StockTableColumn.INDUSTRY);
+		stockTableConfig.getColumns().add(StockTableColumn.PE);
+		stockTableConfig.getColumns().add(StockTableColumn.PEG);
+		
+		stockTableConfig.getColumns().add(StockTableColumn.PRICE);
+		stockTableConfig.getColumns().add(StockTableColumn.YIELD);
+		stockTableConfig.getColumns().add(StockTableColumn.NORM_YIELD);
+		stockTableConfig.getColumns().add(StockTableColumn.DIVIDEND);
+		stockTableConfig.getColumns().add(StockTableColumn.NORM_DIVIDEND);
+		stockTableConfig.getColumns().add(StockTableColumn.YIELD_RANK);
+		
+		stockTableConfig.getColumns().add(StockTableColumn.YRLOW);
+		stockTableConfig.getColumns().add(StockTableColumn.YRHIGH);
+		stockTableConfig.getColumns().add(StockTableColumn.YRRANK);
+		stockTableConfig.getColumns().add(StockTableColumn.YR_TARGET_PRICE);
+		stockTableConfig.getColumns().add(StockTableColumn.YR_UPSIDE);
+		stockTableConfig.getColumns().add(StockTableColumn.VALUE_RANK);
+		
+		stockTableConfig.getColumns().add(StockTableColumn.STREAK);
+		stockTableConfig.getColumns().add(StockTableColumn.SKIPPED);
+		stockTableConfig.getColumns().add(StockTableColumn.STALWART_RANK);
+		
+		stockTableConfig.getColumns().add(StockTableColumn.DG5);
+		stockTableConfig.getColumns().add(StockTableColumn.DG10);
+		stockTableConfig.getColumns().add(StockTableColumn.GROWTH_RANK);
+		
+		stockTableConfig.getColumns().add(StockTableColumn.RG5);
+		stockTableConfig.getColumns().add(StockTableColumn.RG10);
+		stockTableConfig.getColumns().add(StockTableColumn.FIN_RANK);
+		
+		stockTableConfig.getColumns().add(StockTableColumn.CHOWDER);
+		stockTableConfig.getColumns().add(StockTableColumn.OVERALL_RANK);		
+		return stockTableConfig;
 	}
 
 	public void tableRowSelect() {
@@ -209,8 +255,6 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 		
 		if (sd != null){
 			if (
-					(sd.getRanksCalculated() && (sd.getGrowthRank() == 0.00 && sd.getYieldRank()==0.00))
-					||
 					( !"NYSE".equals(sd.getStock().getExchange()) && !"NasdaqNM".equals(sd.getStock().getExchange()) && !"AMEX".equals(sd.getStock().getExchange()))
 			
 					){

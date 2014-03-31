@@ -22,12 +22,13 @@ public class StockData {
 	Double stdDev = 0d;
 	Double wildness = 0d;
 	
-	Double eps4 = 0d;
-	Double eps8 = 0d;
+	Double rg5 = 0d;
+	Double rg10 = 0d;
 
 	BigDecimal yrHighDiff;
-	
 	BigDecimal oytUpside;
+	
+	BigDecimal chowder;
 	
 	Boolean ranksCalculated = false;
 
@@ -60,6 +61,14 @@ public class StockData {
 		stock = s;
 	}
 	
+	public BigDecimal getChowder() {
+		return chowder;
+	}
+
+	public void setChowder(BigDecimal chowder) {
+		this.chowder = chowder;
+	}
+
 	public Double getStdDev() {
 		return stdDev;
 	}
@@ -172,18 +181,22 @@ public class StockData {
 		this.yrHighDiff = yrHighDiff;
 	}
 
-	public Double getEps4() {
-		return eps4;
+	public Double getRg5() {
+		return rg5;
 	}
-	public void setEps4(Double eps4) {
-		this.eps4 = eps4;
+
+	public void setRg5(Double rg5) {
+		this.rg5 = rg5;
 	}
-	public Double getEps8() {
-		return eps8;
+
+	public Double getRg10() {
+		return rg10;
 	}
-	public void setEps8(Double eps8) {
-		this.eps8 = eps8;
+
+	public void setRg10(Double rg10) {
+		this.rg10 = rg10;
 	}
+
 	public BigDecimal getNormDividend() {
 		return normDividend;
 	}

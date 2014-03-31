@@ -18,8 +18,23 @@ public class StockDataUtil {
 		buildDivYearData(stockData);
 		normalizeYearDivs(stockData);
 		calcDivStats(stockData);
+		calcChowder(stockData);
 	}
 	
+	private static void calcChowder(StockData sd) {
+		BigDecimal chowder = null;
+		if (sd.getNormYield() != null){
+			if (sd.getDg5() != null){
+				chowder = sd.getNormYield().add(new BigDecimal(sd.getDg5()));
+			} 
+		} else if (sd.getStock().getYield()!= null){
+			if (sd.getDg5() != null){
+				chowder = sd.getStock().getYield().add(new BigDecimal(sd.getDg5()));
+			} 
+		} 
+		sd.setChowder(chowder);
+	}
+
 	public static void buildDivYearData(StockData stockData) {
 		List<DivData> ddl = stockData.getDivData();
 		
@@ -362,35 +377,35 @@ public class StockDataUtil {
 		}
 		
 		int fr = 0;
-		if (stockData.getEps4() != null && stockData.getEps8() != null){
-			if (stockData.getEps4() > 0){
+		if (stockData.getRg5() != null && stockData.getRg10() != null){
+			if (stockData.getRg5() > 0){
 				fr = 1;
 			} 
-			if (stockData.getEps4() >= 1.5){
+			if (stockData.getRg5() >= 1.5){
 				fr = 2;
 			} 
-			if (stockData.getEps4() >= 3){
+			if (stockData.getRg5() >= 3){
 				fr = 3;
 			} 
-			if (stockData.getEps4() >= 4 && stockData.getEps8() >=1){
+			if (stockData.getRg5() >= 4 && stockData.getRg10() >=1){
 				fr = 4;
 			} 
-			if (stockData.getEps4() >= 5 && stockData.getEps8() >=2){
+			if (stockData.getRg5() >= 5 && stockData.getRg10() >=2){
 				fr = 5;
 			} 
-			if (stockData.getEps4() >= 6 && stockData.getEps8() >=3){
+			if (stockData.getRg5() >= 6 && stockData.getRg10() >=3){
 				fr = 6;
 			} 
-			if (stockData.getEps4() >= 10 && stockData.getEps8() >=7){
+			if (stockData.getRg5() >= 10 && stockData.getRg10() >=7){
 				fr = 7;
 			} 
-			if (stockData.getEps4() >= 15 && stockData.getEps8() >=10){
+			if (stockData.getRg5() >= 15 && stockData.getRg10() >=10){
 				fr = 8;
 			} 
-			if (stockData.getEps4() >= 20 && stockData.getEps8() >=15){
+			if (stockData.getRg5() >= 20 && stockData.getRg10() >=15){
 				fr = 9;
 			} 
-			if (stockData.getEps4() >= 25 && stockData.getEps8() >=20){
+			if (stockData.getRg5() >= 25 && stockData.getRg10() >=20){
 				fr = 10;
 			} 
 		}
@@ -407,40 +422,42 @@ public class StockDataUtil {
 		stockData.setYrHighDiff(yrHighDiff);
 		
 		BigDecimal oytUpside = null;
-		if (stockData.getStock().getOneYrTargetPrice() != null && stockData.getStock().getPrice() != null){
+		if (stockData.getStock().getOneYrTargetPrice() != null && stockData.getStock().getPrice() != null && stockData.getStock().getPrice().compareTo(new BigDecimal(0)) > 0){
 			oytUpside = stockData.getStock().getOneYrTargetPrice().subtract(stockData.getStock().getPrice()).multiply(new BigDecimal(100)).divide(stockData.getStock().getPrice(), 2, RoundingMode.HALF_UP);
 			stockData.setOytUpside(oytUpside);
 		}
 		
-		int vrNbr = 0;
+		int yhNbr = 0;
+		int oytNbr = 0;
 		int vrDiv = 0;
 		
 		if (yrHighDiff != null){
 			if (yrHighDiff.compareTo(new BigDecimal("10")) > 0){
-				vrNbr+= 10;
+				yhNbr= 10;
 			} else if (yrHighDiff.compareTo(new BigDecimal("0")) < 0){
-				vrNbr+= 0;
+				yhNbr= 0;
 			} else {
-				vrNbr+= yrHighDiff.setScale(0, RoundingMode.HALF_UP).intValue();
+				yhNbr= yrHighDiff.setScale(0, RoundingMode.HALF_UP).intValue();
 			}
 			vrDiv++;
 		}
 		
 		if (oytUpside != null){
-			if (oytUpside.compareTo(new BigDecimal("10")) > 0){
-				vrNbr += 10;
+			if (oytUpside.compareTo(new BigDecimal("20")) > 0){
+				oytNbr = 10;
 			} else if (oytUpside.compareTo(new BigDecimal("0")) < 0){
-				vrNbr += 0;
+				oytNbr = 0;
 			} else {
-				vrNbr = oytUpside.setScale(0, RoundingMode.HALF_UP).intValue();
+				oytNbr = oytUpside.divide(new BigDecimal("2")).setScale(0, RoundingMode.HALF_UP).intValue();
 			}
+			vrDiv++;
 		}
 		
 		int vr = 0;
 		if (vrDiv == 0){
 			vr = 5;
 		} else {
-			vr = vrNbr/ vrDiv;
+			vr = (yhNbr + oytNbr)/ vrDiv;
 		}
 
 		double overall = (yr + sr + gr + fr + vr);
@@ -616,13 +633,13 @@ public class StockDataUtil {
 				double d = revNow / rev4yr;
 				double pow = Math.pow(d, (1.0 / 4.0));
 				double e4y = (pow - 1) * 100;
-				stockData.setEps4(e4y);
+				stockData.setRg5(e4y);
 			}
 			if (rev8yr != null && rev8yr > 0){
 				double d = revNow / rev8yr;
 				double pow = Math.pow(d, (1.0 / 8.0));
 				double e8y = (pow - 1) * 100;
-				stockData.setEps8(e8y);
+				stockData.setRg10(e8y);
 			} 
 		}
 		
