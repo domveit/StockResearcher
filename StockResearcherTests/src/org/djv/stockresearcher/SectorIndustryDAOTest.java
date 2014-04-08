@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
-import org.djv.stockresearcher.db.SectorIndustryDAO;
+import org.djv.stockresearcher.db.dao.SectorIndustryDAO;
 import org.djv.stockresearcher.model.SectorIndustry;
 import org.junit.Test;
 

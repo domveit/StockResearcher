@@ -6,7 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 
-import org.djv.stockresearcher.db.PortfolioDAO;
+import org.djv.stockresearcher.db.dao.PortfolioDAO;
 import org.djv.stockresearcher.model.Portfolio;
 import org.junit.Test;
 

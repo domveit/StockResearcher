@@ -1,4 +1,4 @@
-package org.djv.stockresearcher.db;
+package org.djv.stockresearcher.db.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

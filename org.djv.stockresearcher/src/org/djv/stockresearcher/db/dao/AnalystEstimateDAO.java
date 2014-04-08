@@ -1,4 +1,4 @@
-package org.djv.stockresearcher.db;
+package org.djv.stockresearcher.db.dao;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -9,14 +9,23 @@ import java.util.List;
 
 import org.djv.stockresearcher.model.DivData;
 
-public class DividendDAO extends H2DAO{
+public class AnalystEstimateDAO extends H2DAO{
+	
+	 
+
 	
 	private static final String CREATE_SQL = 
-			"CREATE TABLE IF NOT EXISTS DIVIDEND "
+			"CREATE TABLE IF NOT EXISTS ANALYSTESTIMATE "
 			+ "("
 			+ "SYMBOL CHAR(20), "
-			+ "PAYDATE DATE, "
-			+ "DIVIDEND DECIMAL(13, 6) ) ";
+			+ "EARNAVGCQ DECIMAL(13, 6), "
+			+ "EARNAVGNQ DECIMAL(13, 6), "
+			+ "EARNAVGCY DECIMAL(13, 6), "
+			+ "EARNAVGNY DECIMAL(13, 6), "
+			+ "NBRANALCQ INTEGER, "
+			+ "NBRANALNQ INTEGER, "
+			+ "NBRANALCY INTEGER, "
+			+ "NBRANALNY INTEGER, ";
 	
 	private static final String SELECT_SQL = 
 			"SELECT SYMBOL, PAYDATE, DIVIDEND FROM DIVIDEND ";
@@ -32,18 +41,18 @@ public class DividendDAO extends H2DAO{
 	
 	private static final String DELETE_SQL = "DELETE FROM DIVIDEND WHERE SYMBOL = ?";
 	
-	public DividendDAO(Connection con) {
+	public AnalystEstimateDAO(Connection con) {
 		super(con);
 	}
 
 	public void createTableIfNotExists() throws Exception {
-		PreparedStatement st = con.prepareStatement(CREATE_SQL);
-		st.executeUpdate();
-		st.close();
-		
-		PreparedStatement ist = con.prepareStatement(INDEX1_SQL);
-		ist.executeUpdate();
-		ist.close();
+//		PreparedStatement st = con.prepareStatement(CREATE_SQL);
+//		st.executeUpdate();
+//		st.close();
+//		
+//		PreparedStatement ist = con.prepareStatement(INDEX1_SQL);
+//		ist.executeUpdate();
+//		ist.close();
 	}
 	
 	public List<DivData> getDividendsForSymbol(String symbol) throws Exception {

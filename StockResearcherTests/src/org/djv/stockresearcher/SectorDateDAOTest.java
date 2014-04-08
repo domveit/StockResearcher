@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 
-import org.djv.stockresearcher.db.SectorDateDAO;
+import org.djv.stockresearcher.db.dao.SectorDateDAO;
 import org.junit.Test;
 
 public class SectorDateDAOTest {

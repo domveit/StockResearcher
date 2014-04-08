@@ -22,6 +22,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.djv.stockresearcher.db.dao.AnalystEstimateDAO;
+import org.djv.stockresearcher.db.dao.DividendDAO;
+import org.djv.stockresearcher.db.dao.FinDataDAO;
+import org.djv.stockresearcher.db.dao.PortfolioDAO;
+import org.djv.stockresearcher.db.dao.SectorDateDAO;
+import org.djv.stockresearcher.db.dao.SectorIndustryDAO;
+import org.djv.stockresearcher.db.dao.StockDAO;
+import org.djv.stockresearcher.db.dao.StockIndustryDAO;
+import org.djv.stockresearcher.db.dao.TransactionDAO;
+import org.djv.stockresearcher.db.dao.WatchListDAO;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
 import org.djv.stockresearcher.model.Option;
@@ -84,6 +94,7 @@ public class StockDB {
         new PortfolioDAO(con).createTableIfNotExists();
         new TransactionDAO(con).createTableIfNotExists();
         new SectorDateDAO(con).createTableIfNotExists();
+        new AnalystEstimateDAO(con).createTableIfNotExists();
 	}
 	
 	volatile int sectorIndustriesToUpdate = 0;
@@ -91,8 +102,6 @@ public class StockDB {
 	
 	volatile int industriesToUpdate = 0;
 	volatile int industriesUpdated = 0;
-	
-
 	
 	List<SectorIndustryListener> sectorIndustryListeners = new ArrayList<SectorIndustryListener>();
 	List<IndustryStockListener> industryStockListeners = new ArrayList<IndustryStockListener>();
@@ -546,6 +555,7 @@ public class StockDB {
 		}
 		
 		if (br == null){
+			System.err.println("cound not get financials for " + convertedSymbol);
 			return;
 		}
 		CSVReader reader = new CSVReader(br, ',');

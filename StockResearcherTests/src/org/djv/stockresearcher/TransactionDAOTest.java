@@ -8,7 +8,7 @@ import java.sql.Date;
 import java.sql.DriverManager;
 import java.util.List;
 
-import org.djv.stockresearcher.db.TransactionDAO;
+import org.djv.stockresearcher.db.dao.TransactionDAO;
 import org.djv.stockresearcher.model.Transaction;
 import org.junit.Test;
 

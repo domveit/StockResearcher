@@ -3,11 +3,11 @@ package org.djv.stockresearcher;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.djv.stockresearcher.db.SectorDateDAO;
 import org.djv.stockresearcher.db.SectorIndustryListener;
 import org.djv.stockresearcher.db.StockDB;
 import org.djv.stockresearcher.db.StockDataChangeListener;
 import org.djv.stockresearcher.db.StockDataUtil;
+import org.djv.stockresearcher.db.dao.SectorDateDAO;
 import org.djv.stockresearcher.model.Option;
 import org.djv.stockresearcher.model.StockData;
 import org.junit.Test;
