@@ -427,8 +427,8 @@ public class StockDataUtil {
 			stockData.setOytUpside(oytUpside);
 		}
 		
-		int yhNbr = 0;
-		int oytNbr = 0;
+		double yhNbr = 0;
+		double oytNbr = 0;
 		int vrDiv = 0;
 		
 		if (yrHighDiff != null){
@@ -437,7 +437,7 @@ public class StockDataUtil {
 			} else if (yrHighDiff.compareTo(new BigDecimal("0")) < 0){
 				yhNbr= 0;
 			} else {
-				yhNbr= yrHighDiff.setScale(0, RoundingMode.HALF_UP).intValue();
+				yhNbr= yrHighDiff.doubleValue();
 			}
 			vrDiv++;
 		}
@@ -448,7 +448,7 @@ public class StockDataUtil {
 			} else if (oytUpside.compareTo(new BigDecimal("0")) < 0){
 				oytNbr = 0;
 			} else {
-				oytNbr = oytUpside.divide(new BigDecimal("2")).setScale(0, RoundingMode.HALF_UP).intValue();
+				oytNbr = oytUpside.doubleValue() / 2;
 			}
 			vrDiv++;
 		}
@@ -457,7 +457,7 @@ public class StockDataUtil {
 		if (vrDiv == 0){
 			vr = 5;
 		} else {
-			vr = (yhNbr + oytNbr)/ vrDiv;
+			vr = (int)Math.round((yhNbr + oytNbr)/ vrDiv);
 		}
 
 		double overall = (yr + sr + gr + fr + vr);
