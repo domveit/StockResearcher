@@ -4,6 +4,7 @@ package org.djv.stockresearcher.parts;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import javax.annotation.PostConstruct;
 
 import org.djv.stockresearcher.db.AppState;
 import org.djv.stockresearcher.db.StockDB;
+import org.djv.stockresearcher.model.Lot;
 import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
 import org.djv.stockresearcher.model.Position;
@@ -53,6 +55,7 @@ public class PortfolioPart {
 	private Button refreshButton;
 	
 	private Button newTranButton;
+	private Button editTranButton;
 	private Button deleteTranButton;
 	
 	String[] tranTitles = {"Date", "Action", "Symbol", "Shares", "Price Paid", "Commission", "Cost", "Balance"};
@@ -60,6 +63,10 @@ public class PortfolioPart {
 	
 	String[] posTitles = {"Symbol", "Shares", "Basis", "Price", "Cost", "Value", "Gain", "Gain Pct" ,"Div", "Yield", "YOC", "Weight"};
 	Table posTable;
+	
+	PortfolioData portData;
+	
+	List<String> showLots = new ArrayList<String>();
 	
 	private Shell shell;
 	
@@ -193,14 +200,40 @@ public class PortfolioPart {
 					AppState.getInstance().setSelectedStock(sd);
 				}
 			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				int i = posTable.getSelectionIndex();
+				if (i < 0) {
+					return;
+				}
+				StockData sd = (StockData)posTable.getItem(i).getData("sd");
+				if (sd == null){
+					return;
+				}
+				if (showLots.contains(sd.getSymbol())){
+					showLots.remove(sd.getSymbol());
+				} else {
+					showLots.add(sd.getSymbol());
+				}
+				if (portData != null) {
+					try {
+						rebuildPortfolioTable(portData);
+					} catch (Exception e1) {
+						MessageDialog.openError(posTable.getShell(), "Error", e1.getMessage());
+					}
+				}
+				
+			}
 		});
+		
 		return c;
 	}
 
 	public Composite createTransactionsTab(final Composite parent) {
 		Composite c = new Composite(parent, SWT.NONE);
 		c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		c.setLayout(new GridLayout(4, false));
+		c.setLayout(new GridLayout(5, false));
  
 		newTranButton = new Button(c, SWT.NONE);
 		newTranButton.setText("New Transaction");
@@ -215,6 +248,11 @@ public class PortfolioPart {
 					return;
 				}
 				TransactionDialog td = new TransactionDialog(parent.getShell());
+				
+				StockData sd = AppState.getInstance().getSelectedStock();
+				if (sd != null){
+					td.setSymbol(sd.getSymbol());
+				}
 				td.create();
 				td.setMode("NEW");
 				int result = td.open();
@@ -236,6 +274,47 @@ public class PortfolioPart {
 				} 
 			}
 
+		});
+		
+		editTranButton = new Button(c, SWT.NONE);
+		editTranButton.setText("Edit Transaction");
+		editTranButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
+		
+		editTranButton.addSelectionListener(new SelectionAdapter(){
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				int i = tranTable.getSelectionIndex();
+				if (i < 0) {
+					return;
+				}
+				TransactionData td = (TransactionData)tranTable.getItem(i).getData("tran");
+				Transaction t = td.getTransaction();
+				
+				TransactionDialog tdialog = new TransactionDialog(parent.getShell());
+				tdialog.setAction(t.getAction());
+				tdialog.setPrice(t.getPrice());
+				tdialog.setShares(t.getShares());
+				tdialog.setSymbol(t.getSymbol());
+				tdialog.setTranDate(t.getTranDate());
+				tdialog.setCommission(t.getCommission());
+				tdialog.setMode("EDIT");
+				tdialog.create();
+				int result = tdialog.open();
+				if (result == Window.OK) {
+					try {
+						t.setAction(tdialog.getAction());
+						t.setPrice(tdialog.getPrice());
+						t.setShares(tdialog.getShares());
+						t.setSymbol(tdialog.getSymbol());
+						t.setTranDate(new java.sql.Date(tdialog.getTranDate().getTime()));
+						t.setCommission(tdialog.getCommission());
+						StockDB.getInstance().updateTransaction(t);
+						selectPortfolio();
+					} catch (Exception e1) {
+						MessageDialog.openError(parent.getShell(), "Error", e1.getMessage());
+					}
+				} 
+			}
 		});
 		
 		deleteTranButton = new Button(c, SWT.NONE);
@@ -275,7 +354,7 @@ public class PortfolioPart {
 //			column.addListener(SWT.Selection, sortListener);
 		}	
 		
-		tranTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
+		tranTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 5, 1));
 		
 		tranTable.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -317,7 +396,7 @@ public class PortfolioPart {
 			if ("".equals(portfolioName)){
 				return;
 			}
-			PortfolioData portData = StockDB.getInstance().getPortfolioData(portfolioName);
+			portData = StockDB.getInstance().getPortfolioData(portfolioName);
 			rebuildPortfolioTable(portData);
 			rebuildTranTable(portData);
 		} catch (Exception e) {
@@ -344,8 +423,8 @@ public class PortfolioPart {
 			item.setText (3, new DecimalFormat("#,##0.00##").format(shares));
 			item.setText (4, new DecimalFormat("#,##0.00##").format(tranPrice));
 			item.setText (5, new DecimalFormat("#,##0.00##").format(commission));
-			item.setText (6, new DecimalFormat("#,##0.00##").format(td.getTranCost()));
-			item.setText (7, new DecimalFormat("#,##0.00##").format(td.getCashBalance()));
+			item.setText (6, new DecimalFormat("#,###,##0.00").format(td.getTranCost()));
+			item.setText (7, new DecimalFormat("#,###,##0.00").format(td.getCashBalance()));
 		}
 		for (int i=0; i< tranTitles.length; i++) {
 			tranTable.getColumn (i).pack ();
@@ -366,7 +445,12 @@ public class PortfolioPart {
 				Position p = pMap.get(sym);
 				
 				BigDecimal gainCalc = p.getValue().subtract(p.getCost());
-				BigDecimal divCalc = p.getSd().getStock().getDividend().multiply(p.getShares());
+				BigDecimal divCalc = null;
+				if (p.getSd().getStock().getDividend() != null) {
+					divCalc = p.getSd().getStock().getDividend().multiply(p.getShares());
+				} else {
+					divCalc = BigDecimal.ZERO;
+				}
 				
 				totalCost = totalCost.add(p.getCost());
 				totalValue = totalValue.add(p.getValue());
@@ -411,10 +495,7 @@ public class PortfolioPart {
 			Map<String, Position> pMap = portData.getPositionMap().get(sector);
 			
 			for (String sym : pMap.keySet()){
-				
 				Position p = pMap.get(sym);
-				
-
 				TableItem item = new TableItem (posTable, SWT.NONE);
 				item.setData("sd", p.getSd());
 				
@@ -431,7 +512,12 @@ public class PortfolioPart {
 				BigDecimal gainPctCalc = gainCalc.multiply(BigDecimal.valueOf(100)).divide(p.getCost(), 2, RoundingMode.HALF_UP);
 				String gainPct = new DecimalFormat("0.00").format(gainPctCalc) + "%";
 									
-				BigDecimal divCalc = p.getSd().getStock().getDividend().multiply(p.getShares());
+				BigDecimal divCalc = null ;
+				if (p.getSd().getStock().getDividend() != null) {
+					divCalc = p.getSd().getStock().getDividend().multiply(p.getShares());
+				} else {
+					divCalc =  BigDecimal.ZERO;
+				}
 				String div = new DecimalFormat("#,###,##0.00").format(divCalc);
 				
 				BigDecimal yCalc = divCalc.multiply(BigDecimal.valueOf(100)).divide(p.getValue(), 2, RoundingMode.HALF_UP);
@@ -460,6 +546,25 @@ public class PortfolioPart {
 				sectorValue = sectorValue.add(p.getValue());
 				sectorDiv = sectorDiv.add(divCalc);
 				sectorGain = sectorGain.add(gainCalc);
+				
+				if (showLots.contains(sym))
+				for (Lot l : p.getLotList()){
+					TableItem lotItem = new TableItem (posTable, SWT.NONE);
+					lotItem.setText (0, new SimpleDateFormat("MM/dd/yyyy").format(l.getDate()));
+					String lshares = new DecimalFormat("#,##0.00##").format(l.getShares());
+					String lbasis = new DecimalFormat("#,##0.00##").format(l.getBasis());
+					lotItem.setText (1, lshares);
+					lotItem.setText (2, lbasis);
+					lotItem.setText (3, "");
+					lotItem.setText (4, "");
+					lotItem.setText (5, "");
+					lotItem.setText (6, "");
+					lotItem.setText (7, "");
+					lotItem.setText (8, "");
+					lotItem.setText (9, "");
+					lotItem.setText (10, "");
+					lotItem.setText (11, "");
+				}
 			}
 			
 			BigDecimal sectorYield = sectorDiv.multiply(BigDecimal.valueOf(100)).divide(sectorValue, 2, RoundingMode.HALF_UP);

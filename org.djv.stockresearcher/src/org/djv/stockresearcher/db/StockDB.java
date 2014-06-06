@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -34,6 +35,7 @@ import org.djv.stockresearcher.db.dao.TransactionDAO;
 import org.djv.stockresearcher.db.dao.WatchListDAO;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
+import org.djv.stockresearcher.model.Lot;
 import org.djv.stockresearcher.model.Option;
 import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
@@ -1204,7 +1206,7 @@ public class StockDB {
 		for (TransactionData td : tdlist){
 			Transaction t = td.getTransaction();
 			String action = t.getAction();
-			if ("B".equals(action) || "S".equals(action)){
+			if ("B".equals(action) || "S".equals(action) || "R".equals(action)){
 				for (StockData sd : sdList){
 					if (sd.getStock().getSymbol().equals(t.getSymbol())){
 						td.setStockData(sd);
@@ -1228,13 +1230,46 @@ public class StockDB {
 				}
 				
 				if ("B".equals(action)){
-					pos.setShares(pos.getShares().add(t.getShares()));
 					td.setTranCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
-					pos.setCost(pos.getCost().add(td.getTranCost()));
-				} else if ("S".equals(action)){
-					pos.setShares(pos.getShares().subtract(t.getShares()));
+					Lot lot = new Lot();
+					lot.setDate(td.getTransaction().getTranDate());
+					lot.setShares(td.getTransaction().getShares());
+					lot.setBasis(td.getTranCost().divide(lot.getShares(), 4, RoundingMode.HALF_UP));
+					pos.getLotList().add(lot);
+				} else if ("R".equals(action)){
+					td.setTranCost(BigDecimal.ZERO);
+					BigDecimal tc = t.getShares().multiply(t.getPrice()).add(t.getCommission());
+					Lot lot = new Lot();
+					lot.setDate(td.getTransaction().getTranDate());
+					lot.setShares(td.getTransaction().getShares());
+					lot.setBasis(tc.divide(lot.getShares(), 4, RoundingMode.HALF_UP));
+					pos.getLotList().add(lot);
+				}else if ("S".equals(action)){
 					td.setTranCost(t.getShares().multiply(t.getPrice()).multiply(BigDecimal.valueOf(-1)).add(t.getCommission()));
-					pos.setCost(pos.getCost().add(td.getTranCost()));
+					BigDecimal sharesToBurn = t.getShares();
+					Iterator<Lot> i = pos.getLotList().iterator();
+					while (sharesToBurn.compareTo(BigDecimal.ZERO) != 0) {
+						if (i.hasNext()){
+							Lot l = i.next();
+							if (l.getShares().compareTo(sharesToBurn) < 0){
+								sharesToBurn = sharesToBurn.subtract(l.getShares());
+								i.remove();
+							} else if (l.getShares().compareTo(sharesToBurn) > 0){
+								l.setShares(l.getShares().subtract(sharesToBurn));
+								sharesToBurn = BigDecimal.ZERO;
+							} else {
+								sharesToBurn = BigDecimal.ZERO;
+								i.remove();
+							}
+						} else {
+							Lot lot = new Lot();
+							lot.setDate(td.getTransaction().getTranDate());
+							lot.setShares(sharesToBurn.multiply(BigDecimal.valueOf(-1)));
+							lot.setBasis(t.getPrice());
+							pos.getLotList().add(lot);
+							sharesToBurn = BigDecimal.ZERO;
+						}
+					}
 				} 
 			} else if ("D".equals(action)){
 				td.setTranCost(t.getPrice().multiply(BigDecimal.valueOf(-1)));
@@ -1247,10 +1282,16 @@ public class StockDB {
 			td.setCashBalance(cashBalance);
 		}
 		
+		List <Integer> deadSectors = new ArrayList<Integer>();
 		for (Integer sector : bigMap.keySet()){
 			Map<String, Position> posMap = bigMap.get(sector);
 			for (String s : posMap.keySet() ){
 				Position pos = posMap.get(s);
+				for (Lot l : pos.getLotList()){
+					BigDecimal lotCost = l.getShares().multiply(l.getBasis());
+					pos.setShares(pos.getShares().add(l.getShares()));
+					pos.setCost(pos.getCost().add(lotCost));
+				}
 				if (pos.getShares().compareTo(BigDecimal.ZERO) == 0){
 					posMap.remove(s);
 				} else {
@@ -1258,6 +1299,13 @@ public class StockDB {
 					pos.setValue(pos.getSd().getStock().getPrice().multiply(pos.getShares()));
 				}
 			}
+			if (posMap.isEmpty()){
+				deadSectors.add(sector);
+			}
+		}
+		
+		for (Integer sector : deadSectors){
+			bigMap.remove(sector);
 		}
 		
 		pData.setPositionMap(bigMap);
@@ -1296,6 +1344,11 @@ public class StockDB {
 	public void deleteTransaction(Integer id) throws Exception {
 		TransactionDAO tdao = new TransactionDAO(con);
 		tdao.delete(id);
+	}
+	
+	public void updateTransaction(Transaction t) throws Exception {
+		TransactionDAO tdao = new TransactionDAO(con);
+		tdao.update(t);
 	}
 
 	public List<Option> getOptions(String symbol) throws Exception {

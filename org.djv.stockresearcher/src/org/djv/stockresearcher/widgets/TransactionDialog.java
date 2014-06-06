@@ -123,13 +123,7 @@ public class TransactionDialog extends Dialog {
 		tranDateLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 
 		tranDateText = new Text(container, SWT.BORDER);
-		tranDateText.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-		
-		if (tranDate == null){
-			tranDateText.setText(new SimpleDateFormat("MM/dd/yyyy").format(new Date()));
-		} else {
-			tranDateText.setText(new SimpleDateFormat("MM/dd/yyyy").format(tranDate));
-		}
+		tranDateText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		
 		actionLabel = new Label(container, SWT.NONE);
 		actionLabel.setText("Action: ");
@@ -137,7 +131,7 @@ public class TransactionDialog extends Dialog {
 		
 		actionCombo = new Combo(container, SWT.BORDER);
 		actionCombo.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-		actionCombo.setItems(new String[] {"", "Buy", "Sell", "Cash Deposit", "Cash Withdrawal", "Dividend"});
+		actionCombo.setItems(new String[] {"", "Buy", "Sell", "Cash Deposit", "Cash Withdrawal", "Dividend", "Dividend Reinvest"});
 		actionCombo.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -147,6 +141,44 @@ public class TransactionDialog extends Dialog {
 			}
 		});
 
+		symbolLabel = new Label(container, SWT.NONE);
+		symbolLabel.setText("Symbol: ");
+		symbolLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+		
+		symbolText = new Text(container, SWT.BORDER);
+		symbolText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		sharesLabel = new Label(container, SWT.NONE);
+		sharesLabel.setText("Shares: ");
+		sharesLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+		
+		sharesText = new Text(container, SWT.BORDER);
+		sharesText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+		priceLabel = new Label(container, SWT.NONE);
+		priceLabel.setText("Price: ");
+		priceLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+		
+		priceText = new Text(container, SWT.BORDER);
+		priceText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+		commissionLabel = new Label(container, SWT.NONE);
+		commissionLabel.setText("Commisssion: ");
+		commissionLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+		
+		commissionText = new Text(container, SWT.BORDER);
+		commissionText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		return container;
+	}
+	
+	@Override
+	public int open() {
+		if (tranDate == null){
+			tranDateText.setText(new SimpleDateFormat("MM/dd/yyyy").format(new Date()));
+		} else {
+			tranDateText.setText(new SimpleDateFormat("MM/dd/yyyy").format(tranDate));
+		}
+		
 		if (action == null){
 			actionCombo.select(0);
 		} else {
@@ -171,15 +203,18 @@ public class TransactionDialog extends Dialog {
 					actionCombo.select(5);
 					setFieldsForSelection(5);
 					break;
+				case Transaction.ACTION_DIVIDEND_REINVEST: 
+					actionCombo.select(6);
+					setFieldsForSelection(6);
+					break;
 			}
 		}
 		
-		symbolLabel = new Label(container, SWT.NONE);
-		symbolLabel.setText("Symbol: ");
-		symbolLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-		
-		symbolText = new Text(container, SWT.BORDER);
-		symbolText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		if (shares == null){
+			sharesText.setText("");
+		} else {
+			sharesText.setText(new DecimalFormat("0.0000").format(shares));
+		}
 		
 		if (symbol == null){
 			symbolText.setText("");
@@ -187,48 +222,21 @@ public class TransactionDialog extends Dialog {
 			symbolText.setText(symbol);
 		}
 		
-		sharesLabel = new Label(container, SWT.NONE);
-		sharesLabel.setText("Shares: ");
-		sharesLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-		
-		sharesText = new Text(container, SWT.BORDER);
-		sharesText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-
-		if (shares == null){
-			sharesText.setText("100.0000");
-		} else {
-			symbolText.setText(new DecimalFormat("0.0000").format(shares));
-		}
-		
-		priceLabel = new Label(container, SWT.NONE);
-		priceLabel.setText("Price: ");
-		priceLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-		
-		priceText = new Text(container, SWT.BORDER);
-		priceText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		
 		if (price == null){
-			priceText.setText("0.0000");
+			priceText.setText("");
 		} else {
 			priceText.setText(new DecimalFormat("0.0000").format(price));
 		}
 		
-		commissionLabel = new Label(container, SWT.NONE);
-		commissionLabel.setText("Commisssion: ");
-		commissionLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-		
-		commissionText = new Text(container, SWT.BORDER);
-		commissionText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		
 		if (commission == null){
-			commissionText.setText("0.0000");
+			commissionText.setText("");
 		} else {
 			commissionText.setText(new DecimalFormat("0.0000").format(commission));
 		}
 
-		return container;
+		return super.open();
 	}
-	
+
 	private void setFieldsForSelection(int i) {
 		switch (i){
 		case 0: 
@@ -239,6 +247,7 @@ public class TransactionDialog extends Dialog {
 			break;
 		case 1: 
 		case 2:
+		case 6:
 			symbolText.setEnabled(true);
 			sharesText.setEnabled(true);
 			priceText.setEnabled(true);
@@ -267,9 +276,8 @@ public class TransactionDialog extends Dialog {
 
 	@Override
 	protected void okPressed() {
-		
 		String tranDateStr = tranDateText.getText();
-		
+		tranDateStr = tranDateStr.replace('.', '/');
 		if ("".equals(tranDateStr)){
 			MessageDialog.openError(getParentShell(), "Error", "Enter Tran Date.");
 			return;
@@ -293,6 +301,7 @@ public class TransactionDialog extends Dialog {
 			case "Cash Deposit": action = "D"; break;
 			case "Cash Withdrawal": action = "W"; break;
 			case "Dividend": action = "V"; break;
+			case "Dividend Reinvest": action = "R"; break;
 			default: 
 				MessageDialog.openError(getParentShell(), "Error", "Invalid Action.");
 				return;

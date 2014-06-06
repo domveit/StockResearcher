@@ -10,6 +10,7 @@ public class Transaction {
 	public static final String ACTION_CASH_DEPOSIT = "D";
 	public static final String ACTION_CASH_WITHDRAWAL = "W";
 	public static final String ACTION_DIVIDEND = "V";
+	public static final String ACTION_DIVIDEND_REINVEST = "R";
 	
 	Integer id;
 	Integer portId;
@@ -75,6 +76,7 @@ public class Transaction {
 			case ACTION_CASH_DEPOSIT: return "Cash Deposit";
 			case ACTION_CASH_WITHDRAWAL: return "Cash Withdrawal";
 			case ACTION_DIVIDEND: return "Dividend";
+			case ACTION_DIVIDEND_REINVEST: return "Dividend Reinvest";
 			default: return "???";
 		}
 	}

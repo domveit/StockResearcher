@@ -1,6 +1,8 @@
 package org.djv.stockresearcher.model;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Position {
 	
@@ -9,6 +11,8 @@ public class Position {
 	BigDecimal cost = new BigDecimal("0.00");
 	BigDecimal basis = new BigDecimal("0.00");
 	BigDecimal value = new BigDecimal("0.00");
+	
+	List<Lot> lotList = new ArrayList<Lot>();
 	
 	public StockData getSd() {
 		return sd;
@@ -40,7 +44,12 @@ public class Position {
 	public void setBasis(BigDecimal basis) {
 		this.basis = basis;
 	}
-	
+	public List<Lot> getLotList() {
+		return lotList;
+	}
+	public void setLotList(List<Lot> lotList) {
+		this.lotList = lotList;
+	}
 	
 
 }
