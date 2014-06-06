@@ -61,7 +61,7 @@ public class PortfolioPart {
 	String[] tranTitles = {"Date", "Action", "Symbol", "Shares", "Price Paid", "Commission", "Cost", "Balance"};
 	Table tranTable;
 	
-	String[] posTitles = {"Symbol", "Shares", "Basis", "Price", "Cost", "Value", "Gain", "Gain Pct" ,"Div", "Yield", "YOC", "Weight"};
+	String[] posTitles = {"Sector", "Symbol", "Shares", "Basis", "Price", "Cost", "Value", "Gain", "Gain Pct" ,"Div", "Yield", "YOC", "Weight"};
 	Table posTable;
 	
 	PortfolioData portData;
@@ -459,14 +459,8 @@ public class PortfolioPart {
 			}
 		}
 		
-		BigDecimal totalYield = null;
-		if (totalValue.compareTo(BigDecimal.ZERO) != 0){
-			totalDiv.multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
-		}
-		BigDecimal totalYoc = null;
-		if (totalCost.compareTo(BigDecimal.ZERO) != 0 ){
-			totalDiv.multiply(BigDecimal.valueOf(100)).divide(totalCost, 2, RoundingMode.HALF_UP);
-		}
+		totalCost = totalCost.add(portData.getCashBalance());
+		totalValue = totalValue.add(portData.getCashBalance());
 		
 		for (Integer sector : portData.getPositionMap().keySet()){
 			BigDecimal sectorCost = new BigDecimal("0.00");
@@ -476,21 +470,6 @@ public class PortfolioPart {
 			
 			SectorIndustry industry = StockDB.getInstance().getIndustry(sector);
 			String sectorStr = ((industry == null) ? "" : industry.getSectorName());
-			
-			TableItem sHeadItem = new TableItem (posTable, SWT.NONE);
-			sHeadItem.setText (0, sectorStr);
-			sHeadItem.setBackground(new Color(Display.getDefault(), 163, 227, 247));
-			sHeadItem.setText (1, "");
-			sHeadItem.setText (2, "");
-			sHeadItem.setText (3, "");
-			sHeadItem.setText (4,"");
-			sHeadItem.setText (5,"");
-			sHeadItem.setText (6,"");
-			sHeadItem.setText (7,"");
-			sHeadItem.setText (8,"");
-			sHeadItem.setText (9,"");
-			sHeadItem.setText (10,"");
-			sHeadItem.setText (11,"");
 			
 			Map<String, Position> pMap = portData.getPositionMap().get(sector);
 			
@@ -529,18 +508,19 @@ public class PortfolioPart {
 				BigDecimal wCalc = p.getValue().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
 				String w = new DecimalFormat("0.00").format(wCalc)+ "%";
 				
-				item.setText (0, symbol);
-				item.setText (1, shares);
-				item.setText (2, basis);
-				item.setText (3, price);
-				item.setText (4,cost);
-				item.setText (5,value);
-				item.setText (6,gain);
-				item.setText (7,gainPct);
-				item.setText (8,div);
-				item.setText (9,y);
-				item.setText (10,yoc);
-				item.setText (11,w);
+				item.setText (0, sectorStr);
+				item.setText (1, symbol);
+				item.setText (2, shares);
+				item.setText (3, basis);
+				item.setText (4, price);
+				item.setText (5,cost);
+				item.setText (6,value);
+				item.setText (7,gain);
+				item.setText (8,gainPct);
+				item.setText (9,div);
+				item.setText (10,y);
+				item.setText (11,yoc);
+				item.setText (12,w);
 				
 				sectorCost = sectorCost.add(p.getCost());
 				sectorValue = sectorValue.add(p.getValue());
@@ -550,12 +530,12 @@ public class PortfolioPart {
 				if (showLots.contains(sym))
 				for (Lot l : p.getLotList()){
 					TableItem lotItem = new TableItem (posTable, SWT.NONE);
-					lotItem.setText (0, new SimpleDateFormat("MM/dd/yyyy").format(l.getDate()));
+					lotItem.setText (0, "");
+					lotItem.setText (1, new SimpleDateFormat("MM/dd/yyyy").format(l.getDate()));
 					String lshares = new DecimalFormat("#,##0.00##").format(l.getShares());
 					String lbasis = new DecimalFormat("#,##0.00##").format(l.getBasis());
-					lotItem.setText (1, lshares);
-					lotItem.setText (2, lbasis);
-					lotItem.setText (3, "");
+					lotItem.setText (2, lshares);
+					lotItem.setText (3, lbasis);
 					lotItem.setText (4, "");
 					lotItem.setText (5, "");
 					lotItem.setText (6, "");
@@ -564,6 +544,7 @@ public class PortfolioPart {
 					lotItem.setText (9, "");
 					lotItem.setText (10, "");
 					lotItem.setText (11, "");
+					lotItem.setText (12, "");
 				}
 			}
 			
@@ -587,19 +568,50 @@ public class PortfolioPart {
 			String div = new DecimalFormat("#,###,##0.00").format(sectorDiv);
 			
 			TableItem subTotItem = new TableItem (posTable, SWT.NONE);
-			subTotItem.setText (0, sectorStr + " Totals");
+			subTotItem.setText (0, sectorStr);
+			subTotItem.setText (1, "Subtotals");
 			subTotItem.setBackground(new Color(Display.getDefault(), 230, 230, 230));
-			subTotItem.setText (1, shares);
-			subTotItem.setText (2, basis);
-			subTotItem.setText (3, price);
-			subTotItem.setText (4,cost);
-			subTotItem.setText (5,value);
-			subTotItem.setText (6,gain);
-			subTotItem.setText (7,gainPct);
-			subTotItem.setText (8,div);
-			subTotItem.setText (9,y);
-			subTotItem.setText (10,yoc);
-			subTotItem.setText (11,w);
+			subTotItem.setText (2, shares);
+			subTotItem.setText (3, basis);
+			subTotItem.setText (4, price);
+			subTotItem.setText (5,cost);
+			subTotItem.setText (6,value);
+			subTotItem.setText (7,gain);
+			subTotItem.setText (8,gainPct);
+			subTotItem.setText (9,div);
+			subTotItem.setText (10,y);
+			subTotItem.setText (11,yoc);
+			subTotItem.setText (12,w);
+		}
+		
+		TableItem cashItem = new TableItem (posTable, SWT.NONE);
+		
+		String bal = new DecimalFormat("#,###,##0.00").format(portData.getCashBalance());
+		BigDecimal cashWeight = portData.getCashBalance().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
+		String cw = new DecimalFormat("0.00").format(cashWeight)+ "%";
+		
+		cashItem.setBackground(new Color(Display.getDefault(), 230, 230, 230));
+		cashItem.setText (0, "");
+		cashItem.setText (1, "Cash");
+		cashItem.setText (2, "");
+		cashItem.setText (3, "");
+		cashItem.setText (4, "");
+		cashItem.setText (5,bal);
+		cashItem.setText (6,bal);
+		cashItem.setText (7,"0.00");
+		cashItem.setText (8,"0.00%");
+		cashItem.setText (9,"0.00");
+		cashItem.setText (10,"0.00%");
+		cashItem.setText (11,"0.00%");
+		cashItem.setText (12,cw);
+
+		BigDecimal totalYield = null;
+		if (totalValue.compareTo(BigDecimal.ZERO) != 0){
+			totalYield = totalDiv.multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
+		}
+		BigDecimal totalYoc = null;
+		if (totalCost.compareTo(BigDecimal.ZERO) != 0 ){
+			totalYoc = totalDiv.multiply(BigDecimal.valueOf(100)).divide(totalCost, 2, RoundingMode.HALF_UP);
 		}
 		
 		TableItem totItem = new TableItem (posTable, SWT.NONE);
@@ -626,18 +638,19 @@ public class PortfolioPart {
 		
 		totItem.setBackground(new Color(Display.getDefault(), 200, 200, 200));
 		
-		totItem.setText (0, "Grand Totals");
-		totItem.setText (1, shares);
-		totItem.setText (2, basis);
-		totItem.setText (3, price);
-		totItem.setText (4,cost);
-		totItem.setText (5,value);
-		totItem.setText (6,gain);
-		totItem.setText (7,gainPct);
-		totItem.setText (8,div);
-		totItem.setText (9,y);
-		totItem.setText (10,yoc);
-		totItem.setText (11,"100%");
+		totItem.setText (0, "");
+		totItem.setText (1, "Total");
+		totItem.setText (2, shares);
+		totItem.setText (3, basis);
+		totItem.setText (4, price);
+		totItem.setText (5,cost);
+		totItem.setText (6,value);
+		totItem.setText (7,gain);
+		totItem.setText (8,gainPct);
+		totItem.setText (9,div);
+		totItem.setText (10,y);
+		totItem.setText (11,yoc);
+		totItem.setText (12,"100%");
 
 		for (int i=0; i< posTitles.length; i++) {
 			posTable.getColumn (i).pack ();
