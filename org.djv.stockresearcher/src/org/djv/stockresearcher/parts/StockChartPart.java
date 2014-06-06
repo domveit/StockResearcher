@@ -37,6 +37,7 @@ public class StockChartPart implements AppStateListener {
 	
 	ExpandItem item1 ;
 	
+	private Composite chartComp;
 	private Label chartLabel;
 	
 	private AppState appState = AppState.getInstance();
@@ -56,41 +57,18 @@ public class StockChartPart implements AppStateListener {
 	}
 	
 	public void buildChartArea(Composite leftSide) {
-		
 		ExpandBar bar = new ExpandBar (leftSide, SWT.V_SCROLL);
-		Image image = Display.getDefault().getSystemImage(SWT.ICON_QUESTION);
 		
-		Composite chartComposite = new Composite(bar, SWT.BORDER);
-		chartComposite.setLayout(new GridLayout(2, false));
-		{
-			Label l = new Label(chartComposite, SWT.NONE);
-			l.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-			l.setText("Time Period");
-				
-			Composite timePeriodComp = new Composite(chartComposite, SWT.NONE);
-			timePeriodComp.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-			timePeriodComp.setLayout(new FillLayout());
-			
-			for (String s : chartTimePeriods){
-				Button b = new Button(timePeriodComp, SWT.PUSH);
-				b.setText(s);
-				b.addSelectionListener(new SelectionAdapter() {
-					public void widgetSelected(SelectionEvent e) {
-						Button b = (Button) e.widget;
-						chartLabel.setData("t", b.getText());
-						refreshChart();
-					}
-				});
-			}
-		}
+		Composite chartSettings = new Composite(bar, SWT.BORDER);
+		chartSettings.setLayout(new GridLayout(2, false));
 		
 		{
 			
-			Label l2 = new Label(chartComposite, SWT.NONE);
+			Label l2 = new Label(chartSettings, SWT.NONE);
 			l2.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 			l2.setText("Chart Type");
 			
-			Composite chartTypeComp = new Composite(chartComposite, SWT.NONE);
+			Composite chartTypeComp = new Composite(chartSettings, SWT.NONE);
 			chartTypeComp.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 			chartTypeComp.setLayout(new FillLayout());
 
@@ -108,11 +86,11 @@ public class StockChartPart implements AppStateListener {
 		}
 		{
 			
-			Label l2 = new Label(chartComposite, SWT.NONE);
+			Label l2 = new Label(chartSettings, SWT.NONE);
 			l2.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 			l2.setText("Moving Avg");
 			
-			Composite maComp = new Composite(chartComposite, SWT.NONE);
+			Composite maComp = new Composite(chartSettings, SWT.NONE);
 			maComp.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 			maComp.setLayout(new FillLayout());
 			
@@ -149,11 +127,11 @@ public class StockChartPart implements AppStateListener {
 		
 		{
 			
-			Label l2 = new Label(chartComposite, SWT.NONE);
+			Label l2 = new Label(chartSettings, SWT.NONE);
 			l2.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 			l2.setText("EMA");
 			
-			Composite emaComp = new Composite(chartComposite, SWT.NONE);
+			Composite emaComp = new Composite(chartSettings, SWT.NONE);
 			emaComp.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 			emaComp.setLayout(new FillLayout());
 			
@@ -187,21 +165,47 @@ public class StockChartPart implements AppStateListener {
 				});
 			}
 		}
+
+		chartComp = new Composite(bar, SWT.BORDER);
+		chartComp.setLayout(new GridLayout(2, false));
 		
-		chartLabel = new Label(bar, SWT.NONE);
+		{
+			Label l = new Label(chartComp, SWT.NONE);
+			l.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+			l.setText("Time Period");
+				
+			Composite timePeriodComp = new Composite(chartComp, SWT.NONE);
+			timePeriodComp.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+			timePeriodComp.setLayout(new FillLayout());
+			
+			for (String s : chartTimePeriods){
+				Button b = new Button(timePeriodComp, SWT.PUSH);
+				b.setText(s);
+				b.addSelectionListener(new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent e) {
+						Button b = (Button) e.widget;
+						chartLabel.setData("t", b.getText());
+						refreshChart();
+					}
+				});
+			}
+		}
+
+		chartLabel = new Label(chartComp, SWT.NONE);
+		chartLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 		chartLabel.setData("t", "1y");
 		chartLabel.setData("q", "l");
 		chartLabel.setData("p", "");
 		
 		ExpandItem item0 = new ExpandItem (bar, SWT.NONE, 0);
-		item0.setText("Chart settings");
-		item0.setHeight(chartComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-		item0.setControl(chartComposite);
+		item0.setText("More chart settings");
+		item0.setHeight(chartSettings.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+		item0.setControl(chartSettings);
 
 		item1 = new ExpandItem (bar, SWT.NONE, 1);
 		item1.setText("Chart");
-		item1.setHeight(chartLabel.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-		item1.setControl(chartLabel);
+		item1.setHeight(chartComp.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+		item1.setControl(chartComp);
 		item1.setExpanded(true);
 	}
 	
@@ -226,7 +230,7 @@ public class StockChartPart implements AppStateListener {
 						@Override
 						public void run() {
 							chartLabel.setImage(img);		
-							item1.setHeight(chartLabel.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+							item1.setHeight(chartComp.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 						}
 					});
 				} catch (Exception e){

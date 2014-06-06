@@ -7,6 +7,9 @@ public class Transaction {
 	
 	public static final String ACTION_BUY = "B";
 	public static final String ACTION_SELL = "S";
+	public static final String ACTION_CASH_DEPOSIT = "D";
+	public static final String ACTION_CASH_WITHDRAWAL = "W";
+	public static final String ACTION_DIVIDEND = "V";
 	
 	Integer id;
 	Integer portId;
@@ -14,6 +17,7 @@ public class Transaction {
 	String symbol;
 	BigDecimal shares;
 	BigDecimal price;
+	BigDecimal commission;
 	Date tranDate;
 	
 	public Integer getId() {
@@ -58,11 +62,19 @@ public class Transaction {
 	public void setTranDate(Date tranDate) {
 		this.tranDate = tranDate;
 	}
-	
+	public BigDecimal getCommission() {
+		return commission;
+	}
+	public void setCommission(BigDecimal commission) {
+		this.commission = commission;
+	}
 	public String getActionText(){
 		switch(action){
-			case "B": return "Buy";
-			case "S": return "Sell";
+			case ACTION_BUY: return "Buy";
+			case ACTION_SELL: return "Sell";
+			case ACTION_CASH_DEPOSIT: return "Cash Deposit";
+			case ACTION_CASH_WITHDRAWAL: return "Cash Withdrawal";
+			case ACTION_DIVIDEND: return "Dividend";
 			default: return "???";
 		}
 	}

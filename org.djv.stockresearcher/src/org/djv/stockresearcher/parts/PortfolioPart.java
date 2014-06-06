@@ -16,6 +16,7 @@ import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
 import org.djv.stockresearcher.model.Position;
 import org.djv.stockresearcher.model.SectorIndustry;
+import org.djv.stockresearcher.model.StockData;
 import org.djv.stockresearcher.model.Transaction;
 import org.djv.stockresearcher.model.TransactionData;
 import org.djv.stockresearcher.widgets.PortfolioDialog;
@@ -32,9 +33,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
@@ -51,12 +50,16 @@ public class PortfolioPart {
 	private Combo portfolioSelector;
 	private Button newButton;
 	private Button deleteButton;
+	private Button refreshButton;
 	
 	private Button newTranButton;
 	private Button deleteTranButton;
 	
-	String[] titles = {"Date", "Action", "Symbol", "Shares", "Price Paid", "Cost"};
-	Table table;
+	String[] tranTitles = {"Date", "Action", "Symbol", "Shares", "Price Paid", "Commission", "Cost", "Balance"};
+	Table tranTable;
+	
+	String[] posTitles = {"Symbol", "Shares", "Basis", "Price", "Cost", "Value", "Gain", "Gain Pct" ,"Div", "Yield", "YOC", "Weight"};
+	Table posTable;
 	
 	private Shell shell;
 	
@@ -65,7 +68,7 @@ public class PortfolioPart {
 		this.shell = parent.getShell();
 	    
 		parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		parent.setLayout(new GridLayout(3, false));
+		parent.setLayout(new GridLayout(4, false));
 		
 		portfolioSelector = new Combo(parent, SWT.BORDER);
 		portfolioSelector.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
@@ -125,8 +128,27 @@ public class PortfolioPart {
 			}
 		});
 		
+		refreshButton = new Button(parent, SWT.NONE);
+		refreshButton.setText("Refresh");
+		refreshButton.setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, true, false));
+		
+		refreshButton.addSelectionListener(new SelectionAdapter(){
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				String portfolioName = portfolioSelector.getText();
+				if ("".equals(portfolioName)){
+					return;
+				}
+				try {
+					selectPortfolio();
+				} catch (Exception e1) {
+					MessageDialog.openError(parent.getShell(), "Error", e1.getMessage());
+				}
+			}
+		});
+		
 	    folder = new TabFolder(parent, SWT.NONE);
-	    folder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
+	    folder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
 	    
 	    TabItem tab1 = new TabItem(folder, SWT.NONE);
 	    tab1.setText("Overview");
@@ -139,30 +161,46 @@ public class PortfolioPart {
 		tab2.setControl(c2);
 		
 		updatePortfolioList();
-		for (int i=0; i< titles.length; i++) {
-			table.getColumn (i).pack ();
+		for (int i=0; i< tranTitles.length; i++) {
+			tranTable.getColumn (i).pack ();
 		}
 		
 	}
 
 	private Composite createOverviewTab(TabFolder parent) {
-		sc = new ScrolledComposite(parent, SWT.V_SCROLL | SWT.BORDER);
-		sc.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		sc.setLayout(new GridLayout());
-		overview = new Composite(sc, SWT.BORDER);
-		overview.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		sc.setContent(overview);
-		sc.setMinSize(overview.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-		sc.setExpandVertical(true);
-		sc.setExpandHorizontal(true);
-		sc.setAlwaysShowScrollBars(true);
-		return sc;
+		Composite c = new Composite(parent, SWT.NONE);
+		c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		c.setLayout(new GridLayout(1, false));
+ 
+		posTable = new Table (c, SWT.MULTI | SWT.NONE | SWT.FULL_SELECTION);
+		posTable.setLinesVisible (true);
+		posTable.setHeaderVisible (true);
+		
+		for (int i=0; i<posTitles.length; i++) {
+			TableColumn column = new TableColumn (posTable, SWT.NONE);
+			column.setText (posTitles [i]);
+		}	
+		posTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		
+		posTable.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				int i = posTable.getSelectionIndex();
+				if (i < 0) {
+					return;
+				}
+				StockData sd = (StockData)posTable.getItem(i).getData("sd");
+				if (sd != null){
+					AppState.getInstance().setSelectedStock(sd);
+				}
+			}
+		});
+		return c;
 	}
 
 	public Composite createTransactionsTab(final Composite parent) {
 		Composite c = new Composite(parent, SWT.NONE);
 		c.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		c.setLayout(new GridLayout(3, false));
+		c.setLayout(new GridLayout(4, false));
  
 		newTranButton = new Button(c, SWT.NONE);
 		newTranButton.setText("New Transaction");
@@ -178,6 +216,7 @@ public class PortfolioPart {
 				}
 				TransactionDialog td = new TransactionDialog(parent.getShell());
 				td.create();
+				td.setMode("NEW");
 				int result = td.open();
 				if (result == Window.OK) {
 					try {
@@ -187,6 +226,7 @@ public class PortfolioPart {
 						t.setShares(td.getShares());
 						t.setSymbol(td.getSymbol());
 						t.setTranDate(new java.sql.Date(td.getTranDate().getTime()));
+						t.setCommission(td.getCommission());
 								
 						StockDB.getInstance().createNewTransaction(portfolioName, t);
 						selectPortfolio();
@@ -205,11 +245,11 @@ public class PortfolioPart {
 		deleteTranButton.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				int i = table.getSelectionIndex();
+				int i = tranTable.getSelectionIndex();
 				if (i < 0) {
 					return;
 				}
-				TransactionData td = (TransactionData)table.getItem(i).getData("tran");
+				TransactionData td = (TransactionData)tranTable.getItem(i).getData("tran");
 				if (td != null){
 					boolean result = MessageDialog.openConfirm(shell, "Are you sure?", "Are you sure?");
 					if (result){
@@ -225,25 +265,25 @@ public class PortfolioPart {
 
 		});
 		
-		table = new Table (c, SWT.MULTI | SWT.NONE | SWT.FULL_SELECTION);
-		table.setLinesVisible (true);
-		table.setHeaderVisible (true);
+		tranTable = new Table (c, SWT.MULTI | SWT.NONE | SWT.FULL_SELECTION);
+		tranTable.setLinesVisible (true);
+		tranTable.setHeaderVisible (true);
 		
-		for (int i=0; i<titles.length; i++) {
-			TableColumn column = new TableColumn (table, SWT.NONE);
-			column.setText (titles [i]);
+		for (int i=0; i<tranTitles.length; i++) {
+			TableColumn column = new TableColumn (tranTable, SWT.NONE);
+			column.setText (tranTitles [i]);
 //			column.addListener(SWT.Selection, sortListener);
 		}	
 		
-		table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 5, 1));
+		tranTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1));
 		
-		table.addSelectionListener(new SelectionAdapter() {
+		tranTable.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				int i = table.getSelectionIndex();
+				int i = tranTable.getSelectionIndex();
 				if (i < 0) {
 					return;
 				}
-				TransactionData td = (TransactionData)table.getItem(i).getData("tran");
+				TransactionData td = (TransactionData)tranTable.getItem(i).getData("tran");
 				if (td != null){
 					AppState.getInstance().setSelectedStock(td.getStockData());
 				}
@@ -272,140 +312,231 @@ public class PortfolioPart {
 	}
 	
 	public void selectPortfolio() {
-		table.removeAll();
-		String portfolioName = portfolioSelector.getText();
-		if ("".equals(portfolioName)){
-			return;
-		}
 		try {
-			for (Control c : overview.getChildren()){
-				c.dispose();
+			String portfolioName = portfolioSelector.getText();
+			if ("".equals(portfolioName)){
+				return;
 			}
-			
 			PortfolioData portData = StockDB.getInstance().getPortfolioData(portfolioName);
-			
-			overview.setLayout(new GridLayout(8, false));
-			
-			Label h1 = new Label(overview, SWT.LEFT);
-			h1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h1.setText("Sector");
-			h1.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-
-			Label h2 = new Label(overview, SWT.LEFT);
-			h2.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h2.setText("Symbol");
-			h2.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-			
-			Label h3 = new Label(overview, SWT.LEFT);
-			h3.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h3.setText("Shares");
-			h3.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-			
-			Label h4 = new Label(overview, SWT.LEFT);
-			h4.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h4.setText("Cost");
-			h4.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-			
-			Label h5 = new Label(overview, SWT.LEFT);
-			h5.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h5.setText("Basis");
-			h5.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-			
-			Label h6 = new Label(overview, SWT.LEFT);
-			h6.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h6.setText("Price");
-			h6.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-			
-			Label h7 = new Label(overview, SWT.LEFT);
-			h7.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h7.setText("Value");
-			h7.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-			
-			Label h8 = new Label(overview, SWT.LEFT);
-			h8.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-			h8.setText("Div");
-			h8.setBackground(new Color(Display.getDefault(), 195, 195, 195));
-			
-			for (Integer sector : portData.getPositionMap().keySet()){
-				boolean firstRow = true;
-				Map<String, Position> pMap = portData.getPositionMap().get(sector);
-				for (String sym : pMap.keySet()){
-					if (firstRow){
-						Label sh1 = new Label(overview, SWT.NONE);
-						sh1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-						SectorIndustry industry = StockDB.getInstance().getIndustry(sector);
-						sh1.setText(industry == null ? "" : industry.getSectorName());
-						sh1.setBackground(new Color(Display.getDefault(), 153, 217, 234));
-						firstRow = false;
-					} else {
-						Label l1 = new Label(overview, SWT.NONE);
-						l1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-						l1.setText("");
-					}
-					Position p = pMap.get(sym);
-					
-					Label l2 = new Label(overview, SWT.NONE);
-					l2.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-					l2.setText(p.getSd().getStock().getSymbol());
-					
-					Label l3 = new Label(overview, SWT.NONE);
-					l3.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-					l3.setText(new DecimalFormat("0.0000").format(p.getShares()));
-					
-					Label l4 = new Label(overview, SWT.NONE);
-					l4.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-					l4.setText(new DecimalFormat("0.00").format(p.getCost()));
-					
-					Label l5 = new Label(overview, SWT.NONE);
-					l5.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-					l5.setText(new DecimalFormat("0.00").format(p.getBasis()));
-					
-					Label l6 = new Label(overview, SWT.NONE);
-					l6.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-					l6.setText(new DecimalFormat("0.00").format(p.getSd().getStock().getPrice()));
-					
-					Label l7 = new Label(overview, SWT.NONE);
-					l7.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-					l7.setText(new DecimalFormat("0.00").format(p.getValue()));
-					
-					Label l8 = new Label(overview, SWT.NONE);
-					l8.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
-					l8.setText(new DecimalFormat("0.00").format(p.getSd().getNormDividend()));
-
-				}
-			}
-			overview.layout(true);
-			sc.setMinSize(overview.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-			sc.layout(true);
-				
-			for (TransactionData td : portData.getTransactionList()){
-				TableItem item = new TableItem (table, SWT.NONE);
-				item.setData("tran", td);
-				
-				BigDecimal shares = td.getTransaction().getShares();
-				BigDecimal currPrice = td.getStockData().getStock().getPrice();
-				BigDecimal tranPrice = td.getTransaction().getPrice();
-				BigDecimal tranCost = tranPrice.multiply(shares);
-				BigDecimal tranValue = currPrice.multiply(shares);
-				BigDecimal gainOrLoss = tranValue.subtract(tranCost);
-				
-//				String[] titles = {"TranId", "Action", "Date", "Symbol", "Price", "Shares"};
-				item.setText (0, String.valueOf(td.getTransaction().getTranDate()));
-				item.setText (1, td.getTransaction().getActionText());
-				item.setText (2, td.getTransaction().getSymbol());
-				
-				item.setText (3, new DecimalFormat("0.00").format(shares));
-				item.setText (4, new DecimalFormat("0.00").format(tranPrice));
-				item.setText (5, new DecimalFormat("0.00").format(tranCost));
-//				}
-			}
-			for (int i=0; i< titles.length; i++) {
-				table.getColumn (i).pack ();
-			}
+			rebuildPortfolioTable(portData);
+			rebuildTranTable(portData);
 		} catch (Exception e) {
 			e.printStackTrace();
 			MessageDialog.openError(shell, "Error", e.getMessage());
 		}
 		
 	}
+
+	private void rebuildTranTable(PortfolioData portData) {
+		tranTable.removeAll();
+		
+		for (TransactionData td : portData.getTransactionList()){
+			TableItem item = new TableItem (tranTable, SWT.NONE);
+			item.setData("tran", td);
+			
+			BigDecimal shares = td.getTransaction().getShares();
+			BigDecimal tranPrice = td.getTransaction().getPrice();
+			BigDecimal commission = td.getTransaction().getCommission();
+
+			item.setText (0, String.valueOf(td.getTransaction().getTranDate()));
+			item.setText (1, td.getTransaction().getActionText());
+			item.setText (2, td.getTransaction().getSymbol());
+			item.setText (3, new DecimalFormat("#,##0.00##").format(shares));
+			item.setText (4, new DecimalFormat("#,##0.00##").format(tranPrice));
+			item.setText (5, new DecimalFormat("#,##0.00##").format(commission));
+			item.setText (6, new DecimalFormat("#,##0.00##").format(td.getTranCost()));
+			item.setText (7, new DecimalFormat("#,##0.00##").format(td.getCashBalance()));
+		}
+		for (int i=0; i< tranTitles.length; i++) {
+			tranTable.getColumn (i).pack ();
+		}
+	}
+
+	private void rebuildPortfolioTable(PortfolioData portData) throws Exception {
+		posTable.removeAll();
+		
+		BigDecimal totalCost = new BigDecimal("0.0000");
+		BigDecimal totalValue = new BigDecimal("0.00");
+		BigDecimal totalDiv = new BigDecimal("0.00");
+		BigDecimal totalGain = new BigDecimal("0.00");
+		
+		for (Integer sector : portData.getPositionMap().keySet()){
+			Map<String, Position> pMap = portData.getPositionMap().get(sector);
+			for (String sym : pMap.keySet()){
+				Position p = pMap.get(sym);
+				
+				BigDecimal gainCalc = p.getValue().subtract(p.getCost());
+				BigDecimal divCalc = p.getSd().getStock().getDividend().multiply(p.getShares());
+				
+				totalCost = totalCost.add(p.getCost());
+				totalValue = totalValue.add(p.getValue());
+				totalDiv = totalDiv.add(divCalc);
+				totalGain = totalGain.add(gainCalc);
+			}
+		}
+		
+		BigDecimal totalYield = null;
+		if (totalValue.compareTo(BigDecimal.ZERO) != 0){
+			totalDiv.multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
+		}
+		BigDecimal totalYoc = null;
+		if (totalCost.compareTo(BigDecimal.ZERO) != 0 ){
+			totalDiv.multiply(BigDecimal.valueOf(100)).divide(totalCost, 2, RoundingMode.HALF_UP);
+		}
+		
+		for (Integer sector : portData.getPositionMap().keySet()){
+			BigDecimal sectorCost = new BigDecimal("0.00");
+			BigDecimal sectorValue = new BigDecimal("0.00");
+			BigDecimal sectorDiv = new BigDecimal("0.00");
+			BigDecimal sectorGain = new BigDecimal("0.00");
+			
+			SectorIndustry industry = StockDB.getInstance().getIndustry(sector);
+			String sectorStr = ((industry == null) ? "" : industry.getSectorName());
+			
+			TableItem sHeadItem = new TableItem (posTable, SWT.NONE);
+			sHeadItem.setText (0, sectorStr);
+			sHeadItem.setBackground(new Color(Display.getDefault(), 163, 227, 247));
+			sHeadItem.setText (1, "");
+			sHeadItem.setText (2, "");
+			sHeadItem.setText (3, "");
+			sHeadItem.setText (4,"");
+			sHeadItem.setText (5,"");
+			sHeadItem.setText (6,"");
+			sHeadItem.setText (7,"");
+			sHeadItem.setText (8,"");
+			sHeadItem.setText (9,"");
+			sHeadItem.setText (10,"");
+			sHeadItem.setText (11,"");
+			
+			Map<String, Position> pMap = portData.getPositionMap().get(sector);
+			
+			for (String sym : pMap.keySet()){
+				
+				Position p = pMap.get(sym);
+				
+
+				TableItem item = new TableItem (posTable, SWT.NONE);
+				item.setData("sd", p.getSd());
+				
+				String symbol = p.getSd().getStock().getSymbol();
+				String shares = new DecimalFormat("#,##0.00##").format(p.getShares());
+				String basis = new DecimalFormat("#,##0.00##").format(p.getBasis());
+				String price = new DecimalFormat("#,##0.00##").format(p.getSd().getStock().getPrice());
+				String cost = new DecimalFormat("#,###,##0.00").format(p.getCost());
+				String value = new DecimalFormat("#,###,##0.00").format(p.getValue());
+				
+				BigDecimal gainCalc = p.getValue().subtract(p.getCost());
+				String gain = new DecimalFormat("#,###,##0.00").format(gainCalc);
+				
+				BigDecimal gainPctCalc = gainCalc.multiply(BigDecimal.valueOf(100)).divide(p.getCost(), 2, RoundingMode.HALF_UP);
+				String gainPct = new DecimalFormat("0.00").format(gainPctCalc) + "%";
+									
+				BigDecimal divCalc = p.getSd().getStock().getDividend().multiply(p.getShares());
+				String div = new DecimalFormat("#,###,##0.00").format(divCalc);
+				
+				BigDecimal yCalc = divCalc.multiply(BigDecimal.valueOf(100)).divide(p.getValue(), 2, RoundingMode.HALF_UP);
+				String y = new DecimalFormat("0.00").format(yCalc)+ "%";
+				
+				BigDecimal yocCalc = divCalc.multiply(BigDecimal.valueOf(100)).divide(p.getCost(), 2, RoundingMode.HALF_UP);
+				String yoc = new DecimalFormat("0.00").format(yocCalc)+ "%";
+				
+				BigDecimal wCalc = p.getValue().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
+				String w = new DecimalFormat("0.00").format(wCalc)+ "%";
+				
+				item.setText (0, symbol);
+				item.setText (1, shares);
+				item.setText (2, basis);
+				item.setText (3, price);
+				item.setText (4,cost);
+				item.setText (5,value);
+				item.setText (6,gain);
+				item.setText (7,gainPct);
+				item.setText (8,div);
+				item.setText (9,y);
+				item.setText (10,yoc);
+				item.setText (11,w);
+				
+				sectorCost = sectorCost.add(p.getCost());
+				sectorValue = sectorValue.add(p.getValue());
+				sectorDiv = sectorDiv.add(divCalc);
+				sectorGain = sectorGain.add(gainCalc);
+			}
+			
+			BigDecimal sectorYield = sectorDiv.multiply(BigDecimal.valueOf(100)).divide(sectorValue, 2, RoundingMode.HALF_UP);
+			BigDecimal sectorYoc = sectorDiv.multiply(BigDecimal.valueOf(100)).divide(sectorCost, 2, RoundingMode.HALF_UP);
+			BigDecimal sectorWeight = sectorValue.multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
+			
+			String shares = "";
+			String basis = "";
+			String price = "";
+			String cost = new DecimalFormat("#,###,##0.00").format(sectorCost);
+			String value = new DecimalFormat("#,###,##0.00").format(sectorValue);
+			String gain = new DecimalFormat("#,###,##0.00").format(sectorGain);
+			String y = new DecimalFormat("0.00").format(sectorYield)+ "%";
+			String yoc = new DecimalFormat("0.00").format(sectorYoc)+ "%";
+			String w = new DecimalFormat("0.00").format(sectorWeight)+ "%";
+			
+			BigDecimal gainPctCalc = sectorGain.multiply(BigDecimal.valueOf(100)).divide(sectorCost, 2, RoundingMode.HALF_UP);
+			String gainPct = new DecimalFormat("0.00").format(gainPctCalc) + "%";
+					
+			String div = new DecimalFormat("#,###,##0.00").format(sectorDiv);
+			
+			TableItem subTotItem = new TableItem (posTable, SWT.NONE);
+			subTotItem.setText (0, sectorStr + " Totals");
+			subTotItem.setBackground(new Color(Display.getDefault(), 230, 230, 230));
+			subTotItem.setText (1, shares);
+			subTotItem.setText (2, basis);
+			subTotItem.setText (3, price);
+			subTotItem.setText (4,cost);
+			subTotItem.setText (5,value);
+			subTotItem.setText (6,gain);
+			subTotItem.setText (7,gainPct);
+			subTotItem.setText (8,div);
+			subTotItem.setText (9,y);
+			subTotItem.setText (10,yoc);
+			subTotItem.setText (11,w);
+		}
+		
+		TableItem totItem = new TableItem (posTable, SWT.NONE);
+		
+//			String[] posTitles = {"Sector", "Symbol", "Basis", "Price", "Cost", "Value", "Div"};
+		
+		String shares = "";
+		String basis = "";
+		String price = "";
+		String cost = new DecimalFormat("#,###,##0.00").format(totalCost);
+		String value = new DecimalFormat("#,###,##0.00").format(totalValue);
+		String gain = new DecimalFormat("#,###,##0.00").format(totalGain);
+		String y = (totalYield == null) ? "N/A" : new DecimalFormat("0.00").format(totalYield)+ "%";
+		String yoc = (totalYoc == null) ? "N/A" : new DecimalFormat("0.00").format(totalYoc)+ "%";
+		
+		BigDecimal gainPctCalc = null;
+		String gainPct = "N/A";
+		if (totalCost.compareTo(BigDecimal.ZERO) != 0){
+			gainPctCalc = totalGain.multiply(BigDecimal.valueOf(100)).divide(totalCost, 2, RoundingMode.HALF_UP);
+			gainPct = new DecimalFormat("0.00").format(gainPctCalc) + "%";
+		}
+				
+		String div = new DecimalFormat("#,###,##0.00").format(totalDiv);
+		
+		totItem.setBackground(new Color(Display.getDefault(), 200, 200, 200));
+		
+		totItem.setText (0, "Grand Totals");
+		totItem.setText (1, shares);
+		totItem.setText (2, basis);
+		totItem.setText (3, price);
+		totItem.setText (4,cost);
+		totItem.setText (5,value);
+		totItem.setText (6,gain);
+		totItem.setText (7,gainPct);
+		totItem.setText (8,div);
+		totItem.setText (9,y);
+		totItem.setText (10,yoc);
+		totItem.setText (11,"100%");
+
+		for (int i=0; i< posTitles.length; i++) {
+			posTable.getColumn (i).pack ();
+		}
+	}
+
 }

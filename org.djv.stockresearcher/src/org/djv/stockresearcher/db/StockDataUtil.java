@@ -356,22 +356,22 @@ public class StockDataUtil {
 			if (stockData.getDg5() >= 3 && stockData.getDg10() >=0){
 				gr = 4;
 			} 
-			if (stockData.getDg5() >= 4 && stockData.getDg10() >=0){
+			if (stockData.getDg5() >= 5 && stockData.getDg10() >=0){
 				gr = 5;
 			} 
-			if (stockData.getDg5() >= 6 && stockData.getDg10() >=0){
+			if ((stockData.getDg5() >= 8 && stockData.getDg10() >=4) || stockData.getDg5() >= 10){
 				gr = 6;
-			} 
-			if ((stockData.getDg5() >= 8 && stockData.getDg10() >=3) || stockData.getDg5() >= 10){
+			}
+			if ((stockData.getDg5() >= 10 && stockData.getDg10() >=5) || stockData.getDg5() >= 12){
 				gr = 7;
 			} 
-			if ((stockData.getDg5() >= 10 && stockData.getDg10() >=4) || stockData.getDg5() >= 13){
+			if ((stockData.getDg5() >= 12 && stockData.getDg10() >=6) || stockData.getDg5() >= 15){
 				gr = 8;
 			} 
-			if ((stockData.getDg5() >= 12 && stockData.getDg10() >=5) || stockData.getDg5() >= 15){
+			if ((stockData.getDg5() >= 15 && stockData.getDg10() >=8) || stockData.getDg5() >= 20){
 				gr = 9;
 			} 
-			if ((stockData.getDg5() >= 15 && stockData.getDg10() >=6) || stockData.getDg5() >= 20){
+			if ((stockData.getDg5() >= 20 && stockData.getDg10() >=10) || stockData.getDg5() >= 25){
 				gr = 10;
 			} 
 		}

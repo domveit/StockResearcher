@@ -31,6 +31,7 @@ public class TransactionDAOTest {
          t1.setTranDate(new Date(System.currentTimeMillis()));
          t1.setPrice(new BigDecimal("1234567.1234"));
          t1.setShares(new BigDecimal("123456789012.1234"));
+         t1.setCommission(new BigDecimal("123456789012.1234"));
          t1.setSymbol("TEST");
          
          Transaction t2 = new Transaction();
@@ -40,6 +41,7 @@ public class TransactionDAOTest {
          t2.setTranDate(new Date(System.currentTimeMillis()));
          t2.setPrice(new BigDecimal("10.00"));
          t2.setShares(new BigDecimal("100.0"));
+         t1.setCommission(new BigDecimal("150.12"));
          t2.setSymbol("TEST2");
          
          Transaction t3 = new Transaction();
@@ -49,6 +51,7 @@ public class TransactionDAOTest {
          t3.setTranDate(new Date(System.currentTimeMillis()));
          t3.setPrice(new BigDecimal("1234567.1234"));
          t3.setShares(new BigDecimal("123456789012.1234"));
+         t1.setCommission(new BigDecimal("123456789012.1234"));
          t3.setSymbol("TEST");
          
          Transaction t4 = new Transaction();
@@ -58,6 +61,7 @@ public class TransactionDAOTest {
          t4.setTranDate(new Date(System.currentTimeMillis()));
          t4.setPrice(new BigDecimal("10.00"));
          t4.setShares(new BigDecimal("100.0"));
+         t1.setCommission(new BigDecimal("150.12"));
          t4.setSymbol("TEST2");
          
          dao.insert(t1);

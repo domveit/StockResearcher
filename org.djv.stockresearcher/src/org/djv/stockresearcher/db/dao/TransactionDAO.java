@@ -19,11 +19,12 @@ public class TransactionDAO extends H2DAO{
 			+ "SYMBOL CHAR(20), "
 			+ "SHARES DECIMAL(16, 4), "
 			+ "PRICE DECIMAL(11, 4), "
-			+ "TRANDATE DATE "
+			+ "TRANDATE DATE,"
+			+ "COMMISSION DECIMAL(11, 4) "
 			+ ")";
 	
 	private static final String SELECT_SQL = 
-			"SELECT ID, PORT_ID, ACTION, SYMBOL, SHARES, PRICE, TRANDATE FROM TRANSACTION ";
+			"SELECT ID, PORT_ID, ACTION, SYMBOL, SHARES, PRICE, TRANDATE, COMMISSION FROM TRANSACTION ";
 	
 	private static final String INDEX1_SQL = 
 			"CREATE UNIQUE INDEX IF NOT EXISTS TRANIX1 ON TRANSACTION (ID ASC) ";
@@ -33,13 +34,13 @@ public class TransactionDAO extends H2DAO{
 	
 	private static final String SELECT_PORT_SQL = 
 			SELECT_SQL
-			+ "WHERE PORT_ID = ? ORDER BY TRANDATE DESC";
+			+ "WHERE PORT_ID = ? ORDER BY TRANDATE ASC";
 	
 	private static final String SELECT_ID_SQL = 
 			SELECT_SQL
 			+ "WHERE ID = ?";
 	
-	private static final String INSERT_SQL = "INSERT INTO TRANSACTION VALUES (?, ?, ?, ?, ?, ?, ?)";
+	private static final String INSERT_SQL = "INSERT INTO TRANSACTION VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 	
 	private static final String UPDATE_SQL = 
 			"UPDATE TRANSACTION SET "
@@ -48,7 +49,8 @@ public class TransactionDAO extends H2DAO{
 			+ "SYMBOL = ?, "
 			+ "SHARES = ?, "
 			+ "PRICE = ?, "
-			+ "TRANDATE = ? "
+			+ "TRANDATE = ?,"
+			+ "COMMISSION = ? "
 			+ "WHERE ID = ?";
 	
 	private static final String DELETE_SQL = "DELETE FROM TRANSACTION WHERE ID = ?";
@@ -91,6 +93,7 @@ public class TransactionDAO extends H2DAO{
 			t.setShares(rs.getBigDecimal("SHARES"));
 			t.setAction(rs.getString("ACTION"));
 			t.setSymbol(rs.getString("SYMBOL"));
+			t.setCommission(rs.getBigDecimal("COMMISSION"));
 			l.add(t);
 		}
 		return l;
@@ -110,6 +113,7 @@ public class TransactionDAO extends H2DAO{
 			t.setShares(rs.getBigDecimal("SHARES"));
 			t.setAction(rs.getString("ACTION"));
 			t.setSymbol(rs.getString("SYMBOL"));
+			t.setCommission(rs.getBigDecimal("COMMISSION"));
 		}
 		return t;
 	}
@@ -135,6 +139,7 @@ public class TransactionDAO extends H2DAO{
 		st.setBigDecimal(5, t.getShares());
 		st.setBigDecimal(6, t.getPrice());
 		st.setDate(7, t.getTranDate());
+		st.setBigDecimal(8, t.getCommission());
 		st.executeUpdate();
 	}
 	
@@ -146,7 +151,8 @@ public class TransactionDAO extends H2DAO{
 		st.setBigDecimal(4, t.getShares());
 		st.setBigDecimal(5, t.getPrice());
 		st.setDate(6, t.getTranDate());
-		st.setInt(7, t.getId());
+		st.setBigDecimal(7, t.getCommission());
+		st.setInt(8, t.getId());
 		st.executeUpdate();
 	}
 	
@@ -159,7 +165,5 @@ public class TransactionDAO extends H2DAO{
 		}
 		return max;
 	}
-
-	
 
 }

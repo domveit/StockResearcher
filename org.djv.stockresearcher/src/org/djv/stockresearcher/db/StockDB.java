@@ -1175,8 +1175,12 @@ public class StockDB {
 		List<Transaction> list = tdao.getTransactionsForPortfolio(p.getId());
 
 		List<String> slist = new ArrayList<String>();
+		List<TransactionData> tdlist = new ArrayList<TransactionData>();
 		for (Transaction t : list){
-			if (!slist.contains(t.getSymbol())){
+			TransactionData td = new TransactionData();
+			td.setTransaction(t);
+			tdlist.add(td);
+			if (!slist.contains(t.getSymbol()) && !"".equals(t.getSymbol())){
 				slist.add(t.getSymbol());
 			}
 		}
@@ -1194,55 +1198,72 @@ public class StockDB {
 			StockDataUtil.calcRankings(sd);
 		}
 		
+		BigDecimal cashBalance = new BigDecimal("0.00");
 		Map<Integer, Map<String, Position>> bigMap = new HashMap<Integer, Map<String, Position>>();
 		
-		List<TransactionData> tdlist = new ArrayList<TransactionData>();
-		for (Transaction t : list){
-			StockData currsd = null;
-			for (StockData sd : sdList){
-				if (sd.getStock().getSymbol().equals(t.getSymbol())){
-					TransactionData td = new TransactionData();
-					td.setTransaction(t);
-					td.setStockData(sd);
-					tdlist.add(td);
-					currsd = sd;
-					break;
+		for (TransactionData td : tdlist){
+			Transaction t = td.getTransaction();
+			String action = t.getAction();
+			if ("B".equals(action) || "S".equals(action)){
+				for (StockData sd : sdList){
+					if (sd.getStock().getSymbol().equals(t.getSymbol())){
+						td.setStockData(sd);
+						break;
+					}
 				}
+				int indId = td.getStockData().getStockIndustry() == null ? 0 : td.getStockData().getStockIndustry().getIndId();
+				int sector = (indId / 100) * 100;
+				
+				Map<String, Position> posMap = bigMap.get(sector);
+				if (posMap == null){
+					posMap = new HashMap<String, Position>();
+					bigMap.put(sector, posMap);
+				}
+				
+				Position pos = posMap.get(td.getStockData().getStock().getSymbol());
+				if (pos == null){
+					pos = new Position();
+					pos.setSd(td.getStockData());
+					posMap.put(td.getStockData().getStock().getSymbol(), pos);
+				}
+				
+				if ("B".equals(action)){
+					pos.setShares(pos.getShares().add(t.getShares()));
+					td.setTranCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
+					pos.setCost(pos.getCost().add(td.getTranCost()));
+				} else if ("S".equals(action)){
+					pos.setShares(pos.getShares().subtract(t.getShares()));
+					td.setTranCost(t.getShares().multiply(t.getPrice()).multiply(BigDecimal.valueOf(-1)).add(t.getCommission()));
+					pos.setCost(pos.getCost().add(td.getTranCost()));
+				} 
+			} else if ("D".equals(action)){
+				td.setTranCost(t.getPrice().multiply(BigDecimal.valueOf(-1)));
+			} else if ("W".equals(action)){
+				td.setTranCost(t.getPrice());
+			} else if ("V".equals(action)){
+				td.setTranCost(t.getPrice().multiply(BigDecimal.valueOf(-1)));	
 			}
-			int indId = currsd.getStockIndustry() == null ? 0 : currsd.getStockIndustry().getIndId();
-			int sector = (indId / 100) * 100;
-			
+			cashBalance = cashBalance.subtract(td.getTranCost());
+			td.setCashBalance(cashBalance);
+		}
+		
+		for (Integer sector : bigMap.keySet()){
 			Map<String, Position> posMap = bigMap.get(sector);
-			if (posMap == null){
-				posMap = new HashMap<String, Position>();
-				bigMap.put(sector, posMap);
-			}
-			
-			Position pos = posMap.get(currsd.getStock().getSymbol());
-			if (pos == null){
-				pos = new Position();
-				pos.setSd(currsd);
-				posMap.put(currsd.getStock().getSymbol(), pos);
-			}
-			if ("B".equals(t.getAction())){
-				pos.setShares(pos.getShares().add(t.getShares()));
-				pos.setCost(pos.getBasis().add(t.getShares().multiply(t.getPrice())));
-			} else if ("S".equals(t.getAction())){
-				pos.setShares(pos.getShares().subtract(t.getShares()));
-				pos.setCost(pos.getBasis().subtract(t.getShares().multiply(t.getPrice())));				
-			}
-
-			if (pos.getShares().compareTo(BigDecimal.ZERO) == 0){
-				posMap.remove(currsd.getStock().getSymbol());
-			} else {
-				pos.setBasis(pos.getCost().divide(pos.getShares(), 2, RoundingMode.HALF_UP));
-				pos.setValue(currsd.getStock().getPrice().multiply(pos.getShares()));
+			for (String s : posMap.keySet() ){
+				Position pos = posMap.get(s);
+				if (pos.getShares().compareTo(BigDecimal.ZERO) == 0){
+					posMap.remove(s);
+				} else {
+					pos.setBasis(pos.getCost().divide(pos.getShares(), 4, RoundingMode.HALF_UP));
+					pos.setValue(pos.getSd().getStock().getPrice().multiply(pos.getShares()));
+				}
 			}
 		}
 		
 		pData.setPositionMap(bigMap);
 		pData.setTransactionList(tdlist);
 		pData.setPortfolio(p);
+		pData.setCashBalance(cashBalance);
 		
 		return pData;
 	}
