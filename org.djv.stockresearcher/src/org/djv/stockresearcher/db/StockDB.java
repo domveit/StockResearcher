@@ -1216,51 +1216,19 @@ public class StockDB {
 			switch (ttype){
 				case BUY:
 				case PUT_ASSIGN:
-					Position posBuy = getOrCreatePosition(bigMap, td);
+					BigDecimal buyShares = t.getShares();
 					td.setCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
-					td.setBasis(td.getCost().subtract(t.getPremium()));
+					td.setBasis(td.getCost().add(t.getPremium()));
 					td.setBasisPerShare(td.getBasis().divide(t.getShares(), 6, RoundingMode.HALF_UP));
-					Lot lotBuy = new Lot();
-					lotBuy.setDate(td.getTransaction().getTranDate());
-					lotBuy.setShares(td.getTransaction().getShares());
-					lotBuy.setCost(td.getCost());
-					lotBuy.setBasis(td.getBasis());
-					lotBuy.setBasisPerShare(td.getBasisPerShare());
-					posBuy.getLotList().add(lotBuy);
+					crunchBuyOrSell(bigMap, td, t, buyShares);
 					break;
 				case SELL:
 				case CALL_ASSIGN:
-					Position posSell = getOrCreatePosition(bigMap, td);
-					td.setCost(t.getShares().multiply(t.getPrice()).multiply(BigDecimal.valueOf(-1)).add(t.getCommission()));
-					td.setBasis(BigDecimal.ZERO);
-					td.setBasisPerShare(BigDecimal.ZERO);
-
-					BigDecimal sharesToBurn = t.getShares();
-					Iterator<Lot> i = posSell.getLotList().iterator();
-					while (sharesToBurn.compareTo(BigDecimal.ZERO) != 0) {
-						if (i.hasNext()){
-							Lot l = i.next();
-							if (l.getShares().compareTo(sharesToBurn) < 0){
-								sharesToBurn = sharesToBurn.subtract(l.getShares());
-								i.remove();
-							} else if (l.getShares().compareTo(sharesToBurn) > 0){
-								l.setShares(l.getShares().subtract(sharesToBurn));
-								sharesToBurn = BigDecimal.ZERO;
-							} else {
-								sharesToBurn = BigDecimal.ZERO;
-								i.remove();
-							}
-						} else {
-							Lot lotSell = new Lot();
-							lotSell.setDate(td.getTransaction().getTranDate());
-							lotSell.setShares(sharesToBurn.multiply(BigDecimal.valueOf(-1)));
-							td.setCost(lotSell.getShares().multiply(t.getPrice()).add(t.getCommission()));
-							td.setBasis(BigDecimal.ZERO);
-							td.setBasisPerShare(BigDecimal.ZERO);
-							posSell.getLotList().add(lotSell);
-							sharesToBurn = BigDecimal.ZERO;
-						}
-					}
+					BigDecimal sellShares = t.getShares().multiply(BigDecimal.valueOf(-1));
+					td.setCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
+					td.setBasis(td.getCost().add(t.getPremium()));
+					td.setBasisPerShare(td.getBasis().divide(t.getShares(), 6, RoundingMode.HALF_UP));
+					crunchBuyOrSell(bigMap, td, t, sellShares);
 					break;
 				case DIVIDEND_REINVEST:
 					Position posDR = getOrCreatePosition(bigMap, td);
@@ -1308,6 +1276,35 @@ public class StockDB {
 		sumAndCleanup(bigMap);
 		portfolioData.setPositionMap(bigMap);
 		portfolioData.setCashBalance(cashBalance);
+	}
+
+	private void crunchBuyOrSell(Map<Integer, Map<String, Position>> bigMap, TransactionData td, Transaction t, BigDecimal shares) {
+		Position position = getOrCreatePosition(bigMap, td);
+		Iterator<Lot> i = position.getLotList().iterator();
+		while (shares.compareTo(BigDecimal.ZERO) != 0) {
+			if (i.hasNext()){
+				Lot l = i.next();
+				if (l.getShares().compareTo(shares) > 0){
+					shares = shares.add(l.getShares());
+					i.remove();
+				} else if (l.getShares().compareTo(shares) < 0){
+					l.setShares(l.getShares().add(shares));
+					shares = BigDecimal.ZERO;
+				} else {
+					shares = BigDecimal.ZERO;
+					i.remove();
+				}
+			} else {
+				Lot newLot = new Lot();
+				newLot.setDate(td.getTransaction().getTranDate());
+				newLot.setShares(shares);
+				newLot.setCost(newLot.getShares().multiply(t.getPrice()).add(t.getCommission()));
+				newLot.setBasis(td.getBasisPerShare().multiply(shares));
+				newLot.setBasisPerShare(td.getBasisPerShare());
+				position.getLotList().add(newLot);
+				shares = BigDecimal.ZERO;
+			}
+		}
 	}
 
 	public Position getOrCreatePosition(
@@ -1445,19 +1442,6 @@ public class StockDB {
 		}
 	}
 	
-	private String getNode(String str, String startStr, String endStr) {
-		int ix = str.indexOf(startStr, 0);
-		if (ix == -1){
-			return null;
-		}
-		int endix = str.indexOf(endStr, ix);
-		if (endix == -1){
-			return null;
-		}
-		String findStr = str.substring(ix + startStr.length(), endix);
-		return findStr;
-	}
-
 	public void close() throws Exception {
 		con.commit();
 		con.close();
