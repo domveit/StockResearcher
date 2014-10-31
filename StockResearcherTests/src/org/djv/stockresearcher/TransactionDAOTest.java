@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.djv.stockresearcher.db.dao.TransactionDAO;
 import org.djv.stockresearcher.model.Transaction;
+import org.djv.stockresearcher.model.TransactionType;
 import org.junit.Test;
 
 public class TransactionDAOTest {
@@ -27,7 +28,7 @@ public class TransactionDAOTest {
          Transaction t1 = new Transaction();
          t1.setId(100001);
          t1.setPortId(100000);
-         t1.setAction(Transaction.ACTION_BUY);
+         t1.setType(TransactionType.BUY.getTypeCode());
          t1.setTranDate(new Date(System.currentTimeMillis()));
          t1.setPrice(new BigDecimal("1234567.1234"));
          t1.setShares(new BigDecimal("123456789012.1234"));
@@ -37,7 +38,7 @@ public class TransactionDAOTest {
          Transaction t2 = new Transaction();
          t2.setId(100002);
          t2.setPortId(100000);
-         t2.setAction(Transaction.ACTION_SELL);
+         t2.setType(TransactionType.SELL.getTypeCode());
          t2.setTranDate(new Date(System.currentTimeMillis()));
          t2.setPrice(new BigDecimal("10.00"));
          t2.setShares(new BigDecimal("100.0"));
@@ -47,7 +48,7 @@ public class TransactionDAOTest {
          Transaction t3 = new Transaction();
          t3.setId(200001);
          t3.setPortId(200000);
-         t3.setAction(Transaction.ACTION_BUY);
+         t3.setType(TransactionType.BUY.getTypeCode());
          t3.setTranDate(new Date(System.currentTimeMillis()));
          t3.setPrice(new BigDecimal("1234567.1234"));
          t3.setShares(new BigDecimal("123456789012.1234"));
@@ -57,7 +58,7 @@ public class TransactionDAOTest {
          Transaction t4 = new Transaction();
          t4.setId(200002);
          t4.setPortId(200000);
-         t4.setAction(Transaction.ACTION_SELL);
+         t4.setType(TransactionType.SELL.getTypeCode());
          t4.setTranDate(new Date(System.currentTimeMillis()));
          t4.setPrice(new BigDecimal("10.00"));
          t4.setShares(new BigDecimal("100.0"));

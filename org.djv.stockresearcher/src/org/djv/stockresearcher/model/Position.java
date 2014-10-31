@@ -10,6 +10,7 @@ public class Position {
 	BigDecimal shares = new BigDecimal("0.00");
 	BigDecimal cost = new BigDecimal("0.00");
 	BigDecimal basis = new BigDecimal("0.00");
+	BigDecimal basisPerShare = new BigDecimal("0.00");
 	BigDecimal value = new BigDecimal("0.00");
 	
 	List<Lot> lotList = new ArrayList<Lot>();
@@ -49,6 +50,12 @@ public class Position {
 	}
 	public void setLotList(List<Lot> lotList) {
 		this.lotList = lotList;
+	}
+	public BigDecimal getBasisPerShare() {
+		return basisPerShare;
+	}
+	public void setBasisPerShare(BigDecimal basisPerShare) {
+		this.basisPerShare = basisPerShare;
 	}
 	
 

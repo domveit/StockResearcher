@@ -54,6 +54,7 @@ public class StockData {
 		super();
 		stock = new Stock();
 		stock.setSymbol(symbol);
+		this.symbol = symbol;
 	}
 	
 	public StockData(Stock s) {

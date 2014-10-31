@@ -5,21 +5,15 @@ import java.sql.Date;
 
 public class Transaction {
 	
-	public static final String ACTION_BUY = "B";
-	public static final String ACTION_SELL = "S";
-	public static final String ACTION_CASH_DEPOSIT = "D";
-	public static final String ACTION_CASH_WITHDRAWAL = "W";
-	public static final String ACTION_DIVIDEND = "V";
-	public static final String ACTION_DIVIDEND_REINVEST = "R";
-	
 	Integer id;
 	Integer portId;
-	String action;
+	Date tranDate;
+	String type;
 	String symbol;
 	BigDecimal shares;
 	BigDecimal price;
 	BigDecimal commission;
-	Date tranDate;
+	BigDecimal premium;
 	
 	public Integer getId() {
 		return id;
@@ -45,11 +39,11 @@ public class Transaction {
 	public void setShares(BigDecimal shares) {
 		this.shares = shares;
 	}
-	public String getAction() {
-		return action;
+	public String getType() {
+		return type;
 	}
-	public void setAction(String action) {
-		this.action = action;
+	public void setType(String type) {
+		this.type = type;
 	}
 	public BigDecimal getPrice() {
 		return price;
@@ -69,15 +63,11 @@ public class Transaction {
 	public void setCommission(BigDecimal commission) {
 		this.commission = commission;
 	}
-	public String getActionText(){
-		switch(action){
-			case ACTION_BUY: return "Buy";
-			case ACTION_SELL: return "Sell";
-			case ACTION_CASH_DEPOSIT: return "Cash Deposit";
-			case ACTION_CASH_WITHDRAWAL: return "Cash Withdrawal";
-			case ACTION_DIVIDEND: return "Dividend";
-			case ACTION_DIVIDEND_REINVEST: return "Dividend Reinvest";
-			default: return "???";
-		}
+	public BigDecimal getPremium() {
+		return premium;
 	}
+	public void setPremium(BigDecimal premium) {
+		this.premium = premium;
+	}
+	
 }

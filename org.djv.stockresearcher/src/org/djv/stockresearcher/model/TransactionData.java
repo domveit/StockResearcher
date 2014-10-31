@@ -6,7 +6,9 @@ public class TransactionData {
 	
 	Transaction transaction;
 	StockData stockData;
-	BigDecimal tranCost;
+	BigDecimal cost;
+	BigDecimal basis;
+	BigDecimal basisPerShare;
 	BigDecimal cashBalance;
 	
 	public Transaction getTransaction() {
@@ -27,11 +29,23 @@ public class TransactionData {
 	public void setCashBalance(BigDecimal cashBalance) {
 		this.cashBalance = cashBalance;
 	}
-	public BigDecimal getTranCost() {
-		return tranCost;
+	public BigDecimal getCost() {
+		return cost;
 	}
-	public void setTranCost(BigDecimal tranCost) {
-		this.tranCost = tranCost;
+	public void setCost(BigDecimal cost) {
+		this.cost = cost;
+	}
+	public BigDecimal getBasis() {
+		return basis;
+	}
+	public void setBasis(BigDecimal basis) {
+		this.basis = basis;
+	}
+	public BigDecimal getBasisPerShare() {
+		return basisPerShare;
+	}
+	public void setBasisPerShare(BigDecimal basisPerShare) {
+		this.basisPerShare = basisPerShare;
 	}
 	
 }

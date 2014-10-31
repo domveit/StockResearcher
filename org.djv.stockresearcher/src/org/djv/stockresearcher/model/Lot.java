@@ -7,7 +7,9 @@ public class Lot {
 	
 	Date date;
 	BigDecimal shares;
+	BigDecimal cost;
 	BigDecimal basis;
+	BigDecimal basisPerShare;
 	
 	public Date getDate() {
 		return date;
@@ -27,5 +29,16 @@ public class Lot {
 	public void setBasis(BigDecimal basis) {
 		this.basis = basis;
 	}
-
+	public BigDecimal getCost() {
+		return cost;
+	}
+	public void setCost(BigDecimal cost) {
+		this.cost = cost;
+	}
+	public BigDecimal getBasisPerShare() {
+		return basisPerShare;
+	}
+	public void setBasisPerShare(BigDecimal basisPerShare) {
+		this.basisPerShare = basisPerShare;
+	}
 }

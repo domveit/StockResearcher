@@ -1,11 +1,15 @@
 package org.djv.stockresearcher.widgets;
 
+import static org.djv.stockresearcher.model.ValidatorType.OPTIONAL;
+import static org.djv.stockresearcher.model.ValidatorType.REQUIRED;
+
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.djv.stockresearcher.model.Transaction;
+import org.djv.stockresearcher.model.TransactionType;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
@@ -24,52 +28,19 @@ import org.eclipse.swt.widgets.Text;
 public class TransactionDialog extends Dialog {
 	
 	String mode;
-	String action;
 	
-	public String getMode() {
-		return mode;
+	Transaction transaction;
+	
+	public Transaction getTransaction() {
+		return transaction;
 	}
 
-	public void setMode(String mode) {
-		this.mode = mode;
+	public void setTransaction(Transaction transaction) {
+		this.transaction = transaction;
 	}
 
-	String symbol;
-	BigDecimal shares;
-	BigDecimal price;
-	BigDecimal commission;
-	Date tranDate;
-
-	public BigDecimal getCommission() {
-		return commission;
-	}
-
-	public void setCommission(BigDecimal commission) {
-		this.commission = commission;
-	}
-
-	public void setAction(String action) {
-		this.action = action;
-	}
-
-	public void setSymbol(String symbol) {
-		this.symbol = symbol;
-	}
-
-	public void setShares(BigDecimal shares) {
-		this.shares = shares;
-	}
-
-	public void setPrice(BigDecimal price) {
-		this.price = price;
-	}
-
-	public void setTranDate(Date tranDate) {
-		this.tranDate = tranDate;
-	}
-
-	Label actionLabel;
-	Combo actionCombo;
+	Label tranTypeLabel;
+	Combo tranTypeCombo;
 	
 	Label symbolLabel;
 	Text symbolText;
@@ -86,26 +57,8 @@ public class TransactionDialog extends Dialog {
 	Label tranDateLabel;
 	Text tranDateText;
 	
-	
-	public String getAction() {
-		return action;
-	}
-
-	public String getSymbol() {
-		return symbol;
-	}
-
-	public BigDecimal getShares() {
-		return shares;
-	}
-
-	public BigDecimal getPrice() {
-		return price;
-	}
-	
-	public Date getTranDate() {
-		return tranDate;
-	}
+	Label premiumLabel;
+	Text premiumText;
 
 	public TransactionDialog(Shell parentShell) {
 		super(parentShell);
@@ -125,19 +78,19 @@ public class TransactionDialog extends Dialog {
 		tranDateText = new Text(container, SWT.BORDER);
 		tranDateText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		
-		actionLabel = new Label(container, SWT.NONE);
-		actionLabel.setText("Action: ");
-		actionLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+		tranTypeLabel = new Label(container, SWT.NONE);
+		tranTypeLabel.setText("Action: ");
+		tranTypeLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 		
-		actionCombo = new Combo(container, SWT.BORDER);
-		actionCombo.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
-		actionCombo.setItems(new String[] {"", "Buy", "Sell", "Cash Deposit", "Cash Withdrawal", "Dividend", "Dividend Reinvest"});
-		actionCombo.addSelectionListener(new SelectionAdapter(){
+		tranTypeCombo = new Combo(container, SWT.BORDER);
+		tranTypeCombo.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+		tranTypeCombo.setItems(TransactionType.getTextOptions());
+		tranTypeCombo.addSelectionListener(new SelectionAdapter(){
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				Combo c = (Combo)e.widget;
-				int i = c.getSelectionIndex();
-				setFieldsForSelection(i);
+				TransactionType tt = TransactionType.getFromDisplay(c.getText());
+				setFieldsForSelection(tt);
 			}
 		});
 
@@ -163,115 +116,100 @@ public class TransactionDialog extends Dialog {
 		priceText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
 		commissionLabel = new Label(container, SWT.NONE);
-		commissionLabel.setText("Commisssion: ");
+		commissionLabel.setText("Commission: ");
 		commissionLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 		
 		commissionText = new Text(container, SWT.BORDER);
 		commissionText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		premiumLabel = new Label(container, SWT.NONE);
+		premiumLabel.setText("Premium: ");
+		premiumLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
+		
+		premiumText = new Text(container, SWT.BORDER);
+		premiumText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
 		return container;
 	}
 	
 	@Override
 	public int open() {
-		if (tranDate == null){
+		if (transaction.getTranDate() == null){
 			tranDateText.setText(new SimpleDateFormat("MM/dd/yyyy").format(new Date()));
 		} else {
-			tranDateText.setText(new SimpleDateFormat("MM/dd/yyyy").format(tranDate));
+			tranDateText.setText(new SimpleDateFormat("MM/dd/yyyy").format(transaction.getTranDate()));
 		}
 		
-		if (action == null){
-			actionCombo.select(0);
+		if (transaction.getType() == null){
+			tranTypeCombo.select(0);
 		} else {
-			switch (action){
-				case Transaction.ACTION_BUY: 
-					actionCombo.select(1);
-					setFieldsForSelection(1);
-					break;
-				case Transaction.ACTION_SELL: 
-					actionCombo.select(2);
-					setFieldsForSelection(2);
-					break;
-				case Transaction.ACTION_CASH_DEPOSIT: 
-					actionCombo.select(3);
-					setFieldsForSelection(3);
-					break;
-				case Transaction.ACTION_CASH_WITHDRAWAL: 
-					actionCombo.select(4);
-					setFieldsForSelection(4);
-					break;
-				case Transaction.ACTION_DIVIDEND: 
-					actionCombo.select(5);
-					setFieldsForSelection(5);
-					break;
-				case Transaction.ACTION_DIVIDEND_REINVEST: 
-					actionCombo.select(6);
-					setFieldsForSelection(6);
-					break;
-			}
+			TransactionType tt = TransactionType.getFromCode(transaction.getType());
+			tranTypeCombo.setText(tt.getTypeText());
+			setFieldsForSelection(tt);
 		}
-		
-		if (shares == null){
-			sharesText.setText("");
-		} else {
-			sharesText.setText(new DecimalFormat("0.0000").format(shares));
-		}
-		
-		if (symbol == null){
-			symbolText.setText("");
-		} else {
-			symbolText.setText(symbol);
-		}
-		
-		if (price == null){
-			priceText.setText("");
-		} else {
-			priceText.setText(new DecimalFormat("0.0000").format(price));
-		}
-		
-		if (commission == null){
-			commissionText.setText("");
-		} else {
-			commissionText.setText(new DecimalFormat("0.0000").format(commission));
-		}
-
 		return super.open();
 	}
 
-	private void setFieldsForSelection(int i) {
-		switch (i){
-		case 0: 
-			symbolText.setEnabled(false);
-			sharesText.setEnabled(false);
-			priceText.setEnabled(false);
-			commissionText.setEnabled(false);
-			break;
-		case 1: 
-		case 2:
-		case 6:
+	private void setFieldsForSelection(TransactionType tt) {
+		if (tt.getSymbolRequired() == REQUIRED ||  tt.getSymbolRequired() == OPTIONAL){
 			symbolText.setEnabled(true);
-			sharesText.setEnabled(true);
-			priceText.setEnabled(true);
-			commissionText.setEnabled(true);
-			break;
-		case 3:
-		case 4:
+			if (transaction.getSymbol() == null){
+				symbolText.setText("");
+			} else {
+				symbolText.setText(transaction.getSymbol());
+			}
+		} else {
+			symbolText.setEnabled(false);
 			symbolText.setText("");
-			symbolText.setEnabled(false);
-			sharesText.setText("");
+		}
+		
+		if (tt.getSharesRequired() == REQUIRED ||  tt.getSharesRequired() == OPTIONAL){
+			sharesText.setEnabled(true);
+			if (transaction.getShares() == null){
+				sharesText.setText("");
+			} else {
+				sharesText.setText(new DecimalFormat("0.0000").format(transaction.getShares()));
+			}
+		} else {
 			sharesText.setEnabled(false);
-			priceText.setEnabled(true);
-			commissionText.setText("");
-			commissionText.setEnabled(false);
-			break;
-		case 5: 
-			symbolText.setEnabled(true);
 			sharesText.setText("");
-			sharesText.setEnabled(false);
+		}
+		
+		if (tt.getPriceRequired() == REQUIRED ||  tt.getPriceRequired() == OPTIONAL){
 			priceText.setEnabled(true);
-			commissionText.setText("");
+			if (transaction.getPrice() == null){
+				priceText.setText("");
+			} else {
+				priceText.setText(new DecimalFormat("0.000000").format(transaction.getPrice()));
+			}
+		} else {
+			priceText.setEnabled(false);
+			priceText.setText("");
+		}
+		
+		if (tt.getCommissionRequired() == REQUIRED ||  tt.getCommissionRequired() == OPTIONAL){
+			commissionText.setEnabled(true);
+			if (transaction.getCommission() == null){
+				commissionText.setText("");
+			} else {
+				commissionText.setText(new DecimalFormat("0.0000").format(transaction.getCommission()));
+			}
+		} else {
 			commissionText.setEnabled(false);
-			break;
-	}
+			commissionText.setText("");
+		}
+		
+		if (tt.getPremiumRequired() == REQUIRED ||  tt.getPremiumRequired() == OPTIONAL){
+			premiumText.setEnabled(true);
+			if (transaction.getPremium() == null){
+				premiumText.setText("");
+			} else {
+				premiumText.setText(new DecimalFormat("0.0000").format(transaction.getPremium()));
+			}
+		} else {
+			premiumText.setEnabled(false);
+			premiumText.setText("");
+		}
 	}
 
 	@Override
@@ -283,49 +221,41 @@ public class TransactionDialog extends Dialog {
 			return;
 		} else {
 			try{
-				tranDate = new SimpleDateFormat("MM/dd/yyyy").parse(tranDateStr);
+				transaction.setTranDate(new java.sql.Date(new SimpleDateFormat("MM/dd/yyyy").parse(tranDateStr).getTime()));
 			} catch (Exception e){
 				MessageDialog.openError(getParentShell(), "Error", "Invalid Tran Date.");
 				return;
 			}
 		}
 		
-		String actionStr = actionCombo.getText();
-		if ("".equals(action)){
-			MessageDialog.openError(getParentShell(), "Error", "Enter Action.");
+		String tranType = tranTypeCombo.getText();
+		if ("".equals(tranType)){
+			MessageDialog.openError(getParentShell(), "Error", "Enter Tran Type.");
 			return;
 		}
-		switch (actionStr){
-			case "Buy": action = "B"; break;
-			case "Sell": action = "S"; break;
-			case "Cash Deposit": action = "D"; break;
-			case "Cash Withdrawal": action = "W"; break;
-			case "Dividend": action = "V"; break;
-			case "Dividend Reinvest": action = "R"; break;
-			default: 
-				MessageDialog.openError(getParentShell(), "Error", "Invalid Action.");
-				return;
-		}
+		TransactionType tt = TransactionType.getFromDisplay(tranType);
+		transaction.setType(tt.getTypeCode());
 		
-		symbol = symbolText.getText();
+		String symbol = symbolText.getText();
 		if ("".equals(symbol)) {
-			if 	("B".equals(action) || "S".equals(action) || ("V".equals(action))){
+			if 	(tt.getSymbolRequired() == REQUIRED){
 				MessageDialog.openError(getParentShell(), "Error", "Symbol is required.");
 				return;
 			} 
 		}
+		transaction.setSymbol(symbol);
 		
 		String sharesStr = sharesText.getText();
 		if ("".equals(sharesStr)){
-			if ("B".equals(action) || "S".equals(action)) {
+			if (tt.getSharesRequired() == REQUIRED) {
 				MessageDialog.openError(getParentShell(), "Error", "Enter Shares.");
 				return;
 			} else {
-				shares = new BigDecimal("0.00");
+				transaction.setShares(BigDecimal.ZERO);
 			}
 		} else {
 			try{
-				shares = new BigDecimal(sharesStr);
+				transaction.setShares(new BigDecimal(sharesStr));
 			} catch (Exception e){
 				MessageDialog.openError(getParentShell(), "Error", "Invalid Shares.");
 				return;
@@ -335,26 +265,51 @@ public class TransactionDialog extends Dialog {
 		String priceStr = priceText.getText();
 		
 		if ("".equals(priceStr)){
-			MessageDialog.openError(getParentShell(), "Error", "Enter Price.");
-			return;
+			if (tt.getPriceRequired() == REQUIRED) {
+				MessageDialog.openError(getParentShell(), "Error", "Enter Price.");
+				return;
+			} else {
+				transaction.setPrice(BigDecimal.ZERO);
+			}
 		} else {
 			try{
-				price = new BigDecimal(priceStr);
+				transaction.setPrice(new BigDecimal(priceStr));
 			} catch (Exception e){
 				MessageDialog.openError(getParentShell(), "Error", "Invalid Price.");
 				return;
 			}
 		}
-		
 
 		String commissionStr = commissionText.getText();
 		if ("".equals(commissionStr)){
-			commission = new BigDecimal("0.00");
+			if (tt.getCommissionRequired() == REQUIRED) {
+				MessageDialog.openError(getParentShell(), "Error", "Enter Commission.");
+				return;
+			} else {
+				transaction.setCommission(BigDecimal.ZERO);
+			}
 		} else {
 			try{
-				commission = new BigDecimal(commissionStr);
+				transaction.setCommission(new BigDecimal(commissionStr));
 			} catch (Exception e){
 				MessageDialog.openError(getParentShell(), "Error", "Invalid Commission.");
+				return;
+			}
+		}
+		
+		String premiumStr = premiumText.getText();
+		if ("".equals(premiumStr)){
+			if (tt.getPremiumRequired() == REQUIRED) {
+				MessageDialog.openError(getParentShell(), "Error", "Enter Premium.");
+				return;
+			} else {
+				transaction.setPremium(BigDecimal.ZERO);
+			}
+		} else {
+			try{
+				transaction.setPremium(new BigDecimal(premiumStr));
+			} catch (Exception e){
+				MessageDialog.openError(getParentShell(), "Error", "Invalid Premium.");
 				return;
 			}
 		}
@@ -365,12 +320,20 @@ public class TransactionDialog extends Dialog {
 	@Override
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
-		newShell.setText("Create New Transaction");
+		newShell.setText("Create/Edit Transaction");
 	}
 
 	@Override
 	protected Point getInitialSize() {
 		return new Point(300, 400);
+	}
+
+	public String getMode() {
+		return mode;
+	}
+
+	public void setMode(String mode) {
+		this.mode = mode;
 	}
 
 } 

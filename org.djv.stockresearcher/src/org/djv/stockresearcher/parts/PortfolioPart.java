@@ -21,6 +21,7 @@ import org.djv.stockresearcher.model.SectorIndustry;
 import org.djv.stockresearcher.model.StockData;
 import org.djv.stockresearcher.model.Transaction;
 import org.djv.stockresearcher.model.TransactionData;
+import org.djv.stockresearcher.model.TransactionType;
 import org.djv.stockresearcher.widgets.PortfolioDialog;
 import org.djv.stockresearcher.widgets.TransactionDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -58,7 +59,7 @@ public class PortfolioPart {
 	private Button editTranButton;
 	private Button deleteTranButton;
 	
-	String[] tranTitles = {"Date", "Action", "Symbol", "Shares", "Price Paid", "Commission", "Cost", "Balance"};
+	String[] tranTitles = {"Date", "Action", "Symbol", "Shares", "Price Paid", "Commission", "Premium", "Basis", "Basis PS", "Cost", "Balance"};
 	Table tranTable;
 	
 	String[] posTitles = {"Sector", "Symbol", "Shares", "Basis", "Price", "Cost", "Value", "Gain", "Gain Pct" ,"Div", "Yield", "YOC", "Weight"};
@@ -249,23 +250,19 @@ public class PortfolioPart {
 				}
 				TransactionDialog td = new TransactionDialog(parent.getShell());
 				
+				Transaction t = new Transaction();
+				td.setTransaction(t);
+				
 				StockData sd = AppState.getInstance().getSelectedStock();
 				if (sd != null){
-					td.setSymbol(sd.getSymbol());
+					t.setSymbol(sd.getSymbol());
 				}
 				td.create();
 				td.setMode("NEW");
 				int result = td.open();
 				if (result == Window.OK) {
 					try {
-						Transaction t = new Transaction();
-						t.setAction(td.getAction());
-						t.setPrice(td.getPrice());
-						t.setShares(td.getShares());
-						t.setSymbol(td.getSymbol());
-						t.setTranDate(new java.sql.Date(td.getTranDate().getTime()));
-						t.setCommission(td.getCommission());
-								
+						t = td.getTransaction();
 						StockDB.getInstance().createNewTransaction(portfolioName, t);
 						selectPortfolio();
 					} catch (Exception e1) {
@@ -291,23 +288,13 @@ public class PortfolioPart {
 				Transaction t = td.getTransaction();
 				
 				TransactionDialog tdialog = new TransactionDialog(parent.getShell());
-				tdialog.setAction(t.getAction());
-				tdialog.setPrice(t.getPrice());
-				tdialog.setShares(t.getShares());
-				tdialog.setSymbol(t.getSymbol());
-				tdialog.setTranDate(t.getTranDate());
-				tdialog.setCommission(t.getCommission());
+				tdialog.setTransaction(t);
 				tdialog.setMode("EDIT");
 				tdialog.create();
 				int result = tdialog.open();
 				if (result == Window.OK) {
 					try {
-						t.setAction(tdialog.getAction());
-						t.setPrice(tdialog.getPrice());
-						t.setShares(tdialog.getShares());
-						t.setSymbol(tdialog.getSymbol());
-						t.setTranDate(new java.sql.Date(tdialog.getTranDate().getTime()));
-						t.setCommission(tdialog.getCommission());
+						t = tdialog.getTransaction();
 						StockDB.getInstance().updateTransaction(t);
 						selectPortfolio();
 					} catch (Exception e1) {
@@ -418,13 +405,16 @@ public class PortfolioPart {
 			BigDecimal commission = td.getTransaction().getCommission();
 
 			item.setText (0, String.valueOf(td.getTransaction().getTranDate()));
-			item.setText (1, td.getTransaction().getActionText());
+			item.setText (1, TransactionType.getDisplayFromCode(td.getTransaction().getType()));
 			item.setText (2, td.getTransaction().getSymbol());
 			item.setText (3, new DecimalFormat("#,##0.00##").format(shares));
-			item.setText (4, new DecimalFormat("#,##0.00##").format(tranPrice));
+			item.setText (4, new DecimalFormat("#,##0.00####").format(tranPrice));
 			item.setText (5, new DecimalFormat("#,##0.00##").format(commission));
-			item.setText (6, new DecimalFormat("#,###,##0.00").format(td.getTranCost()));
-			item.setText (7, new DecimalFormat("#,###,##0.00").format(td.getCashBalance()));
+			item.setText (6, new DecimalFormat("#,##0.00##").format(td.getTransaction().getPremium()));
+			item.setText (7, new DecimalFormat("#,##0.00##").format(td.getBasis()));
+			item.setText (8, new DecimalFormat("#,##0.00####").format(td.getBasisPerShare()));
+			item.setText (9, new DecimalFormat("#,###,##0.00").format(td.getCost()));
+			item.setText (10, new DecimalFormat("#,###,##0.00").format(td.getCashBalance()));
 		}
 		for (int i=0; i< tranTitles.length; i++) {
 			tranTable.getColumn (i).pack ();
@@ -480,8 +470,8 @@ public class PortfolioPart {
 				
 				String symbol = p.getSd().getStock().getSymbol();
 				String shares = new DecimalFormat("#,##0.00##").format(p.getShares());
-				String basis = new DecimalFormat("#,##0.00##").format(p.getBasis());
-				String price = new DecimalFormat("#,##0.00##").format(p.getSd().getStock().getPrice());
+				String basis = new DecimalFormat("#,##0.00####").format(p.getBasisPerShare());
+				String price = new DecimalFormat("#,##0.00####").format(p.getSd().getStock().getPrice());
 				String cost = new DecimalFormat("#,###,##0.00").format(p.getCost());
 				String value = new DecimalFormat("#,###,##0.00").format(p.getValue());
 				
@@ -533,11 +523,12 @@ public class PortfolioPart {
 					lotItem.setText (0, "");
 					lotItem.setText (1, new SimpleDateFormat("MM/dd/yyyy").format(l.getDate()));
 					String lshares = new DecimalFormat("#,##0.00##").format(l.getShares());
-					String lbasis = new DecimalFormat("#,##0.00##").format(l.getBasis());
+					String lbps = new DecimalFormat("#,##0.00##").format(l.getBasisPerShare());
+					String lcost = new DecimalFormat("#,##0.00##").format(l.getCost());
 					lotItem.setText (2, lshares);
-					lotItem.setText (3, lbasis);
+					lotItem.setText (3, lbps);
 					lotItem.setText (4, "");
-					lotItem.setText (5, "");
+					lotItem.setText (5, lcost);
 					lotItem.setText (6, "");
 					lotItem.setText (7, "");
 					lotItem.setText (8, "");
@@ -586,9 +577,12 @@ public class PortfolioPart {
 		
 		TableItem cashItem = new TableItem (posTable, SWT.NONE);
 		
+		String cw = "";
 		String bal = new DecimalFormat("#,###,##0.00").format(portData.getCashBalance());
-		BigDecimal cashWeight = portData.getCashBalance().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
-		String cw = new DecimalFormat("0.00").format(cashWeight)+ "%";
+		if (totalValue.compareTo(BigDecimal.ZERO) != 0){
+			BigDecimal cashWeight = portData.getCashBalance().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
+			cw = new DecimalFormat("0.00").format(cashWeight)+ "%";
+		}
 		
 		cashItem.setBackground(new Color(Display.getDefault(), 230, 230, 230));
 		cashItem.setText (0, "");

@@ -7,11 +7,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,7 +35,6 @@ import org.djv.stockresearcher.db.dao.WatchListDAO;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
 import org.djv.stockresearcher.model.Lot;
-import org.djv.stockresearcher.model.Option;
 import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
 import org.djv.stockresearcher.model.Position;
@@ -46,6 +44,7 @@ import org.djv.stockresearcher.model.StockData;
 import org.djv.stockresearcher.model.StockIndustry;
 import org.djv.stockresearcher.model.Transaction;
 import org.djv.stockresearcher.model.TransactionData;
+import org.djv.stockresearcher.model.TransactionType;
 import org.eclipse.swt.widgets.Display;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -57,9 +56,23 @@ import com.google.gson.JsonParser;
 
 public class StockDB {
 	
+	private static final int STOCK_POOL_NBR_THREADS = 8;
+
 	private static StockDB instance;
 	
+	private IOptionBroker optionBroker = new GoogleOptionBroker();
+	
+	public IOptionBroker getOptionBroker() {
+		return optionBroker;
+	}
+
+	public void setOptionBroker(IOptionBroker optionBroker) {
+		this.optionBroker = optionBroker;
+	}
+
 	ExecutorService pool1 = null;
+	
+	List<ExecutorService> pools = new ArrayList<ExecutorService>();
 	
 	public static StockDB getInstance(){
 		if (instance == null){
@@ -83,10 +96,7 @@ public class StockDB {
 	}
 
 	private void createDatabase(String db) throws Exception {
-        Class.forName("org.h2.Driver");
-        String dbURL = "jdbc:h2:~/stockDB/" +db+";AUTO_SERVER=TRUE";
-        System.err.println("opening DB " + dbURL);
-		con = DriverManager.getConnection(dbURL, "stockDB", "" );
+        openConnection(db);
         new SectorIndustryDAO(con).createTableIfNotExists();
         new StockIndustryDAO(con).createTableIfNotExists();
         new StockDAO(con).createTableIfNotExists();
@@ -97,6 +107,14 @@ public class StockDB {
         new TransactionDAO(con).createTableIfNotExists();
         new SectorDateDAO(con).createTableIfNotExists();
         new AnalystEstimateDAO(con).createTableIfNotExists();
+	}
+
+	public void openConnection(String db) throws ClassNotFoundException,
+			SQLException {
+		Class.forName("org.h2.Driver");
+        String dbURL = "jdbc:h2:~/stockDB/" +db+";AUTO_SERVER=TRUE";
+        System.err.println("opening DB " + dbURL);
+		con = DriverManager.getConnection(dbURL, "stockDB", "" );
 	}
 	
 	volatile int sectorIndustriesToUpdate = 0;
@@ -183,7 +201,8 @@ public class StockDB {
 			}
 		}
 				
-		ExecutorService pool = Executors.newFixedThreadPool(16);
+		ExecutorService pool = Executors.newFixedThreadPool(STOCK_POOL_NBR_THREADS);
+		pools.add(pool);
 		
 		stocksUpdatedCoarse = 0;
 		
@@ -209,7 +228,7 @@ public class StockDB {
 						getDataForStocksInternal(finalSubList);
 					} catch (Exception e) {
 						e.printStackTrace();
-					}
+					} 
 				}
 			});
 		}
@@ -228,13 +247,15 @@ public class StockDB {
 						getDataForStocksInternalPo(finalSubList);
 					} catch (Exception e) {
 						e.printStackTrace();
-					}
+					} 
 				}
 			});
 		}
 
 		pool.shutdown();
 		pool.awaitTermination(30, TimeUnit.MINUTES);
+		pools.remove(pool);
+		
 		notifyAllStockDataChangeListeners(null, stocksToUpdateCoarse, stocksUpdatedCoarse);
 		
 		return;
@@ -257,6 +278,7 @@ public class StockDB {
 							+ "LastTradePriceOnly "
 							+ "from yahoo.finance.quotes "
 							+ "where symbol in (" + stockURLParm +")";
+			System.err.println(YQLquery);
 
 			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
 			try {
@@ -354,7 +376,7 @@ public class StockDB {
 							+ "OneyrTargetPrice "
 							+ "from yahoo.finance.quotes "
 							+ "where symbol in (" + stockURLParm +")";
-
+			System.err.println(YQLquery);
 			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
 			try {
 				if (br == null){
@@ -665,7 +687,8 @@ public class StockDB {
 							sectorIndustriesToUpdate += iList.size();
 						}
 						
-						ExecutorService pool = Executors.newFixedThreadPool(16);
+						ExecutorService pool = Executors.newFixedThreadPool(STOCK_POOL_NBR_THREADS);
+						pools.add(pool);
 						for (final String sector : sectorMap.keySet()){
 							pool.submit(new Runnable(){
 								@Override
@@ -689,6 +712,7 @@ public class StockDB {
 						}
 						pool.shutdown();
 						pool.awaitTermination(30, TimeUnit.MINUTES);
+						pools.remove(pool);
 
 						if (d == null){
 							sdDAO.insert(new java.sql.Date(System.currentTimeMillis()));
@@ -914,12 +938,14 @@ public class StockDB {
 			pool1.shutdownNow();
 			try {
 				pool1.awaitTermination(30, TimeUnit.MINUTES);
+				pools.remove(pool1);
 				pool1 = null;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 		pool1 = Executors.newFixedThreadPool(1);
+		pools.add(pool1);
 		pool1.submit(runnable);
 		Thread t = new Thread(new Runnable(){
 			@Override
@@ -927,6 +953,7 @@ public class StockDB {
 				pool1.shutdown();
 				try {
 					pool1.awaitTermination(30, TimeUnit.MINUTES);
+					pools.remove(pool1);
 					pool1 = null;
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -970,7 +997,8 @@ public class StockDB {
 	
 	public void updateStockFineData(List<StockData> sdList)
 			throws InterruptedException {
-		ExecutorService pool = Executors.newFixedThreadPool(16);
+		ExecutorService pool = Executors.newFixedThreadPool(STOCK_POOL_NBR_THREADS);
+		pools.add(pool);
 		stocksToUpdate = 0;
 		stocksUpdated = 0;
 		
@@ -993,6 +1021,7 @@ public class StockDB {
 		}
 		pool.shutdown();
 		pool.awaitTermination(30, TimeUnit.MINUTES);
+		pools.remove(pool);
 		notifyAllStockDataChangeListeners(null, stocksToUpdate, stocksUpdated);
 	}
 	
@@ -1166,88 +1195,48 @@ public class StockDB {
 	}
 
 	public PortfolioData getPortfolioData(String name) throws Exception {
-		PortfolioDAO dao = new PortfolioDAO(con);
-		TransactionDAO tdao = new TransactionDAO(con);
-		Portfolio p = dao.selectByName(name);
-		if (p == null){
-			return null;
+		PortfolioData portfolioData = new PortfolioData();
+		PortfolioDAO pdao = new PortfolioDAO(con);
+		Portfolio portfolio = pdao.selectByName(name);
+		if (portfolio == null){
+			throw new IllegalArgumentException ("invalid portfolio");
 		}
-		
-		PortfolioData pData = new PortfolioData();
-		List<Transaction> list = tdao.getTransactionsForPortfolio(p.getId());
+		portfolioData.setPortfolio(portfolio);
+		buildTransactionDataList(portfolioData);
+		buildPositionMap(portfolioData);
+		return portfolioData;
+	}
 
-		List<String> slist = new ArrayList<String>();
-		List<TransactionData> tdlist = new ArrayList<TransactionData>();
-		for (Transaction t : list){
-			TransactionData td = new TransactionData();
-			td.setTransaction(t);
-			tdlist.add(td);
-			if (!slist.contains(t.getSymbol()) && !"".equals(t.getSymbol())){
-				slist.add(t.getSymbol());
-			}
-		}
-		
-		List<StockData> sdList = new ArrayList<StockData>();
-		for (String symbol: slist){
-			StockData sd = getStockData(symbol, null, false);
-			sdList.add(sd);
-		}
-		
-		getDataForStocks(sdList);
-		for (StockData sd : sdList){
-			getDivData(sd);
-			getFinData(sd);
-			StockDataUtil.calcRankings(sd);
-		}
-		
+	private void buildPositionMap(PortfolioData portfolioData) {
 		BigDecimal cashBalance = new BigDecimal("0.00");
 		Map<Integer, Map<String, Position>> bigMap = new HashMap<Integer, Map<String, Position>>();
-		
-		for (TransactionData td : tdlist){
+		for (TransactionData td : portfolioData.getTransactionList()){
 			Transaction t = td.getTransaction();
-			String action = t.getAction();
-			if ("B".equals(action) || "S".equals(action) || "R".equals(action)){
-				for (StockData sd : sdList){
-					if (sd.getStock().getSymbol().equals(t.getSymbol())){
-						td.setStockData(sd);
-						break;
-					}
-				}
-				int indId = td.getStockData().getStockIndustry() == null ? 0 : td.getStockData().getStockIndustry().getIndId();
-				int sector = (indId / 100) * 100;
-				
-				Map<String, Position> posMap = bigMap.get(sector);
-				if (posMap == null){
-					posMap = new HashMap<String, Position>();
-					bigMap.put(sector, posMap);
-				}
-				
-				Position pos = posMap.get(td.getStockData().getStock().getSymbol());
-				if (pos == null){
-					pos = new Position();
-					pos.setSd(td.getStockData());
-					posMap.put(td.getStockData().getStock().getSymbol(), pos);
-				}
-				
-				if ("B".equals(action)){
-					td.setTranCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
-					Lot lot = new Lot();
-					lot.setDate(td.getTransaction().getTranDate());
-					lot.setShares(td.getTransaction().getShares());
-					lot.setBasis(td.getTranCost().divide(lot.getShares(), 4, RoundingMode.HALF_UP));
-					pos.getLotList().add(lot);
-				} else if ("R".equals(action)){
-					td.setTranCost(BigDecimal.ZERO);
-					BigDecimal tc = t.getShares().multiply(t.getPrice()).add(t.getCommission());
-					Lot lot = new Lot();
-					lot.setDate(td.getTransaction().getTranDate());
-					lot.setShares(td.getTransaction().getShares());
-					lot.setBasis(tc.divide(lot.getShares(), 4, RoundingMode.HALF_UP));
-					pos.getLotList().add(lot);
-				}else if ("S".equals(action)){
-					td.setTranCost(t.getShares().multiply(t.getPrice()).multiply(BigDecimal.valueOf(-1)).add(t.getCommission()));
+			TransactionType ttype = TransactionType.getFromCode(t.getType());
+			switch (ttype){
+				case BUY:
+				case PUT_ASSIGN:
+					Position posBuy = getOrCreatePosition(bigMap, td);
+					td.setCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
+					td.setBasis(td.getCost().subtract(t.getPremium()));
+					td.setBasisPerShare(td.getBasis().divide(t.getShares(), 6, RoundingMode.HALF_UP));
+					Lot lotBuy = new Lot();
+					lotBuy.setDate(td.getTransaction().getTranDate());
+					lotBuy.setShares(td.getTransaction().getShares());
+					lotBuy.setCost(td.getCost());
+					lotBuy.setBasis(td.getBasis());
+					lotBuy.setBasisPerShare(td.getBasisPerShare());
+					posBuy.getLotList().add(lotBuy);
+					break;
+				case SELL:
+				case CALL_ASSIGN:
+					Position posSell = getOrCreatePosition(bigMap, td);
+					td.setCost(t.getShares().multiply(t.getPrice()).multiply(BigDecimal.valueOf(-1)).add(t.getCommission()));
+					td.setBasis(BigDecimal.ZERO);
+					td.setBasisPerShare(BigDecimal.ZERO);
+
 					BigDecimal sharesToBurn = t.getShares();
-					Iterator<Lot> i = pos.getLotList().iterator();
+					Iterator<Lot> i = posSell.getLotList().iterator();
 					while (sharesToBurn.compareTo(BigDecimal.ZERO) != 0) {
 						if (i.hasNext()){
 							Lot l = i.next();
@@ -1262,58 +1251,155 @@ public class StockDB {
 								i.remove();
 							}
 						} else {
-							Lot lot = new Lot();
-							lot.setDate(td.getTransaction().getTranDate());
-							lot.setShares(sharesToBurn.multiply(BigDecimal.valueOf(-1)));
-							lot.setBasis(t.getPrice());
-							pos.getLotList().add(lot);
+							Lot lotSell = new Lot();
+							lotSell.setDate(td.getTransaction().getTranDate());
+							lotSell.setShares(sharesToBurn.multiply(BigDecimal.valueOf(-1)));
+							td.setCost(lotSell.getShares().multiply(t.getPrice()).add(t.getCommission()));
+							td.setBasis(BigDecimal.ZERO);
+							td.setBasisPerShare(BigDecimal.ZERO);
+							posSell.getLotList().add(lotSell);
 							sharesToBurn = BigDecimal.ZERO;
 						}
 					}
-				} 
-			} else if ("D".equals(action)){
-				td.setTranCost(t.getPrice().multiply(BigDecimal.valueOf(-1)));
-			} else if ("W".equals(action)){
-				td.setTranCost(t.getPrice());
-			} else if ("V".equals(action)){
-				td.setTranCost(t.getPrice().multiply(BigDecimal.valueOf(-1)));	
+					break;
+				case DIVIDEND_REINVEST:
+					Position posDR = getOrCreatePosition(bigMap, td);
+					td.setCost(BigDecimal.ZERO);
+					BigDecimal basis = t.getShares().multiply(t.getPrice()).add(t.getCommission());
+					BigDecimal bps = basis.divide(t.getShares(), 6, RoundingMode.HALF_UP);
+					td.setBasisPerShare(bps);
+					td.setBasis(basis);
+					
+					Lot lotDR = new Lot();
+					lotDR.setDate(td.getTransaction().getTranDate());
+					lotDR.setShares(td.getTransaction().getShares());
+					lotDR.setBasis(basis);
+					lotDR.setBasisPerShare(bps);
+					lotDR.setCost(BigDecimal.ZERO);
+					posDR.getLotList().add(lotDR);
+					
+					break;
+				case CASH_DEPOSIT:
+					td.setCost(t.getPrice().multiply(BigDecimal.valueOf(-1)));
+					td.setBasis(BigDecimal.ZERO);
+					td.setBasisPerShare(BigDecimal.ZERO);
+					break;
+				case OPTION_SELL:
+					BigDecimal cost = t.getShares().multiply(BigDecimal.valueOf(-100)).multiply(t.getPrice()).add(t.getCommission());
+					td.setCost(cost);
+					td.setBasis(BigDecimal.ZERO);
+					td.setBasisPerShare(BigDecimal.ZERO);
+					break;
+				case CASH_WITHDRAWAL:
+					td.setCost(t.getPrice());
+					td.setBasis(BigDecimal.ZERO);
+					td.setBasisPerShare(BigDecimal.ZERO);
+					break;
+				case DIVIDEND:
+					td.setCost(t.getPrice().multiply(BigDecimal.valueOf(-1)));
+					td.setBasis(BigDecimal.ZERO);
+					td.setBasisPerShare(BigDecimal.ZERO);
+					break;
+				default: throw new IllegalArgumentException ("Invalid tran type "  + ttype.getTypeCode());
 			}
-			cashBalance = cashBalance.subtract(td.getTranCost());
+			cashBalance = cashBalance.subtract(td.getCost());
 			td.setCashBalance(cashBalance);
 		}
+		sumAndCleanup(bigMap);
+		portfolioData.setPositionMap(bigMap);
+		portfolioData.setCashBalance(cashBalance);
+	}
+
+	public Position getOrCreatePosition(
+			Map<Integer, Map<String, Position>> bigMap, TransactionData td) {
+		int indId = td.getStockData().getStockIndustry() == null ? 0 : td.getStockData().getStockIndustry().getIndId();
+		int sector = (indId / 100) * 100;
 		
+		Map<String, Position> posMap = bigMap.get(sector);
+		if (posMap == null){
+			posMap = new HashMap<String, Position>();
+			bigMap.put(sector, posMap);
+		}
+		
+		Position pos = posMap.get(td.getStockData().getStock().getSymbol());
+		if (pos == null){
+			pos = new Position();
+			pos.setSd(td.getStockData());
+			posMap.put(td.getStockData().getStock().getSymbol(), pos);
+		}
+		return pos;
+	}
+
+	public void sumAndCleanup(Map<Integer, Map<String, Position>> bigMap) {
 		List <Integer> deadSectors = new ArrayList<Integer>();
-		for (Integer sector : bigMap.keySet()){
-			Map<String, Position> posMap = bigMap.get(sector);
-			for (String s : posMap.keySet() ){
-				Position pos = posMap.get(s);
+		for (Integer sKey : bigMap.keySet()){
+			List <String> deadPositions = new ArrayList<String>();
+			Map<String, Position> posMap = bigMap.get(sKey);
+			for (String posKey : posMap.keySet() ){
+				Position pos = posMap.get(posKey);
 				for (Lot l : pos.getLotList()){
-					BigDecimal lotCost = l.getShares().multiply(l.getBasis());
 					pos.setShares(pos.getShares().add(l.getShares()));
-					pos.setCost(pos.getCost().add(lotCost));
+					pos.setCost(pos.getCost().add(l.getCost()));
+					pos.setBasis(pos.getBasis().add(l.getBasis()));
 				}
 				if (pos.getShares().compareTo(BigDecimal.ZERO) == 0){
-					posMap.remove(s);
+					deadPositions.add(posKey);
 				} else {
-					pos.setBasis(pos.getCost().divide(pos.getShares(), 4, RoundingMode.HALF_UP));
+					pos.setBasisPerShare(pos.getBasis().divide(pos.getShares(), 6, RoundingMode.HALF_UP));
 					pos.setValue(pos.getSd().getStock().getPrice().multiply(pos.getShares()));
 				}
 			}
+			for (String posKey : deadPositions){
+				posMap.remove(posKey);
+			}
 			if (posMap.isEmpty()){
-				deadSectors.add(sector);
+				deadSectors.add(sKey);
 			}
 		}
-		
 		for (Integer sector : deadSectors){
 			bigMap.remove(sector);
 		}
+	}
+
+	public void buildTransactionDataList(PortfolioData portfolioData) throws Exception {
+		Portfolio portfolio = portfolioData.getPortfolio();
+		TransactionDAO tdao = new TransactionDAO(con);
 		
-		pData.setPositionMap(bigMap);
-		pData.setTransactionList(tdlist);
-		pData.setPortfolio(p);
-		pData.setCashBalance(cashBalance);
+		List<Transaction> transactionList = tdao.getTransactionsForPortfolio(portfolio.getId());
+		List<String> stocksNeedingData = new ArrayList<String>();
 		
-		return pData;
+		for (Transaction transaction : transactionList){
+			if (!stocksNeedingData.contains(transaction.getSymbol()) && !"".equals(transaction.getSymbol())){
+				stocksNeedingData.add(transaction.getSymbol());
+			}
+		}
+		
+		List<StockData> sdList = new ArrayList<StockData>();
+		for (String symbol: stocksNeedingData){
+			StockData sd = getStockData(symbol, null, false);
+			sdList.add(sd);
+		}
+		
+		getDataForStocks(sdList);
+		for (StockData sd : sdList){
+			getDivData(sd);
+			getFinData(sd);
+			StockDataUtil.calcRankings(sd);
+		}
+		
+		List<TransactionData> transactionDataList = new ArrayList<TransactionData>();
+		for (Transaction transaction : transactionList){
+			TransactionData td = new TransactionData();
+			td.setTransaction(transaction);
+			for (StockData sd : sdList){
+				if (sd.getStock().getSymbol().equals(td.getTransaction().getSymbol())){
+					td.setStockData(sd);
+					break;
+				}
+			}
+			transactionDataList.add(td);
+		}
+		portfolioData.setTransactionList(transactionDataList);
 	}
 
 	public void deletePortfolio(String name) throws Exception {
@@ -1351,109 +1437,6 @@ public class StockDB {
 		tdao.update(t);
 	}
 
-	public List<Option> getOptions(String symbol) throws Exception {
-		List<Option> list = new ArrayList<Option>();
-		
-		List<String> perlist = new ArrayList<String>();
-		BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/q/op?s=" + symbol + "&m=0-0");
-		String s = null;
-		while((s = br.readLine()) != null){
-			int ix = s.indexOf("View By Expiration");
-			if (ix > -1){
-				int endix = s.indexOf("<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\">", ix);
-				String options = s.substring(ix, endix);
-				int ixu = 0;
-				while((ixu = options.indexOf("<a href=\"", ixu)) > -1) {
-					int endixu = options.indexOf("</a>", ixu);
-					perlist.add(options.substring(endixu - 15, endixu - 8));
-					ixu = endixu;
-				}
-				break;
-			}
-		}
-		for (String per : perlist){
-			List<Option> options = getOptionCallsForPeriod(symbol, per);
-			list.addAll(options);
-		}
-		br.close();
-		return list;
-	}
-	
-	private List<Option> getOptionCallsForPeriod(String symbol, String period) throws Exception {
-		List<Option> list = new ArrayList<Option>();
-		BufferedReader br = YahooFinanceUtil.getYahooCSV("http://finance.yahoo.com/q/op?s=" + symbol + "&m=" + period);
-		String s = null;
-		while((s = br.readLine()) != null){
-			int ixc = s.indexOf("Call Options");
-			if (ixc > -1){
-				ixc = s.indexOf("Open Int</th></tr>", ixc) + 18;
-				int endixc = s.indexOf("</td></tr></table><table cellpadding=\"0\" cellspacing=\"0\" border=\"0\">", ixc);
-				String callTable = s.substring(ixc, endixc);
-				List<String> calls = new ArrayList<String>();
-				
-				int ixcc = 0;
-				int endixcc = -1;
-				while ((endixcc = callTable.indexOf("</tr>", ixcc)) > -1){
-					calls.add(callTable.substring(ixcc, endixcc + 5));
-					ixcc = endixcc + 5;
-				}
-				
-				for (String call : calls){
-					List<String> callTds = new ArrayList<String>();
-					int ixtd = 0;
-					int endixtd = -1;
-					while ((endixtd = call.indexOf("</td>", ixtd)) > -1){
-						callTds.add(call.substring(ixtd, endixtd + 5));
-						ixtd = endixtd + 5;
-					}
-					
-					String ret = getNode(callTds.get(0), "<strong>", "</strong></a></td>");
-					BigDecimal strike = getBd(ret);
-					
-					String sym = getNode(callTds.get(1), "0\">", "</a></td>");
-					
-					String ret3 = getNode(callTds.get(2), "right\"><b>", "</b></td>");
-					if (ret3 == null){
-						 ret3 = getNode(callTds.get(2), "right\">", "</td>");
-					}
-					BigDecimal last = getBd(ret3);
-					
-					String ret5 = getNode(callTds.get(4), "align=\"right\">", "</td>");
-					BigDecimal bid = getBd(ret5);
-					
-					String ret6 = getNode(callTds.get(5), "align=\"right\">", "</td>");
-					BigDecimal ask = getBd(ret6);
-					
-					String date = "20" + sym.substring(sym.length() - 15, sym.length() - 9);
-					Date d = new SimpleDateFormat("yyyyMMdd").parse(date);
-					Option o = new Option();
-					o.setExpiration(d);
-					o.setStrike(strike);
-					o.setSymbol(sym);
-					o.setAsk(ask);
-					o.setBid(bid);
-					o.setLast(last);
-					list.add(o);
-				}
-				
-				break;
-			}
-		}
-		br.close();
-		Collections.sort(list, new Comparator<Option>(){
-			@Override
-			public int compare(Option arg0, Option arg1) {
-				int comp = arg0.getExpiration().compareTo(arg1.getExpiration());
-				if (comp == 0){
-					comp = arg0.getStrike().compareTo(arg1.getStrike());
-				}
-				return comp;
-			}
-		});
-		
-		return list;
-	}
-	
 	public BigDecimal getBd(String str) {
 		try {
 			return new BigDecimal(str.replace(",", ""));
@@ -1481,9 +1464,9 @@ public class StockDB {
 	}
 
 	public void waitFor() {
-		if (pool1 != null){
+		for (ExecutorService pool : pools){
 			try {
-				pool1.awaitTermination(30, TimeUnit.MINUTES);
+				pool.awaitTermination(30, TimeUnit.MINUTES);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

@@ -8,7 +8,8 @@ import org.djv.stockresearcher.db.StockDB;
 import org.djv.stockresearcher.db.StockDataChangeListener;
 import org.djv.stockresearcher.db.StockDataUtil;
 import org.djv.stockresearcher.db.dao.SectorDateDAO;
-import org.djv.stockresearcher.model.Option;
+import org.djv.stockresearcher.model.OptionPeriod;
+import org.djv.stockresearcher.model.OptionTable;
 import org.djv.stockresearcher.model.StockData;
 import org.junit.Test;
 
@@ -44,7 +45,7 @@ public class StockDBTest {
 			System.err.println(sd.getStockIndustry().getName() + " " + updated + " / " + toUpdate);
 			}
 		});
-		db.updateSectorAndIndustry("Basic Materials", "ALL");
+		db.updateSectorAndIndustry("Basic Materials", "Agricultural Chemicals");
 		db.waitFor();
 	}
 		
@@ -63,8 +64,14 @@ public class StockDBTest {
 			sl.add(sd);
 		}
 		
+		db.addStockDataChangeListener(new StockDataChangeListener() {
+			public void notifyChanged(StockData sd, int toUpdate, int updated) {
+			System.err.println(sd.getStockIndustry().getName() + " " + updated + " / " + toUpdate);
+			}
+		});
+		
 		db.getDataForStocks(sl);
-		Thread.sleep(30000);
+		db.waitFor();
 	}
 	
 	@Test
@@ -90,10 +97,4 @@ public class StockDBTest {
 		StockDataUtil.calcRankings(sd);
 		System.err.println(sd);
 	}
-	
-	@Test
-	public void test4() throws Exception {
-		List<Option> l =  new StockDB("stockDBTest").getOptions("KMP");
-	}
-	
 }
