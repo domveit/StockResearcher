@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.djv.stockresearcher.db.dao.AdjustedDivDAO;
 import org.djv.stockresearcher.db.dao.AnalystEstimateDAO;
 import org.djv.stockresearcher.db.dao.DividendDAO;
 import org.djv.stockresearcher.db.dao.FinDataDAO;
@@ -32,6 +33,7 @@ import org.djv.stockresearcher.db.dao.StockDAO;
 import org.djv.stockresearcher.db.dao.StockIndustryDAO;
 import org.djv.stockresearcher.db.dao.TransactionDAO;
 import org.djv.stockresearcher.db.dao.WatchListDAO;
+import org.djv.stockresearcher.model.AdjustedDiv;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinPeriodData;
 import org.djv.stockresearcher.model.Lot;
@@ -60,16 +62,6 @@ public class StockDB {
 
 	private static StockDB instance;
 	
-	private IOptionBroker optionBroker = new GoogleOptionBroker();
-	
-	public IOptionBroker getOptionBroker() {
-		return optionBroker;
-	}
-
-	public void setOptionBroker(IOptionBroker optionBroker) {
-		this.optionBroker = optionBroker;
-	}
-
 	ExecutorService pool1 = null;
 	
 	List<ExecutorService> pools = new ArrayList<ExecutorService>();
@@ -107,6 +99,7 @@ public class StockDB {
         new TransactionDAO(con).createTableIfNotExists();
         new SectorDateDAO(con).createTableIfNotExists();
         new AnalystEstimateDAO(con).createTableIfNotExists();
+        new AdjustedDivDAO(con).createTableIfNotExists();
 	}
 
 	public void openConnection(String db) throws ClassNotFoundException,
@@ -475,14 +468,17 @@ public class StockDB {
 		return o.getAsString();
 	}
 
-	public void getDivData(StockData sd) throws Exception {
-		if (dataExpired(sd.getStock().getDivDataDate())){
+	public void getDivData(StockData sd, boolean forceUpdate) throws Exception {
+		if (forceUpdate){
+			new DividendDAO(con).deleteForStock(sd.getSymbol());
+		}
+		if (dataExpired(sd.getStock().getDivDataDate()) || forceUpdate){
 			insertNewDividends(sd);
 			sd.getStock().setDivDataDate(new java.sql.Date(new Date().getTime()));
 			new StockDAO(con).update(sd.getStock());
 			sd.setDivData(null)	;
 		}
-		if (sd.getDivData() == null){	
+		if (sd.getDivData() == null || forceUpdate){	
 			List<DivData> ddl = new DividendDAO(con).getDividendsForSymbol(sd.getStock().getSymbol());
 			sd.setDivData(ddl);
 		}
@@ -987,7 +983,7 @@ public class StockDB {
 		
 		getDataForStocks(sdList);
 		notifyAllIndustryStockListeners(si.getIndustryName(), sdList, 0);
-		updateStockFineData(sdList);
+		updateStockFineData(sdList, false);
 		industriesUpdated ++;
 		notifyAllIndustryStockListeners(si.getIndustryName(), null, 1);
 	}
@@ -995,7 +991,7 @@ public class StockDB {
 	volatile int stocksToUpdate = 0;
 	volatile int stocksUpdated = 0;
 	
-	public void updateStockFineData(List<StockData> sdList)
+	public void updateStockFineData(List<StockData> sdList, final boolean forceUpdate)
 			throws InterruptedException {
 		ExecutorService pool = Executors.newFixedThreadPool(STOCK_POOL_NBR_THREADS);
 		pools.add(pool);
@@ -1008,7 +1004,7 @@ public class StockDB {
 				@Override
 				public void run() {
 					try {
-						getDivData(sd);
+						getDivData(sd,forceUpdate);
 						getFinData(sd);
 						StockDataUtil.calcRankings(sd);
 						stocksUpdated++;
@@ -1086,7 +1082,7 @@ public class StockDB {
 					sdList.add(sd);
 					
 					getDataForStocks(sdList);
-					updateStockFineData(sdList);
+					updateStockFineData(sdList, false);
 					
 					notifyAllWatchListListeners(sdList, true);
 				} catch (Exception e){
@@ -1110,7 +1106,7 @@ public class StockDB {
 					
 					getDataForStocks(sdList);
 					notifyAllWatchListListeners(sdList, true);
-					updateStockFineData(sdList);
+					updateStockFineData(sdList, false);
 				} catch (Exception e){
 					e.printStackTrace();
 				}
@@ -1192,6 +1188,20 @@ public class StockDB {
 	public List<Portfolio> getPortfolioList() throws Exception {
 		PortfolioDAO dao = new PortfolioDAO(con);
 		return dao.getAll();
+	}
+	
+	public void insertUpdateDeleteDivAdjustment(AdjustedDiv aDiv) throws Exception {
+		AdjustedDivDAO dao = new AdjustedDivDAO(con);
+		if (aDiv.getAdjustedDate() == null && aDiv.getAdjustedDiv() == null){
+			dao.delete(aDiv.getSymbol(), aDiv.getPaydate());
+		} else {
+			AdjustedDiv adivsel = dao.getAdjustment(aDiv.getSymbol(), aDiv.getPaydate());
+			if (adivsel == null){
+				dao.insert(aDiv);
+			} else {
+				dao.update(aDiv);
+			}
+		}
 	}
 
 	public PortfolioData getPortfolioData(String name) throws Exception {
@@ -1382,7 +1392,7 @@ public class StockDB {
 		
 		getDataForStocks(sdList);
 		for (StockData sd : sdList){
-			getDivData(sd);
+			getDivData(sd,false);
 			getFinData(sd);
 			StockDataUtil.calcRankings(sd);
 		}
@@ -1489,7 +1499,7 @@ public class StockDB {
 					}
 					
 					getDataForStocks(newsdList);
-					updateStockFineData(newsdList);
+					updateStockFineData(newsdList, false);
 					
 					notifyAllWatchListListeners(newsdList, true);
 				} catch (Exception e){

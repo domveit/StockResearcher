@@ -5,6 +5,7 @@ import java.util.Date;
 
 public class Option {
 	
+	String type;
 	Date expiration;
 	BigDecimal strike;
 	String symbol;
@@ -12,6 +13,12 @@ public class Option {
 	BigDecimal bid;
 	BigDecimal ask;
 	
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
 	public Date getExpiration() {
 		return expiration;
 	}

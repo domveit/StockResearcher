@@ -25,8 +25,9 @@ public class DividendDAO extends H2DAO{
 			"CREATE UNIQUE INDEX IF NOT EXISTS DIVIDENDIX1 ON DIVIDEND (SYMBOL ASC, PAYDATE DESC) ";
 	
 	private static final String SELECT_SYMBOL_SQL = 
-			SELECT_SQL
-			+ "WHERE SYMBOL = ? ORDER BY PAYDATE DESC";
+			"SELECT A.SYMBOL, A.PAYDATE, DIVIDEND, ADJDATE, ADJDIV FROM DIVIDEND A "
+			+ " LEFT OUTER JOIN ADJUSTEDDIV B ON A.SYMBOL = B.SYMBOL AND A.PAYDATE = B.PAYDATE " + 
+			" WHERE A.SYMBOL = ? ORDER BY A.PAYDATE DESC";
 	
 	private static final String INSERT_SQL = "INSERT INTO DIVIDEND VALUES (?, ?, ?)";
 	
@@ -56,6 +57,9 @@ public class DividendDAO extends H2DAO{
 			dd.setSymbol(rs.getString("SYMBOL"));
 			dd.setPaydate(rs.getDate("PAYDATE"));
 			dd.setDividend(rs.getBigDecimal("DIVIDEND"));
+			
+			dd.setAdjustedDate(rs.getDate("ADJDATE"));
+			dd.setAdjustedDividend(rs.getBigDecimal("ADJDIV"));
 			l.add(dd);
 		}
 		return l;

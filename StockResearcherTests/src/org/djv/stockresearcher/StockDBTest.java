@@ -78,7 +78,7 @@ public class StockDBTest {
 	public void test2a() throws Exception {
 		StockDB yf = new StockDB("stockDBTest");
 		StockData sd = new StockData("0819.HK");
-		yf.getDivData(sd);
+		yf.getDivData(sd,true);
 		System.err.println(sd);
 	}
 	
@@ -92,7 +92,7 @@ public class StockDBTest {
 		sl.add(sd);
 		
 		db.getDataForStocks(sl);
-		db.getDivData(sd);
+		db.getDivData(sd, true);
 		db.getFinData(sd);
 		StockDataUtil.calcRankings(sd);
 		System.err.println(sd);

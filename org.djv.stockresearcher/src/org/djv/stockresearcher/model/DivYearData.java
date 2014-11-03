@@ -8,18 +8,11 @@ public class DivYearData {
 	
 	Integer year;
 	BigDecimal div = new BigDecimal("0.0000");
-	BigDecimal normalizedDiv = new BigDecimal("0.0000");
 	BigDecimal pctIncreaseOverPreviousYear = new BigDecimal("0.00");
 	List<DivData> divDetail = new ArrayList<DivData>();
 	
 	public Integer getYear() {
 		return year;
-	}
-	public BigDecimal getNormalizedDiv() {
-		return normalizedDiv;
-	}
-	public void setNormalizedDiv(BigDecimal normalizedDiv) {
-		this.normalizedDiv = normalizedDiv;
 	}
 	public void setYear(Integer year) {
 		this.year = year;

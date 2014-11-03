@@ -3,19 +3,30 @@ package org.djv.stockresearcher.parts;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.djv.stockresearcher.db.AppState;
 import org.djv.stockresearcher.db.AppStateListener;
+import org.djv.stockresearcher.db.StockDB;
+import org.djv.stockresearcher.db.StockDataChangeListener;
+import org.djv.stockresearcher.model.AdjustedDiv;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.DivYearData;
 import org.djv.stockresearcher.model.StockData;
+import org.djv.stockresearcher.widgets.DivAdjDialog;
 import org.eclipse.e4.ui.di.Focus;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
@@ -34,11 +45,11 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Year;
 
-public class DividendsPart implements AppStateListener {
+public class DividendsPart implements AppStateListener, StockDataChangeListener {
 	
 	private Label divChartLabel;
 	
-	private String[] divTitles = {"Date", "Dividend", "Norm", "Growth"};
+	private String[] divTitles = {"Date", "Dividend", "AdjDate", "AdjDiv", "Growth"};
 	private Table divTable;
 	
 	private Composite parent;
@@ -60,11 +71,56 @@ public class DividendsPart implements AppStateListener {
 		GridData data2 = new GridData(SWT.FILL, SWT.FILL, false, true);
 		divTable.setLayoutData(data2);
 		
+		divTable.addMouseListener(new MouseListener(){
+
+			@Override
+			public void mouseDoubleClick(MouseEvent e) {
+				TableItem[] selection = divTable.getSelection();
+				TableItem item = selection[0];
+				DivData dd = (DivData) item.getData("dd");
+				if (dd == null){
+					return;
+				}
+				
+				DivAdjDialog td = new DivAdjDialog(divTable.getShell());
+				
+				AdjustedDiv adjDiv = new AdjustedDiv();
+				td.setAdjDiv(adjDiv);
+				
+				adjDiv.setSymbol(dd.getSymbol());
+				adjDiv.setPaydate(dd.getPaydate());
+				adjDiv.setAdjustedDate(dd.getAdjustedDate());
+				adjDiv.setAdjustedDiv(dd.getAdjustedDividend());
+				
+				td.create();
+				int result = td.open();
+				if (result == Window.OK) {
+					try {
+						AdjustedDiv ad = td.getAdjDiv();
+						StockDB.getInstance().insertUpdateDeleteDivAdjustment(ad);
+						StockDB.getInstance().updateStockFineData(Arrays.asList(AppState.getInstance().getSelectedStock()), true);
+					} catch (Exception e1) {
+						MessageDialog.openError(divTable.getShell(), "Error", e1.getMessage());
+					}
+				} 
+			}
+
+			@Override
+			public void mouseDown(MouseEvent e) {
+			}
+
+			@Override
+			public void mouseUp(MouseEvent e) {
+			}
+			
+		});
+		
 		for (int i=0; i < divTitles.length; i++) {
 			TableColumn column = new TableColumn (divTable, SWT.NONE);
 			column.setText (divTitles [i]);
 		}
 		AppState.getInstance().addListener(this);
+		StockDB.getInstance().addStockDataChangeListener(this);
 		Display.getDefault().asyncExec(new Runnable(){
 			@Override
 			public void run() {
@@ -98,8 +154,18 @@ public class DividendsPart implements AppStateListener {
 								series1.add(new Day(c.getTime()), 0.00);
 							} else {
 								for (DivData dd : dyd.getDivDetail()) {
-									series1.add(new Day(dd.getPaydate()),
-											dd.getDividend());
+									Date d = dd.getPaydate();
+									if (dd.getAdjustedDate() != null){
+										d = dd.getAdjustedDate();
+									}
+									BigDecimal bd = dd.getDividend();
+									if (dd.getAdjustedDividend() != null){
+										if (dd.getAdjustedDividend().compareTo(BigDecimal.ZERO) == 0){
+											continue;
+										}
+										bd = dd.getAdjustedDividend();
+									}
+									series1.add(new Day(d), bd);
 								}
 							}
 							series2.add(new Year(y), dyd.getDiv().doubleValue());
@@ -144,24 +210,25 @@ public class DividendsPart implements AppStateListener {
 											SWT.BOLD));
 									item.setText(0, String.valueOf(dyd.getYear()));
 									item.setText(1, String.valueOf(dyd.getDiv()));
-									if (dyd.getDiv().compareTo(dyd.getNormalizedDiv()) != 0) {
-										item.setText(2, String.valueOf(dyd.getNormalizedDiv()));
-									}
 									item.setText(3,
 											String.valueOf(dyd.getPctIncreaseOverPreviousYear())
 													+ "%");
 					
 									for (DivData dd : dyd.getDivDetail()) {
 										TableItem item2 = new TableItem(divTable, SWT.NONE);
+										item2.setData("dd", dd);
 										item2.setText(
 												0,
 												"     "
 														+ new SimpleDateFormat("MM/dd/yyyy")
 																.format(dd.getPaydate()));
 										item2.setText(1, String.valueOf(dd.getDividend()));
-										if (dd.getDividend().compareTo(dd.getNormalizedDivided()) != 0) {
-											item2.setText(2,
-													String.valueOf(dd.getNormalizedDivided()));
+										if (dd.getAdjustedDate() != null) {
+											item2.setText(2,new SimpleDateFormat("MM/dd/yyyy")
+											.format(dd.getAdjustedDate()));
+										}
+										if (dd.getAdjustedDividend() != null) {
+											item2.setText(3,String.valueOf(dd.getAdjustedDividend()));
 										}
 									}
 								}
@@ -191,6 +258,14 @@ public class DividendsPart implements AppStateListener {
 	@Override
 	public void notifyChanged(AppState appState) {
 		createChart();
+	}
+
+	@Override
+	public void notifyChanged(StockData stockData, int stocksToUpdate,
+			int stocksUpdated) {
+		if (stockData == AppState.getInstance().getSelectedStock()){
+			createChart();
+		}
 	}
 	
 	

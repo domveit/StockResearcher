@@ -14,7 +14,6 @@ import org.djv.stockresearcher.model.StockData;
 public class StockDataUtil {
 	
 	public static void crunchDividends(StockData stockData) {
-		normalizeDivs(stockData);
 		buildDivYearData(stockData);
 		normalizeYearDivs(stockData);
 		calcDivStats(stockData);
@@ -53,10 +52,16 @@ public class StockDataUtil {
 		for (int i = 0; i < ddl.size() ; i ++){
 			DivData dd = ddl.get(i);
 			Integer year = dd.getPayDateCal().get(Calendar.YEAR);
+			if (dd.getAdjustedDateCal() != null){
+				year = dd.getAdjustedDateCal().get(Calendar.YEAR);
+			}
 			lastYear = year;
 			DivYearData dyd = divYearData.get(year);
-			dyd.setDiv(dyd.getDiv().add(dd.getDividend()));
-			dyd.setNormalizedDiv(dyd.getNormalizedDiv().add(dd.getNormalizedDivided()));
+			if (dd.getAdjustedDividend() == null){
+				dyd.setDiv(dyd.getDiv().add(dd.getDividend()));
+			} else {
+				dyd.setDiv(dyd.getDiv().add(dd.getAdjustedDividend()));
+			}
 			dyd.getDivDetail().add(dd);
 		}
 		
@@ -87,7 +92,7 @@ public class StockDataUtil {
 			if (dyd == null){
 				 continue;
 			}
-			BigDecimal currDiv = dyd.getNormalizedDiv();
+			BigDecimal currDiv = dyd.getDiv();
 			
 			if (y == currYYYY - 1){
 				divNow = currDiv.doubleValue();
@@ -105,7 +110,7 @@ public class StockDataUtil {
 			if (dydPrevYr == null){
 				 continue;
 			}
-			BigDecimal prevDiv = dydPrevYr.getNormalizedDiv();
+			BigDecimal prevDiv = dydPrevYr.getDiv();
 			
 			if (prevDiv.compareTo(currDiv) > 0 || currDiv.compareTo(BigDecimal.ZERO) == 0){
 				stopStreak = true;
@@ -151,88 +156,6 @@ public class StockDataUtil {
 		Calendar c = Calendar.getInstance();
 		int currYYYY = c.get(Calendar.YEAR);
 		
-		// look for early paid Q4 dividends in 2012 and move them to 2013
-		{
-		DivYearData dyd = divYearData.get(currYYYY);
-		DivYearData dydMinus1 = divYearData.get(currYYYY - 1);
-		DivYearData dydMinus2 = divYearData.get(currYYYY - 2);
-		DivYearData dydMinus3 = divYearData.get(currYYYY - 3);
-		
-		if (dyd != null && dydMinus1 != null && dydMinus2!= null && dydMinus3 != null){
-			if (dydMinus2.getDivDetail().size() == 4 && dydMinus3.getDivDetail().size() == 4 && dydMinus1.getDivDetail().size() == 5){
-				DivData extraQ4Div = null;
-				for (DivData dd : dydMinus1.getDivDetail()){
-					int em =dd.getPayDateCal().get(Calendar.MONTH);
-					if (em == Calendar.DECEMBER || em == Calendar.NOVEMBER){
-						extraQ4Div = dd;
-						break;
-					}
-				}
-				DivData q1Div = null;
-				for (DivData dd : dyd.getDivDetail()){
-					int em =dd.getPayDateCal().get(Calendar.MONTH);
-					if (em == Calendar.JANUARY || em == Calendar.FEBRUARY|| em == Calendar.MARCH){
-						q1Div = dd;
-						break;
-					}
-				}
-				
-				if (extraQ4Div != null && q1Div == null){
-					dydMinus1.getDivDetail().remove(extraQ4Div);
-					dydMinus1.setNormalizedDiv(dydMinus1.getNormalizedDiv().subtract(extraQ4Div.getNormalizedDivided()));
-					dyd.getDivDetail().add(extraQ4Div);
-					dyd.setNormalizedDiv(dyd.getNormalizedDiv().add(extraQ4Div.getNormalizedDivided()));
-				}
-				
-			}
-		}
-		}
-		
-		for (Integer y = currYYYY - 1; y > 1960; y --){
-			DivYearData dyd = divYearData.get(y);
-			
-			DivYearData nextdyd = divYearData.get(y + 1);
-			DivYearData prevdyd = divYearData.get(y - 1);
-			if (dyd == null){
-				continue;
-			}
-			
-			if (nextdyd.getYear() == currYYYY){
-				nextdyd = divYearData.get(y - 2);
-			}
-			
-			int normNbrPayments = dyd.getDivDetail().size();
-			if (prevdyd == null && nextdyd == null){
-				continue;
-			} else if (prevdyd != null && nextdyd == null){
-				normNbrPayments = prevdyd.getDivDetail().size();
-			} else if (prevdyd == null && nextdyd != null){
-				normNbrPayments = nextdyd.getDivDetail().size();
-			}  else {
-				if (prevdyd.getDivDetail().size() !=  nextdyd.getDivDetail().size()) {
-					continue;
-				}
-				normNbrPayments = prevdyd.getDivDetail().size();
-			}
-			
-			if(dyd.getDivDetail().size() > normNbrPayments){
-				DivData maxdd = null;
-				for (DivData dd : dyd.getDivDetail()){
-					if (maxdd == null){
-						maxdd = dd;
-					}
-					maxdd = (dd.getDividend().compareTo(maxdd.getDividend()) > 0 ) ? dd : maxdd; 
-				}
-				if (maxdd != null ){
-					maxdd.setNormalizedDivided(new BigDecimal("0.00"));
-					dyd.setNormalizedDiv(new BigDecimal("0.00"));
-					for (DivData dd : dyd.getDivDetail()){
-						dyd.setNormalizedDiv(dyd.getNormalizedDiv().add(dd.getNormalizedDivided()));
-					}
-				}
-			}
-		}
-		
 		int regularPayer = -1;
 		
 		DivYearData lastYear = divYearData.get(currYYYY -1);
@@ -241,9 +164,9 @@ public class StockDataUtil {
 		
 		if (lastYear != null && lastYear2 != null && lastYear3 != null){
 			if (lastYear.getDivDetail().size() == lastYear2.getDivDetail().size() 
-					&& lastYear.getDiv().equals(lastYear2.getNormalizedDiv())
+					&& lastYear.getDiv().equals(lastYear2.getDiv())
 				&& lastYear2.getDivDetail().size() == lastYear3.getDivDetail().size()
-				&& lastYear2.getDiv().equals(lastYear3.getNormalizedDiv())
+				&& lastYear2.getDiv().equals(lastYear3.getDiv())
 					){
 				regularPayer = lastYear.getDivDetail().size();
 			}
@@ -255,8 +178,8 @@ public class StockDataUtil {
 				sd.setNormYield(sd.getNormDividend().multiply(new BigDecimal(100)).divide(sd.getStock().getPrice(), RoundingMode.HALF_UP));
 			} else {
 				if (lastYear != null ){
-					sd.setNormDividend(lastYear.getNormalizedDiv());
-					sd.setNormYield(lastYear.getNormalizedDiv().multiply(new BigDecimal(100)).divide(sd.getStock().getPrice(), RoundingMode.HALF_UP));
+					sd.setNormDividend(lastYear.getDiv());
+					sd.setNormYield(lastYear.getDiv().multiply(new BigDecimal(100)).divide(sd.getStock().getPrice(), RoundingMode.HALF_UP));
 				} else {
 					sd.setNormDividend(sd.getStock().getDividend());
 					sd.setNormYield(sd.getStock().getYield());
@@ -315,32 +238,36 @@ public class StockDataUtil {
 				yr = 0;
 			} 
 		}
-		
 		int sr = 0;
-		if (stockData.getStreak() >= 1){
-			sr = 3;
-		} 
-		if (stockData.getStreak() >= 2 && stockData.getSkipped() == 0){
-			sr = 4;
-		} 		
-		if ((stockData.getStreak() >= 3 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 6 && stockData.getSkipped() == 1)){
-			sr = 5;
-		} 		
-		if ((stockData.getStreak() >= 4 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 8 && stockData.getSkipped() == 1)){
-			sr = 6;
-		} 		
-		if ((stockData.getStreak() >= 6 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 12 && stockData.getSkipped() == 1)){
-			sr = 7;
-		} 
-		if ((stockData.getStreak() >= 8 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 16 && stockData.getSkipped() == 1)){
-			sr = 8;
-		} 
-		if ((stockData.getStreak() >= 10 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 20 && stockData.getSkipped() == 1)){
-			sr = 9;
-		} 		
-		if ((stockData.getStreak() >= 12 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 24 && stockData.getSkipped() == 1)){
-			sr = 10;
-		} 		
+		
+		if (stockData.getStreak() > 2){
+			double srDoub = Math.min(stockData.getStreak() / 2, 8) - stockData.getSkipped() + 2;	
+			sr = (int) srDoub;
+		}
+//		if (stockData.getStreak() >= 1){
+//			sr = 3;
+//		} 
+//		if (stockData.getStreak() >= 2 && stockData.getSkipped() == 0){
+//			sr = 4;
+//		} 		
+//		if ((stockData.getStreak() >= 3 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 6 && stockData.getSkipped() == 1)){
+//			sr = 5;
+//		} 		
+//		if ((stockData.getStreak() >= 4 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 8 && stockData.getSkipped() == 1)){
+//			sr = 6;
+//		} 		
+//		if ((stockData.getStreak() >= 6 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 12 && stockData.getSkipped() == 1)){
+//			sr = 7;
+//		} 
+//		if ((stockData.getStreak() >= 8 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 16 && stockData.getSkipped() == 1)){
+//			sr = 8;
+//		} 
+//		if ((stockData.getStreak() >= 10 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 20 && stockData.getSkipped() == 1)){
+//			sr = 9;
+//		} 		
+//		if ((stockData.getStreak() >= 12 && stockData.getSkipped() == 0) || (stockData.getStreak() >= 24 && stockData.getSkipped() == 1)){
+//			sr = 10;
+//		} 		
 		
 		int gr = 0;
 		if (stockData.getDg5() != null && stockData.getDg10() != null){
@@ -508,82 +435,6 @@ public class StockDataUtil {
 		stockData.setValueRank(vr);
 		stockData.setOverAllRank(rank);
 		stockData.setRanksCalculated(true);
-	}
-
-	private static void normalizeDivs(StockData sd) {
-		List<DivData> ddl = sd.getDivData();
-		double stdDev = getStdDev(sd);
-		sd.setStdDev(stdDev);
-		sd.setWildness(getWildness(sd));
-		for (int i = 0; i < ddl.size(); i ++){
-			DivData dd = ddl.get(i);
-			DivData prevdd = null;
-			if (i > 0){
-				prevdd = ddl.get(i-1);
-			}
-			
-			DivData nextdd = null;
-			if (i < ddl.size() - 1){
-				nextdd = ddl.get(i+1);
-			}
-			BigDecimal curr = dd.getDividend(); 
-			BigDecimal avg = null;
-			if (prevdd != null && nextdd != null){
-				avg = prevdd.getDividend().add(nextdd.getDividend()).divide(new BigDecimal(2));
-			} else if (prevdd != null && nextdd == null){
-				avg = prevdd.getDividend() ;
-			} else if (prevdd == null && nextdd != null){
-				avg = nextdd.getDividend();
-			} else {
-				avg = curr;
-			}
-			
-			double numStdDevs = (curr.doubleValue() - avg.doubleValue()) / stdDev;
-			if (numStdDevs > 2){
-				dd.setNormalizedDivided(avg);
-			} else {
-				dd.setNormalizedDivided(dd.getDividend());
-			}
-		}
-	}
-	
-	static double getMean(StockData sd) {
-		double sum = 0.0;
-		for (DivData dd : sd.getDivData()) {
-			sum += dd.getDividend().doubleValue();
-		}
-		return sum / sd.getDivData().size();
-	}
-
-	static double getVariance(StockData sd) {
-		double mean = getMean(sd);
-		double temp = 0;
-		for (DivData dd : sd.getDivData()) {
-			double a = dd.getDividend().doubleValue();
-			temp += (mean - a) * (mean - a);
-		}
-		return temp / sd.getDivData().size();
-	}
-
-	static double getStdDev(StockData sd) {
-		if (sd.getDivData().size() == 0){
-			return 0d;
-		}
-		return Math.sqrt(getVariance(sd));
-	}
-	
-	static double getWildness(StockData sd) {
-		if (sd.getDivData().size() == 0){
-			return 0d;
-		}
-		double mean = getMean(sd);
-		double temp = 0;
-		for (DivData dd : sd.getDivData()) {
-			double a = dd.getDividend().doubleValue();
-			temp += (mean - a) * (mean - a);
-		}
-		double variance =  temp / sd.getDivData().size();
-		return  (Math.sqrt(variance) / mean) * 100;
 	}
 
 	public static void crunchFinancials(StockData stockData) {

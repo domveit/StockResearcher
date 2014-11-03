@@ -10,14 +10,9 @@ public class DivData {
 	String symbol;
 	Date paydate;
 	BigDecimal dividend;
-	BigDecimal normalizedDivided;
+	Date adjustedDate;
+	BigDecimal adjustedDividend;
 	
-	public BigDecimal getNormalizedDivided() {
-		return normalizedDivided;
-	}
-	public void setNormalizedDivided(BigDecimal normalizedDivided) {
-		this.normalizedDivided = normalizedDivided;
-	}
 	public BigDecimal getDividend() {
 		return dividend;
 	}
@@ -40,13 +35,32 @@ public class DivData {
 	public String toString(){
 		String s = "        date= " + new SimpleDateFormat("MM/dd/yyyy").format(paydate) + "\n";
 		s+= "        dividend= " + dividend + "\n";
-		s+= "        normalizedDivided= " + normalizedDivided + "\n";
 		return s;
 	}
 	public Calendar getPayDateCal() {
 		Calendar c = Calendar.getInstance();
 		c.setTime(paydate);
 		return c;
+	}
+	public Calendar getAdjustedDateCal() {
+		if (adjustedDate == null){
+			return null;
+		}
+		Calendar c = Calendar.getInstance();
+		c.setTime(adjustedDate);
+		return c;
+	}
+	public Date getAdjustedDate() {
+		return adjustedDate;
+	}
+	public void setAdjustedDate(Date adjustedDate) {
+		this.adjustedDate = adjustedDate;
+	}
+	public BigDecimal getAdjustedDividend() {
+		return adjustedDividend;
+	}
+	public void setAdjustedDividend(BigDecimal adjustedDividend) {
+		this.adjustedDividend = adjustedDividend;
 	}
 	
 	

@@ -63,16 +63,22 @@ public class GoogleOptionBroker implements IOptionBroker {
 	public void parseOptionJSON(OptionTable table, JsonObject json )
 			throws IOException {
 		OptionPeriod currPeriod = table.getCurrentPeriod();
-		JsonArray puts = json.get("puts").getAsJsonArray();
-		List<Option> putList = buildOptionList(currPeriod, puts);
-		table.getPutMap().put(currPeriod, putList);
+		JsonElement putsEle = json.get("puts");
+		if (putsEle != null){
+			JsonArray puts = putsEle.getAsJsonArray();
+			List<Option> putList = buildOptionList(currPeriod, puts, "P");
+			table.getPutMap().put(currPeriod, putList);
+		}
 		
-		JsonArray calls = json.get("calls").getAsJsonArray();	
-		List<Option> callList = buildOptionList(currPeriod, calls);
-		table.getCallMap().put(currPeriod, callList);
+		JsonElement callsEle = json.get("calls");
+		if (callsEle != null){
+			JsonArray calls = callsEle.getAsJsonArray();		
+			List<Option> callList = buildOptionList(currPeriod, calls, "C");
+			table.getCallMap().put(currPeriod, callList);
+		}
 	}
 
-	public List<Option> buildOptionList(OptionPeriod currPeriod, JsonArray puts) {
+	public List<Option> buildOptionList(OptionPeriod currPeriod, JsonArray puts, String type) {
 		List<Option> optionList = new ArrayList<Option>();
 		for (JsonElement ce: puts){
 			JsonObject put = ce.getAsJsonObject();
@@ -83,6 +89,7 @@ public class GoogleOptionBroker implements IOptionBroker {
 			BigDecimal strike = convertBd(put.get("strike").getAsString());
 			
 			Option o = new Option();
+			o.setType(type);
 			o.setExpiration(currPeriod.getDate());
 			o.setStrike(strike);
 			o.setSymbol(s);
