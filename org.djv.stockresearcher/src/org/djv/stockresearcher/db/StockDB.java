@@ -1,27 +1,31 @@
 package org.djv.stockresearcher.db;
 
 import java.io.BufferedReader;
-import java.io.IOException;
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.djv.stockresearcher.broker.IDividendDataBroker;
+import org.djv.stockresearcher.broker.IFinancialDataBroker;
+import org.djv.stockresearcher.broker.ISectorIndustryDataBroker;
+import org.djv.stockresearcher.broker.IStockDataBroker;
+import org.djv.stockresearcher.broker.IStockDataCallbackHandler;
+import org.djv.stockresearcher.broker.MorningstarCSVFinancialDataBroker;
+import org.djv.stockresearcher.broker.YahooCSVDividendDataBroker;
+import org.djv.stockresearcher.broker.YahooHTMLSectorIndustryDataBroker;
+import org.djv.stockresearcher.broker.YahooYQLStockDataBroker;
 import org.djv.stockresearcher.db.dao.AdjustedDivDAO;
 import org.djv.stockresearcher.db.dao.AnalystEstimateDAO;
 import org.djv.stockresearcher.db.dao.DividendDAO;
@@ -49,22 +53,19 @@ import org.djv.stockresearcher.model.TransactionData;
 import org.djv.stockresearcher.model.TransactionType;
 import org.eclipse.swt.widgets.Display;
 
-import au.com.bytecode.opencsv.CSVReader;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 public class StockDB {
 	
+	private static StockDB instance;
+	Connection con = null;
 	private static final int STOCK_POOL_NBR_THREADS = 8;
 
-	private static StockDB instance;
-	
 	ExecutorService pool1 = null;
-	
 	List<ExecutorService> pools = new ArrayList<ExecutorService>();
+	
+	private IStockDataBroker 			stockDataBroker 		= new YahooYQLStockDataBroker();
+	private IDividendDataBroker 		divBroker 				= new YahooCSVDividendDataBroker();
+	private IFinancialDataBroker 		finBroker 				= new MorningstarCSVFinancialDataBroker();
+	private ISectorIndustryDataBroker 	sectorIndustryBroker 	= new YahooHTMLSectorIndustryDataBroker();
 	
 	public static StockDB getInstance(){
 		if (instance == null){
@@ -76,8 +77,6 @@ public class StockDB {
 		}
 		return instance;
 	}
-	
-	Connection con = null;
 	
 	public StockDB(String db) throws Exception {
 		createDatabase(db);
@@ -187,7 +186,7 @@ public class StockDB {
 		List<StockData> sdUpdateList = new ArrayList<StockData>();
 		List<StockData> sdUpdateListPo = new ArrayList<StockData>();
 		for (StockData sd : sdList) {
-			if (dataExpired(sd.getStock().getDataDate())){
+			if (Util.dataExpired(sd.getStock().getDataDate())){
 				sdUpdateList.add(sd);
 			} else {
 				sdUpdateListPo.add(sd);
@@ -218,7 +217,20 @@ public class StockDB {
 				@Override
 				public void run() {
 					try {
-						getDataForStocksInternal(finalSubList);
+						IStockDataCallbackHandler handler = new IStockDataCallbackHandler(){
+							@Override
+							public void updateStock(StockData sd) {
+								try {
+									new StockDAO(con).update(sd.getStock());
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+								stocksUpdatedCoarse++;
+								notifyAllStockDataChangeListeners(sd, stocksToUpdateCoarse, stocksUpdatedCoarse);
+							}
+							
+						};
+						stockDataBroker.getData(finalSubList, handler);
 					} catch (Exception e) {
 						e.printStackTrace();
 					} 
@@ -237,7 +249,20 @@ public class StockDB {
 				@Override
 				public void run() {
 					try {
-						getDataForStocksInternalPo(finalSubList);
+						IStockDataCallbackHandler handler = new IStockDataCallbackHandler(){
+							@Override
+							public void updateStock(StockData sd) {
+								try {
+									new StockDAO(con).update(sd.getStock());
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+								stocksUpdatedCoarse++;
+								notifyAllStockDataChangeListeners(sd, stocksToUpdateCoarse, stocksUpdatedCoarse);
+							}
+							
+						};
+						stockDataBroker.getPriceOnly(finalSubList, handler);
 					} catch (Exception e) {
 						e.printStackTrace();
 					} 
@@ -253,227 +278,17 @@ public class StockDB {
 		
 		return;
 	}
-	
-	public void getDataForStocksInternalPo(List<StockData> stocks) throws Exception {
-		List<String> stocksGettingData = new ArrayList<String>();
-		String stockURLParm = "";
-		for (StockData sd : stocks) {
-			if (stockURLParm.length() > 0){
-				stockURLParm += ",";
-			}
-			stockURLParm += ("\"" + sd.getSymbol() + "\"");
-			stocksGettingData.add(sd.getSymbol());
-		}
-		if (stocksGettingData.size() > 0) {
-			String YQLquery = 
-					"select "
-							+ "symbol, "
-							+ "LastTradePriceOnly "
-							+ "from yahoo.finance.quotes "
-							+ "where symbol in (" + stockURLParm +")";
-			System.err.println(YQLquery);
-
-			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-			try {
-				if (br == null){
-					throw new IllegalStateException ("br is null");
-				} else {
-					JsonParser parser = new JsonParser();
-					JsonObject json = parser.parse(br).getAsJsonObject();
-					JsonObject query = json.get("query").getAsJsonObject();
-					JsonElement jsonElement = query.get("results");
-					if (jsonElement != null){
-						JsonObject results = jsonElement.getAsJsonObject();
-						JsonElement quoteEle = results.get("quote");
-						if (quoteEle.isJsonArray()){
-							JsonArray quote = results.get("quote").getAsJsonArray();
-							for (JsonElement ce: quote){
-								handleQuoteElementPo(stocks, ce);
-							}
-						} else {
-							handleQuoteElementPo(stocks, quoteEle);
-						}
-					}
-					
-				}
-			} catch (Exception e){
-				if (stocks.size() > 1){
-					System.err.println("failed to get stock price data for list " + stockURLParm + " getting data one at a time.");
-					for (StockData sd : stocks){
-						List<StockData> oneStock = new ArrayList<StockData>();
-						oneStock.add(sd);
-						getDataForStocksInternalPo(oneStock);
-					}
-				} else {
-					System.err.println("failed to get stock price data for " + stocks.get(0).getSymbol() + ".");
-					stocksUpdatedCoarse++;
-					notifyAllStockDataChangeListeners(stocks.get(0), stocksToUpdateCoarse, stocksUpdatedCoarse);
-				}
-			} finally {
-				br.close();
-			}
-		}
-	}
-
-	
-	public void handleQuoteElementPo(List<StockData> stocks, JsonElement ce)
-			throws Exception {
-		JsonObject c = ce.getAsJsonObject();
-		String symbol = getString(c, "symbol");
-		String price = getString(c, "LastTradePriceOnly");
-
-		StockData sd = null;
-		for (StockData sdLoop : stocks){
-			if (sdLoop.getSymbol().equals(symbol)){
-				sd = sdLoop;
-				break;
-			}
-		}
-		
-		if (sd.getStock() == null){
-			System.err.println("Stock not found " + symbol);
-			return;
-		}
-		Stock s = sd.getStock();
-		s.setPrice(convertBd(price));
-		s.setDataDate(new java.sql.Date(new Date().getTime()));
-
-		new StockDAO(con).update(s);
-		stocksUpdatedCoarse++;
-		notifyAllStockDataChangeListeners(sd, stocksToUpdateCoarse, stocksUpdatedCoarse);
-	}
-
-	public void getDataForStocksInternal(List<StockData> stocks) throws Exception {
-		List<String> stocksGettingData = new ArrayList<String>();
-		String stockURLParm = "";
-		for (StockData sd : stocks) {
-			if (stockURLParm.length() > 0){
-				stockURLParm += ",";
-			}
-			stockURLParm += ("\"" + sd.getSymbol() + "\"");
-			stocksGettingData.add(sd.getSymbol());
-		}
-		if (stocksGettingData.size() > 0) {
-			String YQLquery = 
-					"select "
-							+ "symbol, "
-							+ "LastTradePriceOnly, "
-							+ "MarketCapitalization, "
-							+ "DividendShare, "
-							+ "DividendYield, "
-							+ "PERatio, "
-							+ "PEGRatio, "
-							+ "StockExchange, "
-							+ "YearLow, "
-							+ "YearHigh, "
-							+ "OneyrTargetPrice "
-							+ "from yahoo.finance.quotes "
-							+ "where symbol in (" + stockURLParm +")";
-			System.err.println(YQLquery);
-			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-			try {
-				if (br == null){
-					throw new IllegalStateException("br is null");
-				} else {
-					JsonParser parser = new JsonParser();
-					JsonObject json = parser.parse(br).getAsJsonObject();
-					JsonObject query = json.get("query").getAsJsonObject();
-					JsonElement jsonElement = query.get("results");
-						
-						JsonObject results = jsonElement.getAsJsonObject();
-						JsonElement quoteEle = results.get("quote");
-						if (quoteEle.isJsonArray()){
-							JsonArray quote = results.get("quote").getAsJsonArray();
-							for (JsonElement ce: quote){
-								handleQuoteElement(stocks, ce);
-							}
-						} else {
-							handleQuoteElement(stocks, quoteEle);
-						}
-					
-				}
-			} catch (Exception e){
-				if (stocks.size() > 1){
-					System.err.println("failed to get stock data for list " + stockURLParm + " getting data one at a time.");
-					for (StockData sd : stocks){
-						List<StockData> oneStock = new ArrayList<StockData>();
-						oneStock.add(sd);
-						getDataForStocksInternal(oneStock);
-					}
-				} else {
-					System.err.println("failed to get stock data for " + stocks.get(0).getSymbol() + ".");
-					stocksUpdatedCoarse++;
-					notifyAllStockDataChangeListeners(stocks.get(0), stocksToUpdateCoarse, stocksUpdatedCoarse);
-				}
-			} finally {
-				br.close();
-			}
-		}
-	}
-
-	public void handleQuoteElement(List<StockData> stocks, JsonElement ce)
-			throws Exception {
-		JsonObject c = ce.getAsJsonObject();
-		String symbol = getString(c, "symbol");
-		String price = getString(c, "LastTradePriceOnly");
-		String marketCap = getString(c, "MarketCapitalization");
-		String dividend = getString(c, "DividendShare");
-		String yield = getString(c, "DividendYield");
-		String yrHigh = getString(c, "YearHigh");
-		String yrLow = getString(c, "YearLow");
-		String pe = getString(c, "PERatio");
-		String peg = getString(c, "PEGRatio");
-		String exchange = getString(c, "StockExchange");
-		String oneYrTargetPrice = getString(c, "OneyrTargetPrice");
-
-		StockData sd = null;
-		for (StockData sdLoop : stocks){
-			if (sdLoop.getSymbol().equals(symbol)){
-				sd = sdLoop;
-				break;
-			}
-		}
-		
-		if (sd.getStock() == null){
-			System.err.println("Stock not found " + symbol);
-			return;
-		}
-
-		Stock s = sd.getStock();
-		s.setDividend(convertBd(dividend));
-		s.setPe(convertBd(pe));
-		s.setPeg(convertBd(peg));
-		s.setPrice(convertBd(price));
-		s.setYield(convertBd(yield));
-		s.setMarketCap(marketCap);
-		s.setExchange(exchange);
-		s.setYearHigh(convertBd(yrHigh));
-		s.setYearLow(convertBd(yrLow));
-		s.setOneYrTargetPrice(convertBd(oneYrTargetPrice));
-		s.setDataDate(new java.sql.Date(new Date().getTime()));
-
-		new StockDAO(con).update(s);
-		stocksUpdatedCoarse++;
-		notifyAllStockDataChangeListeners(sd, stocksToUpdateCoarse, stocksUpdatedCoarse);
-	}
-
-	private String getString(JsonObject c, String string) {
-		JsonElement o = c.get(string);
-		if (o == null){
-			return null;
-		}
-		if (o.isJsonNull()){
-			return null;
-		}
-		return o.getAsString();
-	}
 
 	public void getDivData(StockData sd, boolean forceUpdate) throws Exception {
 		if (forceUpdate){
 			new DividendDAO(con).deleteForStock(sd.getSymbol());
 		}
-		if (dataExpired(sd.getStock().getDivDataDate()) || forceUpdate){
-			insertNewDividends(sd);
+		if (Util.dataExpired(sd.getStock().getDivDataDate()) || forceUpdate){
+			Date startDate = new DividendDAO(con).getLastDividendOnFileForSymbol(sd.getSymbol());
+			List<DivData> divList = divBroker.getNewDividends(sd, startDate);
+			for (DivData dd : divList){
+				new DividendDAO(con).insert(dd);
+			}
 			sd.getStock().setDivDataDate(new java.sql.Date(new Date().getTime()));
 			new StockDAO(con).update(sd.getStock());
 			sd.setDivData(null)	;
@@ -484,181 +299,30 @@ public class StockDB {
 		}
 		StockDataUtil.crunchDividends(sd);
 	}
-
-	public void insertNewDividends(StockData sd) throws Exception {
-		String symbol = sd.getStock().getSymbol();
-		Date d = new DividendDAO(con).getLastDividendOnFileForSymbol(symbol);
-		
-		Calendar c = Calendar.getInstance();
-		int year = c.get(Calendar.YEAR);
-		int month = c.get(Calendar.MONTH);
-		int day = c.get(Calendar.DATE);
-		String urlString = "http://ichart.finance.yahoo.com/table.csv?s=" +symbol + "&a=00&b=2&c=1962&d=" + month +"&e=" +day+ "&f=" + year + "&g=v&ignore=.csv";
-		BufferedReader br = YahooFinanceUtil.getYahooCSVNice(urlString);
-		if (br == null){
-			sd.getStock().setDivDataDate(new java.sql.Date(new Date().getTime()));
-			new StockDAO(con).update(sd.getStock());
-			return;
-		}
-		String sDiv = null;
-		while ((sDiv = br.readLine()) != null){
-			if (sDiv.startsWith("Date")){
-				continue;
-			}
-			StringTokenizer st = new StringTokenizer(sDiv, ",");
-			Date date = new SimpleDateFormat("yyyy-MM-dd").parse(st.nextToken());
-
-			BigDecimal div = new BigDecimal(st.nextToken());
-			if (div.compareTo(BigDecimal.ZERO) == 0){
-				continue;
-			}
-			
-			if (d != null && (date.before(d) || date.equals(d))){
-				break;
-			}
-			DivData dd = new DivData();
-			dd.setSymbol(symbol);
-			dd.setPaydate(new java.sql.Date(date.getTime()));
-			dd.setDividend(div);
-			new DividendDAO(con).insert(dd);
-		}
-		br.close();
-		
-	}
 	
 	public void getFinData(StockData sd) throws Exception {
-		if (dataExpired(sd.getStock().getFinDataDate())){
+		if (Util.dataExpired(sd.getStock().getFinDataDate())){
 			new FinDataDAO(con).deleteForStock(sd.getStock().getSymbol());
-			insertFinancials(sd);
+			Map<String, FinPeriodData> finData = finBroker.getFinancialData(sd);
+		    for (String key : finData.keySet()){
+		    	FinPeriodData fpd = finData.get(key);
+		    	if (fpd.getYear() != null){
+		    		new FinDataDAO(con).insert(fpd);
+		    	}
+		    }
 			sd.getStock().setFinDataDate(new java.sql.Date(new Date().getTime()));
 			new StockDAO(con).update(sd.getStock());
 		}
 		
 		List<FinPeriodData> fpdl = new FinDataDAO(con).getFinDataForStock(sd.getStock().getSymbol());
-		Map<String, FinPeriodData> finData = new TreeMap<String, FinPeriodData>();
+		Map<String, FinPeriodData> finDataDb = new TreeMap<String, FinPeriodData>();
 		for (FinPeriodData fpd: fpdl){
-			finData.put(fpd.getPeriod(), fpd);
+			finDataDb.put(fpd.getPeriod(), fpd);
 		}
-		sd.setFinData(finData);
+		sd.setFinData(finDataDb);
 		StockDataUtil.crunchFinancials(sd);
 	}
 	
-	public void insertFinancials(StockData sd) throws Exception {
-		String symbol = sd.getStock().getSymbol();
-		String exchange = sd.getStock().getExchange();
-		Map<String, FinPeriodData> l = new TreeMap<String, FinPeriodData>();
-		Map<Integer, FinPeriodData> listInt = new TreeMap<Integer, FinPeriodData>();
-		String convertedSymbol = symbol;
-		int dotIx = symbol.indexOf('.');
-		if (dotIx > -1){
-			convertedSymbol = symbol.substring(0, dotIx);
-		}
-		
-		String msExchange = StockDBUtil.mapYahooExchangeToMorningStar(exchange);
-		if (msExchange == null){
-			if (symbol.endsWith(".DE")){
-				msExchange = "XFRA";
-			} else {
-				return;
-			}
-		}
-		if ("XHKG".equals(msExchange)){
-			convertedSymbol = "0" + convertedSymbol;
-		}
-		
-		String urlString = "http://financials.morningstar.com/ajax/exportKR2CSV.html?&callback=?&t="+msExchange+ ":"+ convertedSymbol +"&region=usa&culture=en-US&cur=USD";
-		BufferedReader br = YahooFinanceUtil.getYahooCSVNice(urlString);
-		if (br == null && "XOTC".equals(msExchange)){
-			msExchange = "PINX";
-			urlString = "http://financials.morningstar.com/ajax/exportKR2CSV.html?&callback=?&t="+msExchange+ ":"+ convertedSymbol +"&region=usa&culture=en-US&cur=USD";
-			br = YahooFinanceUtil.getYahooCSVNice(urlString);
-		}
-		
-		if (br == null){
-			System.err.println("cound not get financials for " + convertedSymbol);
-			return;
-		}
-		CSVReader reader = new CSVReader(br, ',');
-	    String [] nextLine;
-	    int ln = 0;
-	    while ((nextLine = reader.readNext()) != null) {
-	    	ln++;
-	    	if (ln < 3){
-	    		continue;
-	    	}
-	    	if (ln == 3){
-		    	for (int yr = 1; yr< nextLine.length ; yr ++){
-		    		FinPeriodData fd = new FinPeriodData();
-		    		String period = nextLine[yr];
-		    		fd.setPeriod(period);
-		    		if ("TTM".equals(period)){
-		    			fd.setYear(9999);
-		    		} else {
-			    		try{
-			    			Integer year = Integer.valueOf(period.substring(0, 4));
-			    			fd.setYear(year);
-			    		} catch (Exception e){
-			    			fd.setYear(null);
-			    		}
-		    		}
-		    		fd.setSymbol(symbol);
-		    		l.put(period, fd);
-		    		listInt.put(yr, fd);
-		    	}
-		    	continue;
-	    	}
-	    	
-	    	setFinValues(listInt, nextLine, "Revenue .{3} Mil", "revenue");
-	    	setFinValues(listInt, nextLine, "Gross Margin %", "grossMargin");
-	    	setFinValues(listInt, nextLine, "Operating Income .{3} Mil", "operatingIncome");
-	    	setFinValues(listInt, nextLine, "Operating Margin %", "operatingMargin");
-	    	setFinValues(listInt, nextLine, "Net Income .{3} Mil", "netIncome");
-	    	setFinValues(listInt, nextLine, "Earnings Per Share .{3}", "earningsPerShare");
-	    	setFinValues(listInt, nextLine, "Dividends .{3}", "dividends");
-	    	setFinValues(listInt, nextLine, "Payout Ratio %", "payoutRatio");
-	    	setFinValues(listInt, nextLine, "Shares Mil", "shares");
-	    	setFinValues(listInt, nextLine, "Book Value Per Share .{3}", "bookValuePerShare");
-	    	setFinValues(listInt, nextLine, "Operating Cash Flow .{3} Mil", "operatingCashFlow");
-	    	setFinValues(listInt, nextLine, "Cap Spending .{3} Mil", "capitalSpending");
-	    	setFinValues(listInt, nextLine, "Free Cash Flow .{3} Mil", "freeCashFlow");
-	    	setFinValues(listInt, nextLine, "Free Cash Flow Per Share .{3}", "freeCashFlowPerShare");
-	    	setFinValues(listInt, nextLine, "Working Capital .{3} Mil", "workingCapital");
-		}
-	    reader.close();
-	    for (String key : l.keySet()){
-	    	FinPeriodData fpd = l.get(key);
-	    	if (fpd.getYear() != null){
-	    		new FinDataDAO(con).insert(fpd);
-	    	}
-	    }
-	}
-
-	private void setFinValues(Map<Integer, FinPeriodData> listInt, String[] line, String match, String field) {
-    	if (line[0].matches(match)){
-	    	for (int yr = 1; yr  < line.length ; yr ++){
-	    		FinPeriodData fd = listInt.get(yr);
-	    		try {
-					Field f = FinPeriodData.class.getDeclaredField(field);
-					f.setAccessible(true);
-					f.set(fd, convertBd(line[yr]));
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-	    	}
-    	}
-	}
-
-	public BigDecimal convertBd(String s) {
-		if (s == null){
-			return null;
-		}
-		s = s.replace(",", "");
-		try{
-			return new BigDecimal(s);
-		} catch (Exception e) {
-			return null;
-		}
-	}
 	
 	public void updateSectors() throws Exception {
 		sectorIndustriesToUpdate = 0;
@@ -668,12 +332,20 @@ public class StockDB {
 			public void run() {
 				try {
 					notifyAllSectorIndustryListeners("Getting industry and sector data", 0);
-					
 					SectorDateDAO sdDAO = new SectorDateDAO(con);
 					final SectorIndustryDAO iDAO = new SectorIndustryDAO(con);
 					Date d = sdDAO.select();
-					if (dataExpired(d)){
-						updateSectors(sdDAO, iDAO, d);
+					if (Util.dataExpired(d)){
+						List<SectorIndustry> sectorInds = sectorIndustryBroker.getSectors();
+						for(SectorIndustry s : sectorInds){
+							 SectorIndustry si = iDAO.select(s.getIndustryId());
+							 if (si == null){
+								 iDAO.insert(s);
+							 } else {
+								 iDAO.update(s);
+							 }
+						}
+						
 						List<String> sectors = iDAO.getAllSectors();
 						final Map<String, List<Integer>> sectorMap = new HashMap<String, List<Integer>>();
 						
@@ -692,10 +364,17 @@ public class StockDB {
 									try {
 										List<Integer> iList = sectorMap.get(sector);
 										for (Integer ind : iList){
-											boolean worked = updateStockIndustryYQL(ind);
-											if (!worked){
-												updateStockIndustryHTML(ind);
+											List<StockIndustry> stockInds = sectorIndustryBroker.getStocksForIndustry(ind);
+											for(StockIndustry s : stockInds){
+												StockIndustryDAO stockIndustryDAO = new StockIndustryDAO(con);
+												StockIndustry si = stockIndustryDAO.select(s.getSymbol());
+												 if (si == null){
+													 stockIndustryDAO.insert(si);
+												 } else {
+													 stockIndustryDAO.update(si);
+												 }
 											}
+											
 											SectorIndustry si = iDAO.select(ind);
 											sectorIndustriesUpdated++;
 											notifyAllSectorIndustryListeners("Updated stock list for " + si.getSectorName() + " - " + si.getIndustryName() , 0);
@@ -725,179 +404,6 @@ public class StockDB {
 		});
 	}
 
-	private boolean updateStockIndustryYQL(Integer ind) {
-		boolean ret = false;
-		try {
-			StockIndustryDAO stockSectorIndustryDAO = new StockIndustryDAO(con);
-			String YQLquery = "select * from yahoo.finance.industry where id=\""
-					+ ind + "\"";
-			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-			if (br != null) {
-				JsonParser parser = new JsonParser();
-				JsonObject json = parser.parse(br).getAsJsonObject();
-				JsonObject query = json.get("query").getAsJsonObject();
-				JsonObject results = query.get("results").getAsJsonObject();
-				JsonObject industry = results.get("industry").getAsJsonObject();
-				JsonElement iEle = industry.get("company");
-				if (iEle == null) {
-					return false;
-				}
-				if (iEle.isJsonArray()) {
-					JsonArray companies = iEle.getAsJsonArray();
-					for (JsonElement ce : companies) {
-						handleCompany(ind, stockSectorIndustryDAO, ce);
-					}
-				} else {
-					handleCompany(ind, stockSectorIndustryDAO, iEle);
-				}
-				br.close();
-				ret = true;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return ret;
-	}
-
-	public void handleCompany(Integer ind, StockIndustryDAO stockSectorIndustryDAO,
-			JsonElement ce) throws Exception {
-		JsonObject c = ce.getAsJsonObject();
-		String name = c.get("name").getAsString();
-		String symbol = c.get("symbol").getAsString();
-		 
-		StockIndustry si = stockSectorIndustryDAO.select(symbol);
-		 if (si == null){
-			 si = new StockIndustry();
-			 si.setIndId(ind);
-			 si.setName(name);
-			 si.setSymbol(symbol);
-			 stockSectorIndustryDAO.insert(si);
-		 } else {
-			 si.setIndId(ind);
-			 si.setName(name);
-			 stockSectorIndustryDAO.update(si);
-		 }
-	}
-	
-	private boolean updateStockIndustryHTML(int industryId) throws Exception {
-		StockIndustryDAO stockSectorIndustryDAO = new StockIndustryDAO(con);
-		BufferedReader br = YahooFinanceUtil.getYahooCSVNice("http://biz.yahoo.com/p/" + industryId + "conameu.html");
-		if (br == null){
-			return false;
-		}
-		StringBuffer sb = new StringBuffer();
-		String s = br.readLine();
-		while (s != null){
-			sb.append(s);
-			sb.append(" ");
-			s = br.readLine();
-		}
-		int startIx = sb.indexOf("<b>Companies</b>");
-		String lookFor = "<a href=\"http://us.rd.yahoo.com/finance/industry/quote/colist/*http://biz.yahoo.com/p/";
-		do {
-			int linkIx = sb.indexOf(lookFor, startIx);
-			if (linkIx > -1){
-				int linkEnd = sb.indexOf("</a>", linkIx + lookFor.length());
-				String chopped = sb.substring(linkIx + lookFor.length() + 2, linkEnd);
-				String lookFor2 = ".html\">";
-				int hIx = chopped.indexOf(lookFor2);
-				String symbol = chopped.substring(0, hIx).toUpperCase();
-				String name = chopped.substring(hIx + lookFor2.length());
-
-				StockIndustry si = stockSectorIndustryDAO.select(symbol);
-				 if (si == null){
-					 si = new StockIndustry();
-					 si.setIndId(industryId);
-					 si.setName(name);
-					 si.setSymbol(symbol);
-					 stockSectorIndustryDAO.insert(si);
-				 } else {
-					 si.setIndId(industryId);
-					 si.setName(name);
-					 stockSectorIndustryDAO.update(si);
-				 }
-				startIx = linkEnd + 4;
-			} else {
-				break;
-			}
-		} while (startIx > -1);
-		
-		br.close();
-		return true;
-	}
-
-	public void updateSectors(SectorDateDAO sdDAO, SectorIndustryDAO iDAO, Date d)
-			throws Exception, IOException {
-		String YQLquery = "select * from yahoo.finance.sectors";
-		BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
-		 JsonParser parser = new JsonParser();
-		 JsonObject json = parser.parse(br).getAsJsonObject();
-		 JsonObject query = json.get("query").getAsJsonObject();
-		 JsonObject results = query.get("results").getAsJsonObject();
-		 JsonArray sectors = results.get("sector").getAsJsonArray();
-		 for (JsonElement sectorE: sectors){
-			 JsonObject sector = sectorE.getAsJsonObject();
-			 String sectorname = sector.get("name").getAsString();
-			 
-			 boolean first = true;
-			 JsonElement industryE = sector.get("industry");
-			 if (industryE.isJsonObject()){
-				handleIndustry(iDAO, sectorname, industryE, first);
-				if (first){
-					first = false;
-				}
-			 } else {
-				 JsonArray indArr = industryE.getAsJsonArray();
-				 for (JsonElement industryEe: indArr){
-					 handleIndustry(iDAO, sectorname, industryEe, first);
-						if (first){
-							first = false;
-						}
-				 }
-			 }
-		 }
-
-		 br.close();
-	}
-
-	public void handleIndustry(SectorIndustryDAO iDAO, String sectorname, JsonElement industryEe, boolean first) throws Exception {
-		JsonObject industryO = industryEe.getAsJsonObject();
-		 Integer id = industryO.get("id").getAsInt();
-		 String iname = industryO.get("name").getAsString();
-		 
-		 if (first){
-			 Integer sectid = id / 100 * 100;
-			 String sectname = "ALL";
-			 SectorIndustry si = iDAO.select(sectid);
-			 if (si == null){
-				 si = new SectorIndustry();
-				 si.setIndustryId(sectid);
-				 si.setIndustryName(sectname);
-				 si.setSectorName(sectorname);
-				 iDAO.insert(si);
-			 } else {
-				 si.setIndustryId(sectid);
-				 si.setIndustryName(sectname);
-				 si.setSectorName(sectorname);
-				 iDAO.update(si);
-			 }
-			 
-		 }
-		 SectorIndustry si = iDAO.select(id);
-		 if (si == null){
-			 si = new SectorIndustry();
-			 si.setIndustryId(id);
-			 si.setIndustryName(iname);
-			 si.setSectorName(sectorname);
-			 iDAO.insert(si);
-		 } else {
-			 si.setIndustryId(id);
-			 si.setIndustryName(iname);
-			 si.setSectorName(sectorname);
-			 iDAO.update(si);
-		 }
-	}
-	
 	public void updateSectorAndIndustry(final String sector, final String industry){
 		industriesToUpdate = 0;
 		industriesUpdated = 0;
@@ -929,7 +435,7 @@ public class StockDB {
 		
 	}
 	
-	public void pooledExecution(Runnable runnable){
+	private void pooledExecution(Runnable runnable){
 		if (pool1 != null){
 			pool1.shutdownNow();
 			try {
@@ -959,7 +465,7 @@ public class StockDB {
 		t.start();
 	}
 
-	public void getStocksForIndustryAndSector(int ind) throws Exception {
+	private void getStocksForIndustryAndSector(int ind) throws Exception {
 		SectorIndustry si = new SectorIndustryDAO(con).select(ind);
 		notifyAllIndustryStockListeners(si.getIndustryName(), null, 0);
 		
@@ -1021,28 +527,7 @@ public class StockDB {
 		notifyAllStockDataChangeListeners(null, stocksToUpdate, stocksUpdated);
 	}
 	
-	private boolean dataExpired(Date d) {
-		if (d == null){
-			return true;
-		}
-		Calendar now = Calendar.getInstance();
-		Calendar c = Calendar.getInstance();
-		c.setTime(d);
-		
-		if (now.get(Calendar.YEAR) > c.get(Calendar.YEAR)){
-			return true;
-		}
-		
-		if (now.get(Calendar.YEAR) == c.get(Calendar.YEAR) && now.get(Calendar.MONTH) > c.get(Calendar.MONTH)){
-			return true;
-		}
-		
-		if (now.get(Calendar.YEAR) == c.get(Calendar.YEAR) && now.get(Calendar.MONTH) == c.get(Calendar.MONTH) && now.get(Calendar.DATE) > c.get(Calendar.DATE)){
-			return true;
-		}
-		
-		return false;
-	}
+
 
 	public String getCompanyInfo(String symbol) throws Exception {
 		BufferedReader br = YahooFinanceUtil.getYahooCSVNice("http://finance.yahoo.com/q/pr?s=" +symbol+ "+Profile");

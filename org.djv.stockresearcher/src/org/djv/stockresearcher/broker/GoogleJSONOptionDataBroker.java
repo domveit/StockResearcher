@@ -1,4 +1,4 @@
-package org.djv.stockresearcher.db;
+package org.djv.stockresearcher.broker;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.djv.stockresearcher.db.YahooFinanceUtil;
 import org.djv.stockresearcher.model.Option;
 import org.djv.stockresearcher.model.OptionPeriod;
 import org.djv.stockresearcher.model.OptionTable;
@@ -17,7 +18,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class GoogleOptionBroker implements IOptionBroker {
+public class GoogleJSONOptionDataBroker implements IOptionDataBroker {
 
 	@Override
 	public OptionTable getOptionTable(String symbol) throws Exception {

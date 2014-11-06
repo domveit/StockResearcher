@@ -8,7 +8,7 @@ import java.net.URLConnection;
 
 public class YahooFinanceUtil {
 	
-	public static BufferedReader getYQLJson(String query) throws Exception {
+	public static BufferedReader getYQLJson(String query) {
 		String rQuery = query.replaceAll(" ", "%20");
 		rQuery = rQuery.replaceAll(",", "%2C");
 		rQuery = rQuery.replaceAll("\"", "%22");

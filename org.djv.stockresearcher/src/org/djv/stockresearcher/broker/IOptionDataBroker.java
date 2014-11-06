@@ -1,8 +1,8 @@
-package org.djv.stockresearcher.db;
+package org.djv.stockresearcher.broker;
 
 import org.djv.stockresearcher.model.OptionTable;
 
-public interface IOptionBroker {
+public interface IOptionDataBroker {
 
 	public abstract OptionTable getOptionTable(String symbol) throws Exception;
 

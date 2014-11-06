@@ -6,8 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.djv.stockresearcher.db.GoogleOptionBroker;
-import org.djv.stockresearcher.db.IOptionBroker;
+import org.djv.stockresearcher.broker.GoogleJSONOptionDataBroker;
+import org.djv.stockresearcher.broker.IOptionDataBroker;
 import org.djv.stockresearcher.model.OptionTable;
 
 public class OptionService {
@@ -16,7 +16,7 @@ public class OptionService {
 	
 	ExecutorService pool1 = null;
 	
-	private IOptionBroker optionBroker = new GoogleOptionBroker();
+	private IOptionDataBroker optionBroker = new GoogleJSONOptionDataBroker();
 	
 	List<OptionListener> optionListeners = new ArrayList<OptionListener>();
 	
