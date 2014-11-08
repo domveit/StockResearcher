@@ -39,7 +39,7 @@ import org.djv.stockresearcher.db.dao.TransactionDAO;
 import org.djv.stockresearcher.db.dao.WatchListDAO;
 import org.djv.stockresearcher.model.AdjustedDiv;
 import org.djv.stockresearcher.model.DivData;
-import org.djv.stockresearcher.model.FinPeriodData;
+import org.djv.stockresearcher.model.FinKeyData;
 import org.djv.stockresearcher.model.Lot;
 import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
@@ -67,6 +67,14 @@ public class StockDB {
 	private IFinancialDataBroker 		finBroker 				= new MorningstarCSVFinancialDataBroker();
 	private ISectorIndustryDataBroker 	sectorIndustryBroker 	= new YahooHTMLSectorIndustryDataBroker();
 	
+	public IDividendDataBroker getDivBroker() {
+		return divBroker;
+	}
+
+	public IFinancialDataBroker getFinBroker() {
+		return finBroker;
+	}
+
 	public static StockDB getInstance(){
 		if (instance == null){
 			try {
@@ -303,9 +311,9 @@ public class StockDB {
 	public void getFinData(StockData sd) throws Exception {
 		if (Util.dataExpired(sd.getStock().getFinDataDate())){
 			new FinDataDAO(con).deleteForStock(sd.getStock().getSymbol());
-			Map<String, FinPeriodData> finData = finBroker.getFinancialData(sd);
+			Map<String, FinKeyData> finData = finBroker.getKeyData(sd);
 		    for (String key : finData.keySet()){
-		    	FinPeriodData fpd = finData.get(key);
+		    	FinKeyData fpd = finData.get(key);
 		    	if (fpd.getYear() != null){
 		    		new FinDataDAO(con).insert(fpd);
 		    	}
@@ -314,9 +322,9 @@ public class StockDB {
 			new StockDAO(con).update(sd.getStock());
 		}
 		
-		List<FinPeriodData> fpdl = new FinDataDAO(con).getFinDataForStock(sd.getStock().getSymbol());
-		Map<String, FinPeriodData> finDataDb = new TreeMap<String, FinPeriodData>();
-		for (FinPeriodData fpd: fpdl){
+		List<FinKeyData> fpdl = new FinDataDAO(con).getFinDataForStock(sd.getStock().getSymbol());
+		Map<String, FinKeyData> finDataDb = new TreeMap<String, FinKeyData>();
+		for (FinKeyData fpd: fpdl){
 			finDataDb.put(fpd.getPeriod(), fpd);
 		}
 		sd.setFinData(finDataDb);

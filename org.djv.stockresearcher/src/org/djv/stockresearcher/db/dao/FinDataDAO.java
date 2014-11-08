@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.djv.stockresearcher.model.FinPeriodData;
+import org.djv.stockresearcher.model.FinKeyData;
 
 public class FinDataDAO extends H2DAO{
 	
@@ -77,13 +77,13 @@ public class FinDataDAO extends H2DAO{
 		ist.close();
 	}
 	
-	public List<FinPeriodData> getFinDataForStock(String symbol) throws Exception {
+	public List<FinKeyData> getFinDataForStock(String symbol) throws Exception {
 		PreparedStatement st = con.prepareStatement(SELECT_SQL);
 		st.setString(1, symbol);
 		ResultSet rs = st.executeQuery();
-		List<FinPeriodData> l = new ArrayList<FinPeriodData>();
+		List<FinKeyData> l = new ArrayList<FinKeyData>();
 		while (rs.next()){
-			FinPeriodData fpd = new FinPeriodData();
+			FinKeyData fpd = new FinKeyData();
 			fpd.setSymbol(rs.getString("SYMBOL").trim());
 			fpd.setBookValuePerShare(rs.getBigDecimal("BOOK_VALUE_PS"));
 			fpd.setCapitalSpending(rs.getBigDecimal("CAP_SPENDING"));
@@ -111,7 +111,7 @@ public class FinDataDAO extends H2DAO{
 		return l;
 	}
 	
-	public void insert(FinPeriodData fpd) throws Exception {
+	public void insert(FinKeyData fpd) throws Exception {
 		PreparedStatement st = con.prepareStatement(INSERT_SQL);
 		st.setString(1, fpd.getSymbol());
 		st.setString(2, fpd.getPeriod());

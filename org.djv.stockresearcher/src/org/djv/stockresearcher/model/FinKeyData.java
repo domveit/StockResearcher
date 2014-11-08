@@ -2,7 +2,7 @@ package org.djv.stockresearcher.model;
 
 import java.math.BigDecimal;
 
-public class FinPeriodData {
+public class FinKeyData {
 
 	String symbol;
 	String period;
