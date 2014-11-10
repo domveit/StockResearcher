@@ -44,7 +44,7 @@ public class StockData {
 	List<DivData> divData;
 	Map<Integer, DivYearData> divYearData;
 
-	Map<String, FinPeriodData> finData;
+	Map<String, FinKeyData> finData;
 	
 	public StockData() {
 		super();
@@ -214,10 +214,10 @@ public class StockData {
 		this.normYield = normYield;
 	}
 
-	public Map<String, FinPeriodData> getFinData() {
+	public Map<String, FinKeyData> getFinData() {
 		return finData;
 	}
-	public void setFinData(Map<String, FinPeriodData> finData) {
+	public void setFinData(Map<String, FinKeyData> finData) {
 		this.finData = finData;
 	}
 
@@ -302,7 +302,7 @@ public class StockData {
 		if (finData != null){
 			s+= "===== finData ===== \n";
 			for (String fdKey : finData.keySet()){
-				FinPeriodData fd = finData.get(fdKey);
+				FinKeyData fd = finData.get(fdKey);
 				s+= fd.toString();
 			};
 		}
