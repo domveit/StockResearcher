@@ -3,12 +3,10 @@ package org.djv.stockresearcher.broker;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.djv.stockresearcher.db.Util;
-import org.djv.stockresearcher.db.YahooFinanceUtil;
 import org.djv.stockresearcher.model.FinDataPeriod;
 import org.djv.stockresearcher.model.FinDataRow;
 import org.djv.stockresearcher.model.FinDataTable;
@@ -17,16 +15,13 @@ import org.djv.stockresearcher.model.StockData;
 
 import au.com.bytecode.opencsv.CSVReader;
 
-public class MorningstarCSVFinancialDataBroker implements IFinancialDataBroker {
+public class MSFinancialDataBroker implements IFinancialDataBroker {
 	
-	private interface IURLBuilder {
-		public String buildURL(String exchange, String symbol);
-	};
 	
 	@Override
 	public FinDataTable getCashFlowStatement(StockData sd) throws Exception {
 		FinDataTable is = new FinDataTable();
-		BufferedReader br = buildBufferedReader(sd, new IURLBuilder(){
+		BufferedReader br = MSUtil.buildBufferedReader(sd, new IURLBuilder(){
 			@Override
 			public String buildURL(String exchange, String symbol) {
 				return "http://financials.morningstar.com/ajax/ReportProcess4CSV.html?&t=" + exchange + ":" + symbol+ "&region=usa&culture=en-US&cur=&reportType=cf&period=12&dataType=A&order=asc&columnYear=5&rounding=3&view=raw&r=35432&denominatorView=raw&number=3";
@@ -40,7 +35,7 @@ public class MorningstarCSVFinancialDataBroker implements IFinancialDataBroker {
 	@Override
 	public FinDataTable getBalanceSheet(StockData sd) throws Exception {
 		FinDataTable is = new FinDataTable();
-		BufferedReader br = buildBufferedReader(sd, new IURLBuilder(){
+		BufferedReader br = MSUtil.buildBufferedReader(sd, new IURLBuilder(){
 			@Override
 			public String buildURL(String exchange, String symbol) {
 				return "http://financials.morningstar.com/ajax/ReportProcess4CSV.html?&t=" + exchange + ":" + symbol+ "&region=usa&culture=en-US&cur=&reportType=bs&period=12&dataType=A&order=asc&columnYear=5&rounding=3&view=raw&r=35432&denominatorView=raw&number=3";
@@ -54,7 +49,7 @@ public class MorningstarCSVFinancialDataBroker implements IFinancialDataBroker {
 	@Override
 	public FinDataTable getIncomeStatement(StockData sd) throws Exception {
 		FinDataTable is = new FinDataTable();
-		BufferedReader br = buildBufferedReader(sd, new IURLBuilder(){
+		BufferedReader br = MSUtil.buildBufferedReader(sd, new IURLBuilder(){
 			@Override
 			public String buildURL(String exchange, String symbol) {
 				return "http://financials.morningstar.com/ajax/ReportProcess4CSV.html?&t="+ exchange +":"+symbol+"&region=usa&culture=en-US&cur=&reportType=is&period=12&dataType=A&order=asc&columnYear=10&rounding=3&view=raw&r=341667&denominatorView=raw&number=3";
@@ -95,7 +90,7 @@ public class MorningstarCSVFinancialDataBroker implements IFinancialDataBroker {
 	@Override
 	public Map<String, FinKeyData> getKeyData(StockData sd) throws Exception {
 		Map<String, FinKeyData> finMap = new TreeMap<String, FinKeyData>();
-		BufferedReader br = buildBufferedReader(sd, new IURLBuilder(){
+		BufferedReader br = MSUtil.buildBufferedReader(sd, new IURLBuilder(){
 			@Override
 			public String buildURL(String exchange, String symbol) {
 				return "http://financials.morningstar.com/ajax/exportKR2CSV.html?&callback=?&t="+exchange+ ":"+ symbol +"&region=usa&culture=en-US&cur=USD";
@@ -156,42 +151,7 @@ public class MorningstarCSVFinancialDataBroker implements IFinancialDataBroker {
 	}
 
 	
-	private BufferedReader buildBufferedReader(StockData sd, IURLBuilder urlBuilder)  {
-		String symbol = sd.getStock().getSymbol();
-		String exchange = sd.getStock().getExchange();
-
-		String convertedSymbol = symbol;
-		int dotIx = symbol.indexOf('.');
-		if (dotIx > -1){
-			convertedSymbol = symbol.substring(0, dotIx);
-		}
-
-		String msExchange = mapYahooExchangeToMorningStar(exchange);
-		if (msExchange == null){
-			if (symbol.endsWith(".DE")){
-				msExchange = "XFRA";
-			} else {
-				return null;
-			}
-		}
-		if ("XHKG".equals(msExchange)){
-			convertedSymbol = "0" + convertedSymbol;
-		}
-
-		String urlString = urlBuilder.buildURL(msExchange, convertedSymbol);
-		BufferedReader br = YahooFinanceUtil.getYahooCSVNice(urlString);
-		if (br == null && "XOTC".equals(msExchange)){
-			msExchange = "PINX";
-			urlString = urlBuilder.buildURL(msExchange, convertedSymbol);
-			br = YahooFinanceUtil.getYahooCSVNice(urlString);
-		}
-
-		if (br == null){
-			System.err.println("cound not get financials for " + convertedSymbol);
-			return null;
-		}
-		return br;
-	}
+	
 	private void setFinValues(Map<Integer, FinKeyData> listInt, String[] line, String match, String field) {
 		if (line[0].matches(match)){
 			for (int yr = 1; yr  < line.length ; yr ++){
@@ -207,34 +167,6 @@ public class MorningstarCSVFinancialDataBroker implements IFinancialDataBroker {
 		}
 	}
 
-	static Map<String, String> exchangeMap = new HashMap<String, String>();
 
-	static {
-		exchangeMap.put("NYSE", "XNYS");
-		exchangeMap.put("NZSE", "XASX"); // questionable
-		exchangeMap.put("ASX", "XASX");
-		exchangeMap.put("CDNX", "XTSX");
-		exchangeMap.put("HKSE", "XHKG");
-		exchangeMap.put("London", "XLON");
-		exchangeMap.put("Milan", "MTAA");
-		exchangeMap.put("NCM", "XNAS");
-		exchangeMap.put("NGM", "XNAS");
-		exchangeMap.put("NasdaqNM", "XNAS");
-		exchangeMap.put("OTC BB", "XOTC");
-		exchangeMap.put("Other OTC", "XOTC"); 
-		exchangeMap.put("Paris", "XPAR");
-		exchangeMap.put("Toronto", "XTSE");
-		exchangeMap.put("XETRA", "XETR");
-		exchangeMap.put("AMEX", "XASE");
-		exchangeMap.put("", "");
-		exchangeMap.put("", "");
-		exchangeMap.put("", "");
-		exchangeMap.put("", "");
-		exchangeMap.put("", "");
-	}
-
-	public static String mapYahooExchangeToMorningStar(String exchange) {
-		return exchangeMap.get(exchange);
-	}
 
 }

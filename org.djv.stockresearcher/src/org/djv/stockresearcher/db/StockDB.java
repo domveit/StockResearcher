@@ -17,17 +17,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.djv.stockresearcher.broker.IAnalystDataBroker;
 import org.djv.stockresearcher.broker.IDividendDataBroker;
 import org.djv.stockresearcher.broker.IFinancialDataBroker;
 import org.djv.stockresearcher.broker.ISectorIndustryDataBroker;
 import org.djv.stockresearcher.broker.IStockDataBroker;
 import org.djv.stockresearcher.broker.IStockDataCallbackHandler;
-import org.djv.stockresearcher.broker.MorningstarCSVFinancialDataBroker;
+import org.djv.stockresearcher.broker.MSAnalystDataBroker;
+import org.djv.stockresearcher.broker.MSFinancialDataBroker;
 import org.djv.stockresearcher.broker.YahooCSVDividendDataBroker;
 import org.djv.stockresearcher.broker.YahooHTMLSectorIndustryDataBroker;
 import org.djv.stockresearcher.broker.YahooYQLStockDataBroker;
 import org.djv.stockresearcher.db.dao.AdjustedDivDAO;
-import org.djv.stockresearcher.db.dao.AnalystEstimateDAO;
+import org.djv.stockresearcher.db.dao.AnalystRatingsDAO;
 import org.djv.stockresearcher.db.dao.DividendDAO;
 import org.djv.stockresearcher.db.dao.FinDataDAO;
 import org.djv.stockresearcher.db.dao.PortfolioDAO;
@@ -38,6 +40,7 @@ import org.djv.stockresearcher.db.dao.StockIndustryDAO;
 import org.djv.stockresearcher.db.dao.TransactionDAO;
 import org.djv.stockresearcher.db.dao.WatchListDAO;
 import org.djv.stockresearcher.model.AdjustedDiv;
+import org.djv.stockresearcher.model.AnalystRatings;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.FinKeyData;
 import org.djv.stockresearcher.model.Lot;
@@ -64,8 +67,9 @@ public class StockDB {
 	
 	private IStockDataBroker 			stockDataBroker 		= new YahooYQLStockDataBroker();
 	private IDividendDataBroker 		divBroker 				= new YahooCSVDividendDataBroker();
-	private IFinancialDataBroker 		finBroker 				= new MorningstarCSVFinancialDataBroker();
+	private IFinancialDataBroker 		finBroker 				= new MSFinancialDataBroker();
 	private ISectorIndustryDataBroker 	sectorIndustryBroker 	= new YahooHTMLSectorIndustryDataBroker();
+	private IAnalystDataBroker 			analystBroker 			= new MSAnalystDataBroker();
 	
 	public IDividendDataBroker getDivBroker() {
 		return divBroker;
@@ -105,7 +109,7 @@ public class StockDB {
         new PortfolioDAO(con).createTableIfNotExists();
         new TransactionDAO(con).createTableIfNotExists();
         new SectorDateDAO(con).createTableIfNotExists();
-        new AnalystEstimateDAO(con).createTableIfNotExists();
+        new AnalystRatingsDAO(con).createTableIfNotExists();
         new AdjustedDivDAO(con).createTableIfNotExists();
 	}
 
@@ -287,6 +291,40 @@ public class StockDB {
 		return;
 	}
 
+	volatile int stocksUpdated = 0;
+	volatile int stocksToUpdate = 0;
+
+	public void updateStockFineData(List<StockData> sdList, final boolean forceUpdate)
+			throws InterruptedException {
+		ExecutorService pool = Executors.newFixedThreadPool(STOCK_POOL_NBR_THREADS);
+		pools.add(pool);
+		stocksToUpdate = 0;
+		stocksUpdated = 0;
+		
+		for (final StockData sd : sdList){
+			stocksToUpdate ++;
+			pool.submit(new Runnable(){
+				@Override
+				public void run() {
+					try {
+						getDivData(sd,forceUpdate);
+						getFinData(sd);
+						getAnalData(sd);
+						StockDataUtil.calcRankings(sd);
+						stocksUpdated++;
+						notifyAllStockDataChangeListeners(sd, stocksToUpdate, stocksUpdated);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		}
+		pool.shutdown();
+		pool.awaitTermination(30, TimeUnit.MINUTES);
+		pools.remove(pool);
+		notifyAllStockDataChangeListeners(null, stocksToUpdate, stocksUpdated);
+	}
+
 	public void getDivData(StockData sd, boolean forceUpdate) throws Exception {
 		if (forceUpdate){
 			new DividendDAO(con).deleteForStock(sd.getSymbol());
@@ -331,6 +369,29 @@ public class StockDB {
 		StockDataUtil.crunchFinancials(sd);
 	}
 	
+	public void getAnalData(StockData sd) throws Exception {
+		AnalystRatingsDAO dao = new AnalystRatingsDAO(con);
+		AnalystRatings ar = dao.select(sd.getSymbol());
+		if (ar == null) {
+//			System.err.println("inserting anal data " + sd.getSymbol());
+			ar = analystBroker.getAnalystRatings(sd);
+			dao.insert(ar);
+			
+		} else {
+//			System.err.println(ar.getDataDate());
+			if (Util.dataExpired(ar.getDataDate())){
+//				System.err.println("updating anal data " + sd.getSymbol());
+				ar = analystBroker.getAnalystRatings(sd);
+				if (ar != null){
+					dao.update(ar);
+				}
+				sd.setAnalystRatings(ar);
+			} else {
+//				System.err.println("skipping anal data " + sd.getSymbol());
+			}
+		}
+		sd.setAnalystRatings(ar);
+	}
 	
 	public void updateSectors() throws Exception {
 		sectorIndustriesToUpdate = 0;
@@ -443,36 +504,6 @@ public class StockDB {
 		
 	}
 	
-	private void pooledExecution(Runnable runnable){
-		if (pool1 != null){
-			pool1.shutdownNow();
-			try {
-				pool1.awaitTermination(30, TimeUnit.MINUTES);
-				pools.remove(pool1);
-				pool1 = null;
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		pool1 = Executors.newFixedThreadPool(1);
-		pools.add(pool1);
-		pool1.submit(runnable);
-		Thread t = new Thread(new Runnable(){
-			@Override
-			public void run() {
-				pool1.shutdown();
-				try {
-					pool1.awaitTermination(30, TimeUnit.MINUTES);
-					pools.remove(pool1);
-					pool1 = null;
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		t.start();
-	}
-
 	private void getStocksForIndustryAndSector(int ind) throws Exception {
 		SectorIndustry si = new SectorIndustryDAO(con).select(ind);
 		notifyAllIndustryStockListeners(si.getIndustryName(), null, 0);
@@ -501,41 +532,6 @@ public class StockDB {
 		industriesUpdated ++;
 		notifyAllIndustryStockListeners(si.getIndustryName(), null, 1);
 	}
-
-	volatile int stocksToUpdate = 0;
-	volatile int stocksUpdated = 0;
-	
-	public void updateStockFineData(List<StockData> sdList, final boolean forceUpdate)
-			throws InterruptedException {
-		ExecutorService pool = Executors.newFixedThreadPool(STOCK_POOL_NBR_THREADS);
-		pools.add(pool);
-		stocksToUpdate = 0;
-		stocksUpdated = 0;
-		
-		for (final StockData sd : sdList){
-			stocksToUpdate ++;
-			pool.submit(new Runnable(){
-				@Override
-				public void run() {
-					try {
-						getDivData(sd,forceUpdate);
-						getFinData(sd);
-						StockDataUtil.calcRankings(sd);
-						stocksUpdated++;
-						notifyAllStockDataChangeListeners(sd, stocksToUpdate, stocksUpdated);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			});
-		}
-		pool.shutdown();
-		pool.awaitTermination(30, TimeUnit.MINUTES);
-		pools.remove(pool);
-		notifyAllStockDataChangeListeners(null, stocksToUpdate, stocksUpdated);
-	}
-	
-
 
 	public String getCompanyInfo(String symbol) throws Exception {
 		BufferedReader br = YahooFinanceUtil.getYahooCSVNice("http://finance.yahoo.com/q/pr?s=" +symbol+ "+Profile");
@@ -945,6 +941,36 @@ public class StockDB {
 		}
 	}
 	
+	private void pooledExecution(Runnable runnable){
+		if (pool1 != null){
+			pool1.shutdownNow();
+			try {
+				pool1.awaitTermination(30, TimeUnit.MINUTES);
+				pools.remove(pool1);
+				pool1 = null;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		pool1 = Executors.newFixedThreadPool(1);
+		pools.add(pool1);
+		pool1.submit(runnable);
+		Thread t = new Thread(new Runnable(){
+			@Override
+			public void run() {
+				pool1.shutdown();
+				try {
+					pool1.awaitTermination(30, TimeUnit.MINUTES);
+					pools.remove(pool1);
+					pool1 = null;
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		t.start();
+	}
+
 	public void close() throws Exception {
 		con.commit();
 		con.close();

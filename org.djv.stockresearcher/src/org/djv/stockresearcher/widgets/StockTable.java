@@ -1,6 +1,7 @@
 package org.djv.stockresearcher.widgets;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -174,6 +175,11 @@ public class StockTable extends Composite {
 				String fieldName = source.substring("sectorIndustry.".length());
 				val = getFieldValue(sd.getSectorIndustry(), fieldName);
 			}
+		} else if (source.startsWith("analystRatings.")){
+			if (sd.getAnalystRatings() != null){
+				String fieldName = source.substring("analystRatings.".length());
+				val = getFieldValue(sd.getAnalystRatings(), fieldName);
+			}
 		} else {
 			val = getFieldValue(sd, source);
 		}
@@ -188,6 +194,12 @@ public class StockTable extends Composite {
 			field.setAccessible(true);
 			val = field.get(o);
 		} catch (NoSuchFieldException | SecurityException | IllegalAccessException e) {
+			try {
+				Method m = o.getClass().getDeclaredMethod("get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1));
+				val = m.invoke(o);
+			} catch (Exception e1) {
+				System.err.println("could not get value for " + fieldName);
+			} 
 		}
 		return val;
 	}

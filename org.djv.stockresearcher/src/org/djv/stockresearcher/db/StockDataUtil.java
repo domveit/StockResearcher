@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.djv.stockresearcher.model.AnalystRatings;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.DivYearData;
 import org.djv.stockresearcher.model.StockData;
@@ -386,9 +387,31 @@ public class StockDataUtil {
 		} else {
 			vr = (int)Math.round((yhNbr + oytNbr)/ vrDiv);
 		}
+		
+		int ar = 0;
+		AnalystRatings analystRatings = stockData.getAnalystRatings();
+		if (analystRatings != null){
+			if (analystRatings.getAverageRating() != null){
+				double ard = (analystRatings.getAverageRating().doubleValue() - 1.5) * 7 / 3.5;
+				
+				if (analystRatings.getFiveYearGrowthForcast() != null){
+					double ardAdj = (analystRatings.getFiveYearGrowthForcast().doubleValue() - 5) / 5;
+					ardAdj = Math.min(ardAdj, 3.0);
+					ard = ard + ardAdj;
+				}
+				if (analystRatings.getTotalAnalysts() < 3) {
+					ard = ard - 1;
+				}
+				if (analystRatings.getTotalAnalysts() < 2){
+					ard = ard - 1;
+				}
+				ar = (int)Math.round(ard);
+			}
+		}
+		
 
-		double overall = (yr + sr + gr + fr + vr);
-		double nbrDiv = 5.0;
+		double overall = (yr + sr + gr + fr + vr + ar);
+		double nbrDiv = 6.0;
 		if (yr == 1 || yr == 10){
 			overall += (.5* yr);
 			nbrDiv += 0.5;
@@ -434,6 +457,7 @@ public class StockDataUtil {
 		stockData.setFinRank(fr);
 		stockData.setValueRank(vr);
 		stockData.setOverAllRank(rank);
+		stockData.setAnalRank(ar);
 		stockData.setRanksCalculated(true);
 	}
 

@@ -171,6 +171,11 @@ public class SectorSearchPart implements IndustryStockListener, StockDataChangeL
 		stockTableConfig.getColumns().add(StockTableColumn.RG10);
 		stockTableConfig.getColumns().add(StockTableColumn.FIN_RANK);
 		
+		stockTableConfig.getColumns().add(StockTableColumn.ANAL_5YR);
+		stockTableConfig.getColumns().add(StockTableColumn.ANAL_AVG);
+		stockTableConfig.getColumns().add(StockTableColumn.ANAL_TOT);
+		stockTableConfig.getColumns().add(StockTableColumn.ANAL_RANK);
+		
 		stockTableConfig.getColumns().add(StockTableColumn.CHOWDER);
 		stockTableConfig.getColumns().add(StockTableColumn.OVERALL_RANK);		
 		return stockTableConfig;

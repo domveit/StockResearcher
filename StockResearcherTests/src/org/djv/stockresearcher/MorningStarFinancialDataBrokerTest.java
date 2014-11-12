@@ -1,6 +1,6 @@
 package org.djv.stockresearcher;
 
-import org.djv.stockresearcher.broker.MorningstarCSVFinancialDataBroker;
+import org.djv.stockresearcher.broker.MSFinancialDataBroker;
 import org.djv.stockresearcher.model.FinDataTable;
 import org.djv.stockresearcher.model.Stock;
 import org.djv.stockresearcher.model.StockData;
@@ -10,7 +10,7 @@ public class MorningStarFinancialDataBrokerTest {
 	
 	@Test
 	public void test() throws Exception {
-		MorningstarCSVFinancialDataBroker b = new MorningstarCSVFinancialDataBroker();
+		MSFinancialDataBroker b = new MSFinancialDataBroker();
 		Stock s = new Stock();
 		s.setSymbol("MSFT");
 		s.setExchange("NasdaqNM");
@@ -21,7 +21,7 @@ public class MorningStarFinancialDataBrokerTest {
 	
 	@Test
 	public void test2() throws Exception {
-		MorningstarCSVFinancialDataBroker b = new MorningstarCSVFinancialDataBroker();
+		MSFinancialDataBroker b = new MSFinancialDataBroker();
 		Stock s = new Stock();
 		s.setSymbol("MSFT");
 		s.setExchange("NasdaqNM");
@@ -32,7 +32,7 @@ public class MorningStarFinancialDataBrokerTest {
 	
 	@Test
 	public void test3() throws Exception {
-		MorningstarCSVFinancialDataBroker b = new MorningstarCSVFinancialDataBroker();
+		MSFinancialDataBroker b = new MSFinancialDataBroker();
 		Stock s = new Stock();
 		s.setSymbol("MSFT");
 		s.setExchange("NasdaqNM");

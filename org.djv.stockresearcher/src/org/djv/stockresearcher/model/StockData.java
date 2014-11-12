@@ -37,6 +37,7 @@ public class StockData {
 	Integer growthRank = 0;
 	Integer finRank = 0;
 	Integer valueRank = 0;
+	Integer analRank = 0;
 	Double overAllRank = 0d;
 	
 	String watched = "";
@@ -45,6 +46,8 @@ public class StockData {
 	Map<Integer, DivYearData> divYearData;
 
 	Map<String, FinKeyData> finData;
+	
+	AnalystRatings analystRatings;
 	
 	public StockData() {
 		super();
@@ -108,6 +111,14 @@ public class StockData {
 
 	public Integer getYieldRank() {
 		return yieldRank;
+	}
+
+	public Integer getAnalRank() {
+		return analRank;
+	}
+
+	public void setAnalRank(Integer analRank) {
+		this.analRank = analRank;
 	}
 
 	public void setYieldRank(Integer yieldRank) {
@@ -307,6 +318,14 @@ public class StockData {
 			};
 		}
 		return s;
+	}
+
+	public AnalystRatings getAnalystRatings() {
+		return analystRatings;
+	}
+
+	public void setAnalystRatings(AnalystRatings analystRatings) {
+		this.analystRatings = analystRatings;
 	}
 	
 	

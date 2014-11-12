@@ -51,6 +51,11 @@ public enum StockTableColumn {
 	RG10			("rg10", 		"rg10",					"0.00", 		"N/A", 		true, 		"finRank",		ForgivingBigDecimalComparator.class),
 	FIN_RANK		("FRank", 		"finRank",				null, 			"N/A", 		false, 		"finRank",		ForgivingBigDecimalComparator.class),
 	
+	ANAL_5YR		("Anal 5Yr",	"analystRatings.fiveYearGrowthForcast",		"0.00", 		"N/A", 		true, 		"analRank", 		ForgivingBigDecimalComparator.class),
+	ANAL_AVG		("Anal Avg",	"analystRatings.averageRating",				"0.00", 		"N/A", 		false, 		"analRank", 		ForgivingBigDecimalComparator.class),
+	ANAL_TOT		("Anal Tot",	"analystRatings.totalAnalysts",				"0", 			"N/A", 		false, 		"analRank", 		ForgivingBigDecimalComparator.class),
+	ANAL_RANK		("ARank", 		"analRank",				null, 			"N/A", 		false, 		"analRank",		ForgivingBigDecimalComparator.class),
+	
 	CHOWDER			("Chowder", 	"chowder",				"0.00", 		"N/A", 		true, 		null,			ForgivingBigDecimalComparator.class),
 
 	OVERALL_RANK	("RANK", 		"overAllRank",			"0.00", 		"N/A", 		false, 		"overAllRank",		ForgivingBigDecimalComparator.class),
