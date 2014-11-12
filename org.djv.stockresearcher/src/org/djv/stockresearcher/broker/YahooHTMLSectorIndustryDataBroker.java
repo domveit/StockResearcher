@@ -108,9 +108,12 @@ public class YahooHTMLSectorIndustryDataBroker implements ISectorIndustryDataBro
 				} else {
 					handleCompany(list, ind, iEle);
 				}
+			} else {
+				return null;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			return null;
 		} finally {
 			try {
 				br.close();
@@ -172,7 +175,9 @@ public class YahooHTMLSectorIndustryDataBroker implements ISectorIndustryDataBro
 			e.printStackTrace();
 		} finally {
 			try {
-				br.close();
+				if (br != null){
+					br.close();
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

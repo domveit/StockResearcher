@@ -22,6 +22,7 @@ import org.djv.stockresearcher.model.StockData;
 import org.djv.stockresearcher.model.Transaction;
 import org.djv.stockresearcher.model.TransactionData;
 import org.djv.stockresearcher.model.TransactionType;
+import org.djv.stockresearcher.util.Colors;
 import org.djv.stockresearcher.widgets.PortfolioDialog;
 import org.djv.stockresearcher.widgets.TransactionDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -561,7 +562,7 @@ public class PortfolioPart {
 			TableItem subTotItem = new TableItem (posTable, SWT.NONE);
 			subTotItem.setText (0, sectorStr);
 			subTotItem.setText (1, "Subtotals");
-			subTotItem.setBackground(new Color(Display.getDefault(), 230, 230, 230));
+			subTotItem.setBackground(Colors.LTGRAY);
 			subTotItem.setText (2, shares);
 			subTotItem.setText (3, basis);
 			subTotItem.setText (4, price);
@@ -584,7 +585,7 @@ public class PortfolioPart {
 			cw = new DecimalFormat("0.00").format(cashWeight)+ "%";
 		}
 		
-		cashItem.setBackground(new Color(Display.getDefault(), 230, 230, 230));
+		cashItem.setBackground(Colors.LTGRAY);
 		cashItem.setText (0, "");
 		cashItem.setText (1, "Cash");
 		cashItem.setText (2, "");
@@ -630,7 +631,7 @@ public class PortfolioPart {
 				
 		String div = new DecimalFormat("#,###,##0.00").format(totalDiv);
 		
-		totItem.setBackground(new Color(Display.getDefault(), 200, 200, 200));
+		totItem.setBackground(Colors.GRAY);
 		
 		totItem.setText (0, "");
 		totItem.setText (1, "Total");

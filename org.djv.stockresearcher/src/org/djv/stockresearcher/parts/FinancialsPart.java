@@ -17,9 +17,11 @@ import org.djv.stockresearcher.model.FinDataRow;
 import org.djv.stockresearcher.model.FinDataTable;
 import org.djv.stockresearcher.model.FinKeyData;
 import org.djv.stockresearcher.model.StockData;
+import org.djv.stockresearcher.util.Colors;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
@@ -136,6 +138,9 @@ public class FinancialsPart implements AppStateListener {
 			ti.setText(0, r.getName());
 			
 			Map<FinDataPeriod, BigDecimal> map = data.getDataMap().get(r);
+			if (map == null || map.isEmpty()){
+				ti.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_GRAY));
+			}
 			int ix = 1;
 			if (map != null){
 				for (FinDataPeriod p : data.getPeriods()){
