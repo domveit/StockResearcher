@@ -719,19 +719,89 @@ public class StockDB {
 			switch (ttype){
 				case BUY:
 				case PUT_ASSIGN:
-					BigDecimal buyShares = t.getShares();
-					td.setCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
-					td.setBasis(td.getCost().add(t.getPremium()));
-					td.setBasisPerShare(td.getBasis().divide(t.getShares(), 6, RoundingMode.HALF_UP));
-					crunchBuyOrSell(bigMap, td, t, buyShares);
+					{
+						BigDecimal buyShares = t.getShares();
+						td.setCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
+						td.setBasis(td.getCost().add(t.getPremium()));
+						td.setBasisPerShare(td.getBasis().divide(t.getShares(), 6, RoundingMode.HALF_UP));
+						Position buyPos = getOrCreatePosition(bigMap, td);
+						Iterator<Lot> buyIter = buyPos.getLotList().iterator();
+						while (buyShares.compareTo(BigDecimal.ZERO) != 0) {
+							if (buyIter.hasNext()){
+								Lot l = buyIter.next();
+								// handle short Lots
+								if (l.getShares().compareTo(BigDecimal.ZERO) < 0){
+									BigDecimal addLot = l.getShares().add(buyShares);
+									if (addLot.compareTo(BigDecimal.ZERO) > 0){
+										buyShares = buyShares.add(l.getShares());
+										buyIter.remove();
+									} else if (addLot.compareTo(BigDecimal.ZERO) < 0){
+										l.setShares(addLot);
+										BigDecimal cost = l.getShares().multiply(l.getBasisPerShare());
+										l.setCost(cost);
+										l.setBasis(cost);
+										buyShares = BigDecimal.ZERO;
+									} else {
+										buyShares = BigDecimal.ZERO;
+										buyIter.remove();
+									}
+								}
+							} else {
+								Lot newLot = new Lot();
+								newLot.setDate(td.getTransaction().getTranDate());
+								newLot.setShares(buyShares);
+								BigDecimal cost = newLot.getShares().multiply(t.getPrice()).add(t.getCommission());
+								newLot.setCost(cost);
+								newLot.setBasis(cost);
+								newLot.setBasisPerShare(cost.divide(buyShares, 6, RoundingMode.HALF_UP));
+								buyPos.getLotList().add(newLot);
+								buyShares = BigDecimal.ZERO;
+							}
+						}
+					}
 					break;
 				case SELL:
 				case CALL_ASSIGN:
-					BigDecimal sellShares = t.getShares().multiply(BigDecimal.valueOf(-1));
-					td.setCost(t.getShares().multiply(t.getPrice()).add(t.getCommission()));
-					td.setBasis(td.getCost().add(t.getPremium()));
-					td.setBasisPerShare(td.getBasis().divide(t.getShares(), 6, RoundingMode.HALF_UP));
-					crunchBuyOrSell(bigMap, td, t, sellShares);
+					{
+						BigDecimal sellShares = t.getShares();
+						td.setCost(t.getShares().multiply(t.getPrice()).multiply(BigDecimal.valueOf(-1)).add(t.getCommission()));
+						td.setBasis(td.getCost().add(t.getPremium()));
+						td.setBasisPerShare(td.getBasis().divide(t.getShares(), 6, RoundingMode.HALF_UP));
+						Position sellPos = getOrCreatePosition(bigMap, td);
+						Iterator<Lot> sellIter = sellPos.getLotList().iterator();
+						while (sellShares.compareTo(BigDecimal.ZERO) != 0) {
+							if (sellIter.hasNext()){
+								Lot l = sellIter.next();
+								// handle long lots
+								if (l.getShares().compareTo(BigDecimal.ZERO) > 0){
+									BigDecimal addLot = l.getShares().subtract(sellShares);
+									if (addLot.compareTo(BigDecimal.ZERO) < 0){
+										sellShares = sellShares.subtract(l.getShares());
+										sellIter.remove();
+									} else if (addLot.compareTo(BigDecimal.ZERO) > 0){
+										l.setShares(addLot);
+										BigDecimal cost = l.getShares().multiply(l.getBasisPerShare());
+										l.setCost(cost);
+										l.setBasis(cost);
+										sellShares = BigDecimal.ZERO;
+									} else {
+										sellShares = BigDecimal.ZERO;
+										sellIter.remove();
+									}
+								}
+							} else {
+								Lot newLot = new Lot();
+								newLot.setDate(td.getTransaction().getTranDate());
+								newLot.setShares(sellShares.multiply(BigDecimal.valueOf(-1)));
+								BigDecimal cost = newLot.getShares().multiply(t.getPrice()).add(t.getCommission());
+								newLot.setCost(cost);
+								newLot.setBasis(cost);
+								newLot.setBasisPerShare(cost.divide(sellShares, 6, RoundingMode.HALF_UP));
+								sellPos.getLotList().add(newLot);
+								sellShares = BigDecimal.ZERO;
+							}
+						}
+					}
 					break;
 				case DIVIDEND_REINVEST:
 					Position posDR = getOrCreatePosition(bigMap, td);
@@ -781,34 +851,6 @@ public class StockDB {
 		portfolioData.setCashBalance(cashBalance);
 	}
 
-	private void crunchBuyOrSell(Map<Integer, Map<String, Position>> bigMap, TransactionData td, Transaction t, BigDecimal shares) {
-		Position position = getOrCreatePosition(bigMap, td);
-		Iterator<Lot> i = position.getLotList().iterator();
-		while (shares.compareTo(BigDecimal.ZERO) != 0) {
-			if (i.hasNext()){
-				Lot l = i.next();
-				if (l.getShares().compareTo(shares) > 0){
-					shares = shares.add(l.getShares());
-					i.remove();
-				} else if (l.getShares().compareTo(shares) < 0){
-					l.setShares(l.getShares().add(shares));
-					shares = BigDecimal.ZERO;
-				} else {
-					shares = BigDecimal.ZERO;
-					i.remove();
-				}
-			} else {
-				Lot newLot = new Lot();
-				newLot.setDate(td.getTransaction().getTranDate());
-				newLot.setShares(shares);
-				newLot.setCost(newLot.getShares().multiply(t.getPrice()).add(t.getCommission()));
-				newLot.setBasis(td.getBasisPerShare().multiply(shares));
-				newLot.setBasisPerShare(td.getBasisPerShare());
-				position.getLotList().add(newLot);
-				shares = BigDecimal.ZERO;
-			}
-		}
-	}
 
 	public Position getOrCreatePosition(
 			Map<Integer, Map<String, Position>> bigMap, TransactionData td) {
