@@ -16,7 +16,8 @@ public enum TransactionType {
 	DIVIDEND_REINVEST	("R", "Dividend Reinvest", 		REQUIRED, 	REQUIRED, 	REQUIRED, 	OPTIONAL, 	NO),
 	OPTION_SELL			("P", "Option Sell",	 		REQUIRED, 	REQUIRED,	REQUIRED,	OPTIONAL,	NO),
 	CALL_ASSIGN			("E", "Call Assigned (Sell)", 	REQUIRED, 	REQUIRED, 	REQUIRED, 	OPTIONAL, 	OPTIONAL),
-	PUT_ASSIGN			("F", "Put Assigned (Buy)", 	REQUIRED, 	REQUIRED, 	REQUIRED, 	OPTIONAL, 	OPTIONAL);
+	PUT_ASSIGN			("F", "Put Assigned (Buy)", 	REQUIRED, 	REQUIRED, 	REQUIRED, 	OPTIONAL, 	OPTIONAL),
+	STOCK_SPLIT			("L", "Stock split", 			REQUIRED, 	REQUIRED, 	NO, 		NO, 		NO);
 	
 	private final String typeCode;
 	private final String typeText;

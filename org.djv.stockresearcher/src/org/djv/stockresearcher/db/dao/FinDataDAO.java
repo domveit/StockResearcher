@@ -106,6 +106,12 @@ public class FinDataDAO extends H2DAO{
 			fpd.setShares(rs.getBigDecimal("SHARES"));
 			fpd.setBookValuePerShare(rs.getBigDecimal("WORKING_CAP"));
 			fpd.setYear(rs.getInt("YEAR"));
+			try {
+				fpd.setMonth(Integer.parseInt(fpd.getPeriod().substring(5, 7)));
+			} catch (Exception e){
+				e.printStackTrace();
+				fpd.setMonth(-1);
+			}
 			l.add(fpd);
 		}
 		return l;

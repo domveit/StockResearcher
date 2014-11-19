@@ -71,6 +71,10 @@ public class StockDB {
 	private ISectorIndustryDataBroker 	sectorIndustryBroker 	= new YahooHTMLSectorIndustryDataBroker();
 	private IAnalystDataBroker 			analystBroker 			= new MSAnalystDataBroker();
 	
+	public IAnalystDataBroker getAnalystBroker() {
+		return analystBroker;
+	}
+
 	public IDividendDataBroker getDivBroker() {
 		return divBroker;
 	}
@@ -837,9 +841,20 @@ public class StockDB {
 					td.setBasis(BigDecimal.ZERO);
 					td.setBasisPerShare(BigDecimal.ZERO);
 					break;
+				case STOCK_SPLIT:
+					Position sellPos = getOrCreatePosition(bigMap, td);
+					Iterator<Lot> lotIter = sellPos.getLotList().iterator();
+					while(lotIter.hasNext()){
+						Lot l = lotIter.next();
+						l.setShares(l.getShares().multiply(t.getShares()));
+						l.setBasisPerShare(l.getBasis().divide(l.getShares(), 6, RoundingMode.HALF_UP));
+					}
+					break;
 				default: throw new IllegalArgumentException ("Invalid tran type "  + ttype.getTypeCode());
 			}
-			cashBalance = cashBalance.subtract(td.getCost());
+			if (td.getCost() != null){
+				cashBalance = cashBalance.subtract(td.getCost());
+			}
 			td.setCashBalance(cashBalance);
 		}
 		sumAndCleanup(bigMap);

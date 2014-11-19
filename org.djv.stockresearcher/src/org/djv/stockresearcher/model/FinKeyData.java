@@ -7,6 +7,7 @@ public class FinKeyData {
 	String symbol;
 	String period;
 	Integer year;
+	Integer month;
 	BigDecimal revenue;
 	BigDecimal grossMargin;
 	BigDecimal operatingIncome;
@@ -28,6 +29,12 @@ public class FinKeyData {
 	}
 	public void setSymbol(String symbol) {
 		this.symbol = symbol;
+	}
+	public Integer getMonth() {
+		return month;
+	}
+	public void setMonth(Integer month) {
+		this.month = month;
 	}
 	public String getPeriod() {
 		return period;

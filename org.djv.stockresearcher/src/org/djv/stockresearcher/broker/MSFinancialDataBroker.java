@@ -115,11 +115,15 @@ public class MSFinancialDataBroker implements IFinancialDataBroker {
 					fd.setPeriod(period);
 					if ("TTM".equals(period)){
 						fd.setYear(9999);
+						fd.setMonth(-1);
 					} else {
 						try{
 							Integer year = Integer.valueOf(period.substring(0, 4));
+							Integer month = Integer.valueOf(period.substring(5, 7));
 							fd.setYear(year);
+							fd.setMonth(month);
 						} catch (Exception e){
+							e.printStackTrace();
 							fd.setYear(null);
 						}
 					}

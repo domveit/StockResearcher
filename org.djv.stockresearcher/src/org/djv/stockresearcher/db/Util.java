@@ -1,10 +1,27 @@
 package org.djv.stockresearcher.db;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 
 public class Util {
+	
+	public static StringBuffer dumpBRtoStringBuffer(BufferedReader br) {
+		StringBuffer sb = new StringBuffer();
+			
+		try {
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				sb.append(line);
+				sb.append("\n");
+			}; 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return sb;
+	}
 
 	public static BigDecimal convertBd(String s) {
 		if (s == null){

@@ -31,6 +31,7 @@
             <children xsi:type="basic:PartStack" xmi:id="_7RAboAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partstack.2" selectedElement="_818ZIAz6EeO-noCWkd_QVw">
               <children xsi:type="basic:Part" xmi:id="_818ZIAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.2" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.DividendsPart" label="Dividends"/>
               <children xsi:type="basic:Part" xmi:id="_wggGcAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.0" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.FinancialsPart" label="Financials"/>
+              <children xsi:type="basic:Part" xmi:id="_hTYsUGzoEeSoe-ALy-fw7A" elementId="org.djv.stockresearcher.part.7" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.EPSPart" label="EPS"/>
               <children xsi:type="basic:Part" xmi:id="_mIx88B3KEeOdqf0xBjiqtA" elementId="org.djv.stockresearcher.part.4" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.InfoPart" label="Info"/>
             </children>
           </children>

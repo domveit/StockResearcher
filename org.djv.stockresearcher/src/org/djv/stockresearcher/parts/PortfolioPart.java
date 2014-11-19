@@ -407,15 +407,23 @@ public class PortfolioPart {
 
 			item.setText (0, String.valueOf(td.getTransaction().getTranDate()));
 			item.setText (1, TransactionType.getDisplayFromCode(td.getTransaction().getType()));
-			item.setText (2, td.getTransaction().getSymbol());
-			item.setText (3, new DecimalFormat("#,##0.00##").format(shares));
-			item.setText (4, new DecimalFormat("#,##0.00####").format(tranPrice));
-			item.setText (5, new DecimalFormat("#,##0.00##").format(commission));
-			item.setText (6, new DecimalFormat("#,##0.00##").format(td.getTransaction().getPremium()));
-			item.setText (7, new DecimalFormat("#,##0.00##").format(td.getBasis()));
-			item.setText (8, new DecimalFormat("#,##0.00####").format(td.getBasisPerShare()));
-			item.setText (9, new DecimalFormat("#,###,##0.00").format(td.getCost()));
-			item.setText (10, new DecimalFormat("#,###,##0.00").format(td.getCashBalance()));
+			
+			if ("L".equals(td.getTransaction().getType())){
+				item.setText (2, td.getTransaction().getSymbol());
+				item.setText (3, shares + ":1" );
+				item.setText (10, new DecimalFormat("#,###,##0.00").format(td.getCashBalance()));
+			} else {
+				item.setText (2, td.getTransaction().getSymbol());
+				item.setText (3, new DecimalFormat("#,##0.00##").format(shares));
+				item.setText (4, new DecimalFormat("#,##0.00####").format(tranPrice));
+				item.setText (5, new DecimalFormat("#,##0.00##").format(commission));
+				item.setText (6, new DecimalFormat("#,##0.00##").format(td.getTransaction().getPremium()));
+				item.setText (7, new DecimalFormat("#,##0.00##").format(td.getBasis()));
+				item.setText (8, new DecimalFormat("#,##0.00####").format(td.getBasisPerShare()));
+				item.setText (9, new DecimalFormat("#,###,##0.00").format(td.getCost()));
+				item.setText (10, new DecimalFormat("#,###,##0.00").format(td.getCashBalance()));
+			}
+			
 		}
 		for (int i=0; i< tranTitles.length; i++) {
 			tranTable.getColumn (i).pack ();
