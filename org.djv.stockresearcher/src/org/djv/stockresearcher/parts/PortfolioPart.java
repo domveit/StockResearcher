@@ -31,13 +31,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
@@ -498,7 +496,13 @@ public class PortfolioPart {
 				}
 				String div = new DecimalFormat("#,###,##0.00").format(divCalc);
 				
-				BigDecimal yCalc = divCalc.multiply(BigDecimal.valueOf(100)).divide(p.getValue(), 2, RoundingMode.HALF_UP);
+				BigDecimal yCalc;
+				if (p.getValue().compareTo(BigDecimal.ZERO) != 0){
+					yCalc = divCalc.multiply(BigDecimal.valueOf(100)).divide(p.getValue(), 2, RoundingMode.HALF_UP);
+				} else {
+					yCalc = BigDecimal.ZERO;
+				}
+				
 				String y = new DecimalFormat("0.00").format(yCalc)+ "%";
 				
 				BigDecimal yocCalc = divCalc.multiply(BigDecimal.valueOf(100)).divide(p.getCost(), 2, RoundingMode.HALF_UP);

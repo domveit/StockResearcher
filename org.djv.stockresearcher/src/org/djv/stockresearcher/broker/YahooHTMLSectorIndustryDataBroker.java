@@ -21,6 +21,10 @@ public class YahooHTMLSectorIndustryDataBroker implements ISectorIndustryDataBro
 		List<SectorIndustry> list = new ArrayList<SectorIndustry>();
 		String YQLquery = "select * from yahoo.finance.sectors";
 		BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
+		if (br == null){
+			System.err.println("failed to get sectors by YQL ");
+			return null;
+		}
 		 JsonParser parser = new JsonParser();
 		 JsonObject json = parser.parse(br).getAsJsonObject();
 		 JsonObject query = json.get("query").getAsJsonObject();
@@ -78,7 +82,11 @@ public class YahooHTMLSectorIndustryDataBroker implements ISectorIndustryDataBro
 	public List<StockIndustry> getStocksForIndustry(Integer ind) {
 		List<StockIndustry> list = getStockIndustryYQL(ind);
 		if (list == null){
+			System.err.println("failed to get sectors/industries by YQL " + ind);
 			list = getStockIndustryHTML(ind);
+		}
+		if (list == null){
+			System.err.println("failed to get sectors/industries by HTML " + ind);
 		}
 		return list;
 	}
@@ -86,39 +94,41 @@ public class YahooHTMLSectorIndustryDataBroker implements ISectorIndustryDataBro
 
 	private List<StockIndustry> getStockIndustryYQL(Integer ind) {
 		List<StockIndustry> list = new ArrayList<StockIndustry>();
-		String YQLquery = "select * from yahoo.finance.industry where id=\""
-				+ ind + "\"";
-		BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
+		
+		BufferedReader br = null;
 		try {
-			if (br != null) {
-				JsonParser parser = new JsonParser();
-				JsonObject json = parser.parse(br).getAsJsonObject();
-				JsonObject query = json.get("query").getAsJsonObject();
-				JsonObject results = query.get("results").getAsJsonObject();
-				JsonObject industry = results.get("industry").getAsJsonObject();
-				JsonElement iEle = industry.get("company");
-				if (iEle == null) {
-					return null;
-				}
-				if (iEle.isJsonArray()) {
-					JsonArray companies = iEle.getAsJsonArray();
-					for (JsonElement ce : companies) {
-						handleCompany(list, ind, ce);
-					}
-				} else {
-					handleCompany(list, ind, iEle);
+			String YQLquery = "select * from yahoo.finance.industry where id=\"" + ind + "\"";
+			br = YahooFinanceUtil.getYQLJson(YQLquery);
+			if (br == null){
+				return null;
+			}
+			JsonParser parser = new JsonParser();
+			JsonObject json = parser.parse(br).getAsJsonObject();
+			JsonObject query = json.get("query").getAsJsonObject();
+			JsonObject results = query.get("results").getAsJsonObject();
+			JsonObject industry = results.get("industry").getAsJsonObject();
+			JsonElement iEle = industry.get("company");
+			if (iEle == null) {
+				return null;
+			}
+			if (iEle.isJsonArray()) {
+				JsonArray companies = iEle.getAsJsonArray();
+				for (JsonElement ce : companies) {
+					handleCompany(list, ind, ce);
 				}
 			} else {
-				return null;
+				handleCompany(list, ind, iEle);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			try {
-				br.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+			if (br != null){
+				try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		return list;
@@ -137,8 +147,9 @@ public class YahooHTMLSectorIndustryDataBroker implements ISectorIndustryDataBro
 	
 	private List<StockIndustry> getStockIndustryHTML(int industryId) {
 		List<StockIndustry> list = new ArrayList<StockIndustry>();
-		BufferedReader br = YahooFinanceUtil.getYahooCSVNice("http://biz.yahoo.com/p/" + industryId + "conameu.html");
+		BufferedReader br = null; 
 		try {
+			br = YahooFinanceUtil.getYahooCSVNice("http://biz.yahoo.com/p/" + industryId + "conameu.html");
 			if (br == null){
 				return null;
 			}
@@ -173,6 +184,7 @@ public class YahooHTMLSectorIndustryDataBroker implements ISectorIndustryDataBro
 			} while (startIx > -1);
 		} catch (Exception e) {
 			e.printStackTrace();
+			return null;
 		} finally {
 			try {
 				if (br != null){

@@ -109,7 +109,7 @@ public class FinDataDAO extends H2DAO{
 			try {
 				fpd.setMonth(Integer.parseInt(fpd.getPeriod().substring(5, 7)));
 			} catch (Exception e){
-				e.printStackTrace();
+//				e.printStackTrace();
 				fpd.setMonth(-1);
 			}
 			l.add(fpd);

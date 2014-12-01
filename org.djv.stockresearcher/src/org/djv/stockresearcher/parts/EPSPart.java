@@ -5,9 +5,11 @@ import java.awt.Color;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -17,7 +19,9 @@ import org.djv.stockresearcher.db.AppStateListener;
 import org.djv.stockresearcher.db.StockDB;
 import org.djv.stockresearcher.model.AnalystEstimate;
 import org.djv.stockresearcher.model.AnalystEstimates;
-import org.djv.stockresearcher.model.FinKeyData;
+import org.djv.stockresearcher.model.FinDataPeriod;
+import org.djv.stockresearcher.model.FinDataRow;
+import org.djv.stockresearcher.model.FinDataTable;
 import org.djv.stockresearcher.model.HistPrice;
 import org.djv.stockresearcher.model.StockData;
 import org.eclipse.swt.SWT;
@@ -71,44 +75,118 @@ public class EPSPart implements AppStateListener  {
 			@Override
 			public void run() {
 				try {
-					BigDecimal averagePe = StockDB.getInstance().getAnalystBroker().getAveragePE(sd, 5);
+					
+					BigDecimal averagePe = BigDecimal.ZERO;
+					
+					List<HistPrice> prices = StockDB.getInstance().getAnalystBroker().getMonthlyPrices(sd, 7);
+					FinDataTable incomeStatement = StockDB.getInstance().getFinBroker().getIncomeStatement(sd);
+
+					Map<FinDataPeriod, BigDecimal> fairPriceMap = new TreeMap<FinDataPeriod, BigDecimal>();
+					
+					List<FinDataRow> isRows = incomeStatement.getRows();
+					FinDataRow earningsRow = null;
+					FinDataRow dilutedSharesRow = null;
+					for (FinDataRow row : isRows){
+						if (row.getName().startsWith("Net income available")){
+							earningsRow = row;
+						}
+						if (row.getName().startsWith("Diluted")){
+							dilutedSharesRow = row;
+						}
+					}
+					if (earningsRow != null && dilutedSharesRow != null){
+						BigDecimal avgMarketCap = BigDecimal.ZERO;
+						BigDecimal earningsBucket = BigDecimal.ZERO;
+						
+						int factor = 5;
+						List<FinDataPeriod> isPeriods = incomeStatement.getPeriods();
+						for (FinDataPeriod isPeriod : isPeriods){
+							int y = isPeriod.getYear();
+							if (y == 9999){
+								y = Calendar.getInstance().get(Calendar.YEAR);
+							}
+							Map<FinDataPeriod, BigDecimal> earningsRowMap = incomeStatement.getDataMap().get(earningsRow);
+							
+							BigDecimal earnings = earningsRowMap.get(isPeriod);
+							if (earnings == null){
+								earnings = BigDecimal.ZERO;
+							}
+							System.err.println("earnings for " + y + " " + earnings);
+							
+							Map<FinDataPeriod, BigDecimal> dilutedSharesMap = incomeStatement.getDataMap().get(dilutedSharesRow);
+							
+							BigDecimal dilutedShares = dilutedSharesMap.get(isPeriod);
+							if (dilutedShares == null){
+								dilutedShares = BigDecimal.ZERO;
+							}
+							System.err.println("dilutedShares for " + y + " " + dilutedShares);
+							
+							BigDecimal avgPrice = BigDecimal.ZERO;
+							BigDecimal priceBucket = BigDecimal.ZERO;
+							int nbrPrices = 0;
+							for (HistPrice hp : prices){
+								if (hp.getDate().get(Calendar.YEAR) == y){
+									priceBucket = priceBucket.add(hp.getPrice());
+									nbrPrices++;
+								}
+							}
+							if (dilutedShares != null && dilutedShares.compareTo(BigDecimal.ZERO) != 0) {
+								BigDecimal avgEPS = earnings.divide(dilutedShares, 2, RoundingMode.HALF_UP);
+								if (nbrPrices > 0){
+									avgPrice = priceBucket.divide(BigDecimal.valueOf(nbrPrices), 2, RoundingMode.HALF_UP);
+									System.err.println("avg mkt cap for " + y + " " + avgPrice);
+									System.err.println("avg EPS for " + y + " " + avgEPS);
+									if (avgEPS.compareTo(BigDecimal.ZERO) != 0){
+										System.err.println("avg PE for " + y + " " + avgPrice.divide(avgEPS, 2, RoundingMode.HALF_UP));
+									}
+									earningsBucket = earningsBucket.add(earnings.multiply(BigDecimal.valueOf(factor)));
+									avgMarketCap = avgMarketCap.add(avgPrice.multiply(dilutedShares).multiply(BigDecimal.valueOf(factor)));
+
+								}
+								fairPriceMap.put(isPeriod,avgEPS );
+								factor += 3;
+							}
+						}
+						if (earningsBucket.compareTo(BigDecimal.ZERO) > 0){
+							averagePe = avgMarketCap.divide(earningsBucket, 2, RoundingMode.HALF_UP);
+							System.err.println("avg PE " +averagePe);
+						}
+					}
 					
 					TimeSeriesCollection dataset = new TimeSeriesCollection();
-					Map<String, FinKeyData> finMap = sd.getFinData();
+//					Map<String, FinKeyData> finMap = sd.getFinData();
 					Integer lastYear = null;
 					Integer lastMonth = null;
 					BigDecimal lastEps = null;
-					if (finMap != null){
-						TimeSeries histSeries = new TimeSeries("Avg PE (" + averagePe + ")");
-						for (String key : finMap.keySet()){
-							FinKeyData data = finMap.get(key);
-							if (data.getEarningsPerShare() != null && data.getYear() != null && data.getMonth() != null){
-								if (data.getYear() == 9999){
-									{
-									Calendar c = Calendar.getInstance();
-									c.roll(Calendar.MONTH, -1);
-									int month = c.get(Calendar.MONTH) + 1;
-									int year = c.get(Calendar.YEAR);
-									histSeries.add(new Month(month, year), Math.max(data.getEarningsPerShare().multiply(averagePe).doubleValue(), 0));
-									lastYear = year;
-									lastMonth = month;
-									lastEps = data.getEarningsPerShare().multiply(averagePe);
-									}
-									continue;
+					TimeSeries histSeries = new TimeSeries("Avg PE (" + averagePe + ")");
+					for (FinDataPeriod isPeriod : fairPriceMap.keySet()){
+						BigDecimal epsForPeriod = fairPriceMap.get(isPeriod);
+						if (epsForPeriod != null && isPeriod.getYear() != null && isPeriod.getMonth() != null){
+							if (isPeriod.getYear() == 9999){
+								{
+								Calendar c = Calendar.getInstance();
+								c.roll(Calendar.MONTH, -1);
+								int month = c.get(Calendar.MONTH) + 1;
+								int year = c.get(Calendar.YEAR);
+								histSeries.add(new Month(month, year), Math.max(epsForPeriod.multiply(averagePe).doubleValue(), 0));
+								lastYear = year;
+								lastMonth = month;
+								lastEps = epsForPeriod.multiply(averagePe);
 								}
-								if (data.getMonth() == -1){
-									continue;
-								}
-								System.err.println(data.getMonth());
-								histSeries.add(new Month(data.getMonth(), data.getYear()), Math.max(data.getEarningsPerShare().multiply(averagePe).doubleValue(), 0));
-								lastYear = data.getYear();
-								lastMonth = data.getMonth();
-								lastEps = data.getEarningsPerShare().multiply(averagePe);
+								continue;
 							}
+							if ( isPeriod.getMonth() == -1){
+								continue;
+							}
+							lastYear = isPeriod.getYear();
+							lastMonth = isPeriod.getMonth();
+							histSeries.add(new Month( lastMonth,  lastYear), Math.max(epsForPeriod.multiply(averagePe).doubleValue(), 0));
 
+							lastEps = epsForPeriod.multiply(averagePe);
 						}
-						dataset.addSeries(histSeries);
+
 					}
+					dataset.addSeries(histSeries);
 					
 					AnalystEstimates ae = StockDB.getInstance().getAnalystBroker().getAnalystEstimates(sd);
 					
@@ -151,12 +229,11 @@ public class EPSPart implements AppStateListener  {
 						dataset.addSeries(lowSeries);
 					}
 					
-					List<HistPrice> prices = StockDB.getInstance().getAnalystBroker().getMonthlyPrices(sd, 10);
+					
 					TimeSeries priceSeries = new TimeSeries("Prices");
 					
 					for (HistPrice price: prices){
-						Calendar c = Calendar.getInstance();
-						c.setTime(price.getDate());
+						Calendar c = price.getDate();
 						priceSeries.add(new Month(c.get(Calendar.MONTH) + 1, c.get(Calendar.YEAR)), price.getPrice().doubleValue());
 					}
 					dataset.addSeries(priceSeries);

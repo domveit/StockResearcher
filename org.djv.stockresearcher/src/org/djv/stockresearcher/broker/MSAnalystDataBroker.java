@@ -324,7 +324,9 @@ public class MSAnalystDataBroker implements IAnalystDataBroker {
 				st.nextToken();
 				BigDecimal open = Util.convertBd(st.nextToken());
 				HistPrice hp = new HistPrice();
-				hp.setDate(date);
+				Calendar hpc= Calendar.getInstance();
+				hpc.setTime(date);
+				hp.setDate(hpc);
 				hp.setPrice(open);
 				prices.add(hp);
 			}

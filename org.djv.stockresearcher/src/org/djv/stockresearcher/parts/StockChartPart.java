@@ -291,8 +291,13 @@ public class StockChartPart implements AppStateListener {
 		chartLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 		chartLabel.setData("t", "1y");
 		chartLabel.setData("q", "l");
-		chartLabel.setData("pVals", new ArrayList<String>());
-		chartLabel.setData("aVals", new ArrayList<String>());
+		ArrayList<String> pVals = new ArrayList<String>();
+		pVals.add("b");
+		chartLabel.setData("pVals", pVals);
+		ArrayList<String> aVals = new ArrayList<String>();
+		aVals.add("r14");
+		aVals.add("m26");
+		chartLabel.setData("aVals", aVals);
 		
 		ExpandItem item0 = new ExpandItem (bar, SWT.NONE, 0);
 		item0.setText("More chart settings");

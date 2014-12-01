@@ -1,17 +1,17 @@
 package org.djv.stockresearcher.model;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.util.Calendar;
 
 public class HistPrice {
 	
-	public Date date;
+	public Calendar date;
 	public BigDecimal price;
 	
-	public Date getDate() {
+	public Calendar getDate() {
 		return date;
 	}
-	public void setDate(Date date) {
+	public void setDate(Calendar date) {
 		this.date = date;
 	}
 	public BigDecimal getPrice() {

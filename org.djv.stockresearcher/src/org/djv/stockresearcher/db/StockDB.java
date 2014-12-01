@@ -437,15 +437,20 @@ public class StockDB {
 									try {
 										List<Integer> iList = sectorMap.get(sector);
 										for (Integer ind : iList){
+											if (ind % 100 == 0){
+												continue;
+											}
 											List<StockIndustry> stockInds = sectorIndustryBroker.getStocksForIndustry(ind);
-											for(StockIndustry s : stockInds){
-												StockIndustryDAO stockIndustryDAO = new StockIndustryDAO(con);
-												StockIndustry si = stockIndustryDAO.select(s.getSymbol());
-												 if (si == null){
-													 stockIndustryDAO.insert(si);
-												 } else {
-													 stockIndustryDAO.update(si);
-												 }
+											if (stockInds != null){
+												for(StockIndustry s : stockInds){
+													StockIndustryDAO stockIndustryDAO = new StockIndustryDAO(con);
+													StockIndustry si = stockIndustryDAO.select(s.getSymbol());
+													 if (si == null){
+														 stockIndustryDAO.insert(s);
+													 } else {
+														 stockIndustryDAO.update(s);
+													 }
+												}
 											}
 											
 											SectorIndustry si = iDAO.select(ind);
@@ -515,7 +520,11 @@ public class StockDB {
 		List<StockData> sdList = new ArrayList<StockData>();
 		List<StockIndustry> sList = new StockIndustryDAO(con).getAllForIndustry(ind);
 		for (StockIndustry s : sList){
+			
 			StockData sd = getStockData(s.getSymbol(), s, true);
+			if (sd.getSymbol().contains(".")){
+				continue;
+			}
 			sd.setSymbol(s.getSymbol());
 			sd.setStockIndustry(s);
 			sd.setSectorIndustry(si);

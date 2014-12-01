@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.djv.stockresearcher.db.Util;
 
@@ -13,7 +14,7 @@ public class FinDataTable {
 	List<FinDataPeriod> periods = new ArrayList<FinDataPeriod>();
 	List<FinDataRow> rows = new ArrayList<FinDataRow>();
 	
-	Map<FinDataRow, Map<FinDataPeriod, BigDecimal>> dataMap = new HashMap<FinDataRow, Map<FinDataPeriod, BigDecimal>>();
+	Map<FinDataRow, Map<FinDataPeriod, BigDecimal>> dataMap = new TreeMap<FinDataRow, Map<FinDataPeriod, BigDecimal>>();
 	
 	public List<FinDataPeriod> getPeriods() {
 		return periods;
