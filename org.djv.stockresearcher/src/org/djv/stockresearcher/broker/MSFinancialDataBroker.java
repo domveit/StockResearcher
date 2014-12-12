@@ -28,7 +28,9 @@ public class MSFinancialDataBroker implements IFinancialDataBroker {
 			}
 		});
 		
-		buildFinDataTable(is, br);
+		if (br != null){
+			buildFinDataTable(is, br);
+		}
 		return is;
 	}
 	
@@ -41,8 +43,9 @@ public class MSFinancialDataBroker implements IFinancialDataBroker {
 				return "http://financials.morningstar.com/ajax/ReportProcess4CSV.html?&t=" + exchange + ":" + symbol+ "&region=usa&culture=en-US&cur=&reportType=bs&period=12&dataType=A&order=asc&columnYear=5&rounding=3&view=raw&r=35432&denominatorView=raw&number=3";
 			}
 		});
-		
-		buildFinDataTable(is, br);
+		if (br != null){
+			buildFinDataTable(is, br);
+		}
 		return is;
 	}
 	
@@ -55,8 +58,9 @@ public class MSFinancialDataBroker implements IFinancialDataBroker {
 				return "http://financials.morningstar.com/ajax/ReportProcess4CSV.html?&t="+ exchange +":"+symbol+"&region=usa&culture=en-US&cur=&reportType=is&period=12&dataType=A&order=asc&columnYear=10&rounding=3&view=raw&r=341667&denominatorView=raw&number=3";
 			}
 		});
-		
-		buildFinDataTable(is, br);
+		if (br != null){
+			buildFinDataTable(is, br);
+		}
 		return is;
 	}
 	

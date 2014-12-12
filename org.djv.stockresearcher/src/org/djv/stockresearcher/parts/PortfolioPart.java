@@ -148,6 +148,9 @@ public class PortfolioPart {
 				}
 				try {
 					selectPortfolio();
+					
+					AppState instance = AppState.getInstance();
+					instance.setSelectedStock(instance.getSelectedStock());
 				} catch (Exception e1) {
 					MessageDialog.openError(parent.getShell(), "Error", e1.getMessage());
 				}
@@ -195,9 +198,9 @@ public class PortfolioPart {
 				if (i < 0) {
 					return;
 				}
-				StockData sd = (StockData)posTable.getItem(i).getData("sd");
-				if (sd != null){
-					AppState.getInstance().setSelectedStock(sd);
+				Position pos = (Position)posTable.getItem(i).getData("position");
+				if (pos != null){
+					AppState.getInstance().setSelectedStock(pos.getSd());
 				}
 			}
 
@@ -207,18 +210,18 @@ public class PortfolioPart {
 				if (i < 0) {
 					return;
 				}
-				StockData sd = (StockData)posTable.getItem(i).getData("sd");
-				if (sd == null){
+				Position pos = (Position)posTable.getItem(i).getData("position");
+				if (pos == null){
 					return;
 				}
-				if (showLots.contains(sd.getSymbol())){
-					showLots.remove(sd.getSymbol());
+				if (showLots.contains(pos.getSd().getSymbol())){
+					showLots.remove(pos.getSd().getSymbol());
 				} else {
-					showLots.add(sd.getSymbol());
+					showLots.add(pos.getSd().getSymbol());
 				}
 				if (portData != null) {
 					try {
-						rebuildPortfolioTable(portData);
+						rebuildPortfolioTable(portData, false);
 					} catch (Exception e1) {
 						MessageDialog.openError(posTable.getShell(), "Error", e1.getMessage());
 					}
@@ -337,7 +340,6 @@ public class PortfolioPart {
 		for (int i=0; i<tranTitles.length; i++) {
 			TableColumn column = new TableColumn (tranTable, SWT.NONE);
 			column.setText (tranTitles [i]);
-//			column.addListener(SWT.Selection, sortListener);
 		}	
 		
 		tranTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 5, 1));
@@ -383,7 +385,7 @@ public class PortfolioPart {
 				return;
 			}
 			portData = StockDB.getInstance().getPortfolioData(portfolioName);
-			rebuildPortfolioTable(portData);
+			rebuildPortfolioTable(portData, true);
 			rebuildTranTable(portData);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -428,8 +430,13 @@ public class PortfolioPart {
 		}
 	}
 
-	private void rebuildPortfolioTable(PortfolioData portData) throws Exception {
-		posTable.removeAll();
+	private void rebuildPortfolioTable(PortfolioData portData, boolean rebuild) throws Exception {
+		if (rebuild){
+			posTable.removeAll();
+		}
+		for (TableItem ti : posTable.getItems()){
+			ti.setData("delete", "true");
+		}
 		
 		BigDecimal totalCost = new BigDecimal("0.0000");
 		BigDecimal totalValue = new BigDecimal("0.00");
@@ -472,8 +479,7 @@ public class PortfolioPart {
 			
 			for (String sym : pMap.keySet()){
 				Position p = pMap.get(sym);
-				TableItem item = new TableItem (posTable, SWT.NONE);
-				item.setData("sd", p.getSd());
+				
 				
 				String symbol = p.getSd().getStock().getSymbol();
 				String shares = new DecimalFormat("#,##0.00##").format(p.getShares());
@@ -511,19 +517,40 @@ public class PortfolioPart {
 				BigDecimal wCalc = p.getValue().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
 				String w = new DecimalFormat("0.00").format(wCalc)+ "%";
 				
-				item.setText (0, sectorStr);
-				item.setText (1, symbol);
-				item.setText (2, shares);
-				item.setText (3, basis);
-				item.setText (4, price);
-				item.setText (5,cost);
-				item.setText (6,value);
-				item.setText (7,gain);
-				item.setText (8,gainPct);
-				item.setText (9,div);
-				item.setText (10,y);
-				item.setText (11,yoc);
-				item.setText (12,w);
+				{
+					TableItem posItem = null;
+					
+					for (TableItem ti : posTable.getItems()){
+						Position pos = (Position)ti.getData("position");
+						if (pos != null){
+							if (pos.getSd().getSymbol().equals(p.getSd().getSymbol())){
+								posItem = ti;
+								posItem.setData("position", p);
+								posItem.setData("delete", "false");
+							}
+						}
+					}
+					if (posItem == null){
+						posItem = new TableItem (posTable, SWT.NONE);
+						posItem.setData("position", p);
+						posItem.setData("delete", "false");
+					}
+					
+	
+					posItem.setText (0, sectorStr);
+					posItem.setText (1, symbol);
+					posItem.setText (2, shares);
+					posItem.setText (3, basis);
+					posItem.setText (4, price);
+					posItem.setText (5,cost);
+					posItem.setText (6,value);
+					posItem.setText (7,gain);
+					posItem.setText (8,gainPct);
+					posItem.setText (9,div);
+					posItem.setText (10,y);
+					posItem.setText (11,yoc);
+					posItem.setText (12,w);
+				}
 				
 				sectorCost = sectorCost.add(p.getCost());
 				sectorValue = sectorValue.add(p.getValue());
@@ -532,7 +559,28 @@ public class PortfolioPart {
 				
 				if (showLots.contains(sym))
 				for (Lot l : p.getLotList()){
-					TableItem lotItem = new TableItem (posTable, SWT.NONE);
+					
+					TableItem lotItem = null;
+					
+					for (TableItem ti : posTable.getItems()){
+						Lot lot = (Lot)ti.getData("lot");
+						Position lotPos = (Position)ti.getData("lotPosition");
+						if (lot != null && lotPos != null){
+							if (lotPos.getSd().getSymbol().equals(p) && lot.getDate().equals(l.getDate())){
+								lotItem = ti;
+								lotItem.setData("lotPosition", p);
+								lotItem.setData("lot", l);
+								lotItem.setData("delete", "false");
+							}
+						}
+					}
+					if (lotItem == null){
+						lotItem = new TableItem (posTable, SWT.NONE);
+						lotItem.setData("lotPosition", p);
+						lotItem.setData("lot", l);
+						lotItem.setData("delete", "false");
+					}
+						
 					lotItem.setText (0, "");
 					lotItem.setText (1, new SimpleDateFormat("MM/dd/yyyy").format(l.getDate()));
 					String lshares = new DecimalFormat("#,##0.00##").format(l.getShares());
@@ -571,46 +619,76 @@ public class PortfolioPart {
 					
 			String div = new DecimalFormat("#,###,##0.00").format(sectorDiv);
 			
-			TableItem subTotItem = new TableItem (posTable, SWT.NONE);
-			subTotItem.setText (0, sectorStr);
-			subTotItem.setText (1, "Subtotals");
-			subTotItem.setBackground(Colors.LTGRAY);
-			subTotItem.setText (2, shares);
-			subTotItem.setText (3, basis);
-			subTotItem.setText (4, price);
-			subTotItem.setText (5,cost);
-			subTotItem.setText (6,value);
-			subTotItem.setText (7,gain);
-			subTotItem.setText (8,gainPct);
-			subTotItem.setText (9,div);
-			subTotItem.setText (10,y);
-			subTotItem.setText (11,yoc);
-			subTotItem.setText (12,w);
+			{
+				TableItem subTotItem = null;
+				for (TableItem ti : posTable.getItems()){
+					Integer sect = (Integer)ti.getData("sector");
+					if (sect != null && sect.intValue() == sector.intValue()){
+						subTotItem = ti;
+						subTotItem.setData("sector", sector);
+						subTotItem.setData("delete", "false");
+					}
+				}
+				if (subTotItem == null){
+					subTotItem = new TableItem (posTable, SWT.NONE);
+					subTotItem.setData("sector", sector);
+					subTotItem.setData("delete", "false");
+				}
+				
+				subTotItem.setText (0, sectorStr);
+				subTotItem.setText (1, "Subtotals");
+				subTotItem.setBackground(Colors.LTGRAY);
+				subTotItem.setText (2, shares);
+				subTotItem.setText (3, basis);
+				subTotItem.setText (4, price);
+				subTotItem.setText (5,cost);
+				subTotItem.setText (6,value);
+				subTotItem.setText (7,gain);
+				subTotItem.setText (8,gainPct);
+				subTotItem.setText (9,div);
+				subTotItem.setText (10,y);
+				subTotItem.setText (11,yoc);
+				subTotItem.setText (12,w);
+			}
 		}
-		
-		TableItem cashItem = new TableItem (posTable, SWT.NONE);
-		
-		String cw = "";
-		String bal = new DecimalFormat("#,###,##0.00").format(portData.getCashBalance());
-		if (totalValue.compareTo(BigDecimal.ZERO) != 0){
-			BigDecimal cashWeight = portData.getCashBalance().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
-			cw = new DecimalFormat("0.00").format(cashWeight)+ "%";
+		{
+			TableItem cashItem = null;
+			for (TableItem ti : posTable.getItems()){
+				String cash = (String)ti.getData("cash");
+				if (cash != null){
+					cashItem = ti;
+					cashItem.setData("cash", "cash");
+					cashItem.setData("delete", "false");
+				}
+			}
+			if (cashItem == null){
+				cashItem = new TableItem (posTable, SWT.NONE);
+				cashItem.setData("cash", "cash");
+				cashItem.setData("delete", "false");
+			}
+			
+			String cw = "";
+			String bal = new DecimalFormat("#,###,##0.00").format(portData.getCashBalance());
+			if (totalValue.compareTo(BigDecimal.ZERO) != 0){
+				BigDecimal cashWeight = portData.getCashBalance().multiply(BigDecimal.valueOf(100)).divide(totalValue, 2, RoundingMode.HALF_UP);
+				cw = new DecimalFormat("0.00").format(cashWeight)+ "%";
+			}
+			
+			cashItem.setBackground(Colors.LTGRAY);
+			cashItem.setText (0, "");
+			cashItem.setText (1, "Cash");
+			cashItem.setText (2, "");
+			cashItem.setText (3, "");
+			cashItem.setText (4, "");
+			cashItem.setText (5,bal);
+			cashItem.setText (6,bal);
+			cashItem.setText (7,"0.00");
+			cashItem.setText (8,"0.00%");
+			cashItem.setText (9,"0.00");
+			cashItem.setText (10,"0.00%");
+			cashItem.setText (11,"0.00%");
+			cashItem.setText (12,cw);
 		}
-		
-		cashItem.setBackground(Colors.LTGRAY);
-		cashItem.setText (0, "");
-		cashItem.setText (1, "Cash");
-		cashItem.setText (2, "");
-		cashItem.setText (3, "");
-		cashItem.setText (4, "");
-		cashItem.setText (5,bal);
-		cashItem.setText (6,bal);
-		cashItem.setText (7,"0.00");
-		cashItem.setText (8,"0.00%");
-		cashItem.setText (9,"0.00");
-		cashItem.setText (10,"0.00%");
-		cashItem.setText (11,"0.00%");
-		cashItem.setText (12,cw);
 
 		BigDecimal totalYield = null;
 		if (totalValue.compareTo(BigDecimal.ZERO) != 0){
@@ -621,7 +699,20 @@ public class PortfolioPart {
 			totalYoc = totalDiv.multiply(BigDecimal.valueOf(100)).divide(totalCost, 2, RoundingMode.HALF_UP);
 		}
 		
-		TableItem totItem = new TableItem (posTable, SWT.NONE);
+		TableItem totItem = null;
+		for (TableItem ti : posTable.getItems()){
+			String cash = (String)ti.getData("total");
+			if (cash != null){
+				totItem = ti;
+				totItem.setData("total", "total");
+				totItem.setData("delete", "false");
+			}
+		}
+		if (totItem == null){
+			totItem = new TableItem (posTable, SWT.NONE);
+			totItem.setData("total", "total");
+			totItem.setData("delete", "false");
+		}
 		
 //			String[] posTitles = {"Sector", "Symbol", "Basis", "Price", "Cost", "Value", "Div"};
 		
@@ -659,9 +750,19 @@ public class PortfolioPart {
 		totItem.setText (11,yoc);
 		totItem.setText (12,"100%");
 
+		
+		for (int i = 0; i < posTable.getItemCount(); i ++){
+			TableItem ti = posTable.getItem(i);
+			if ("true".equals(ti.getData("delete"))){
+				posTable.remove(i);
+			}
+		}
+		
+		posTable.setRedraw(false);
 		for (int i=0; i< posTitles.length; i++) {
 			posTable.getColumn (i).pack ();
 		}
+		posTable.setRedraw(true);
 	}
 
 }

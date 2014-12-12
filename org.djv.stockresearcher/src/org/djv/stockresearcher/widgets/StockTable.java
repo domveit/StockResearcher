@@ -308,9 +308,11 @@ public class StockTable extends Composite {
 	private Runnable packer = new Runnable() {
 		@Override
 		public void run() {
+			table.setRedraw(false);
 			for (int i=0; i< stockTableConfig.getColumns().size(); i++) {
 				table.getColumn (i).pack ();
 			}
+			table.setRedraw(true);
 		}
 	};
 

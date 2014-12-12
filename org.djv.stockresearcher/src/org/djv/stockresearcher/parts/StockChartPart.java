@@ -96,38 +96,27 @@ public class StockChartPart implements AppStateListener {
 		SelectionAdapter pSelectionAdapter = new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				Button b = (Button) e.widget;
-				boolean selected = (boolean) b.getData("selected");
-				selected = !selected;
-				b.setData("selected", selected);
 				String pInd = (String)b.getData("pInd");
-				
-				@SuppressWarnings("unchecked")
-				List<String> pVals = (List<String>)chartLabel.getData("pVals");
-				
-				if (selected){
-					pVals.add(pInd);
-				} else {
-					pVals.remove(pInd);
+				if (pInd != null){
+					@SuppressWarnings("unchecked")
+					List<String> pVals = (List<String>)chartLabel.getData("pVals");
+					
+					if (!pVals.contains(pInd)){
+						pVals.add(pInd);
+					} else {
+						pVals.remove(pInd);
+					}
 				}
-				refreshChart();
-			}
-		};
-		
-		SelectionAdapter aSelectionAdapter = new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				Button b = (Button) e.widget;
-				boolean selected = (boolean) b.getData("selected");
-				selected = !selected;
-				b.setData("selected", selected);
 				String aInd = (String)b.getData("aInd");
-				
-				@SuppressWarnings("unchecked")
-				List<String> aVals = (List<String>)chartLabel.getData("aVals");
-				
-				if (selected){
-					aVals.add(aInd);
-				} else {
-					aVals.remove(aInd);
+				if (aInd != null){
+					@SuppressWarnings("unchecked")
+					List<String> aVals = (List<String>)chartLabel.getData("aVals");
+					
+					if (!aVals.contains(aInd)){
+						aVals.add(aInd);
+					} else {
+						aVals.remove(aInd);
+					}
 				}
 				refreshChart();
 			}
@@ -147,7 +136,6 @@ public class StockChartPart implements AppStateListener {
 				Button b = new Button(maComp, SWT.PUSH);
 				maButtons.add(b);
 				b.setText(s);
-				b.setData("selected", false);
 				b.setData("pInd", s);
 				b.addSelectionListener(pSelectionAdapter);
 			}
@@ -166,7 +154,6 @@ public class StockChartPart implements AppStateListener {
 				Button b = new Button(emaComp, SWT.PUSH);
 				maButtons.add(b);
 				b.setText(s);
-				b.setData("selected", false);
 				b.setData("pInd", s);
 				b.addSelectionListener(pSelectionAdapter);
 			}
@@ -183,25 +170,21 @@ public class StockChartPart implements AppStateListener {
 			
 			Button b = new Button(buttonComp, SWT.PUSH);
 			b.setText("Bollinger Bands");
-			b.setData("selected", false);
 			b.setData("pInd", "b");
 			b.addSelectionListener(pSelectionAdapter);
 			
 			Button b1 = new Button(buttonComp, SWT.PUSH);
 			b1.setText("Parabolic_SAR");
-			b1.setData("selected", false);
 			b1.setData("pInd", "p");
 			b1.addSelectionListener(pSelectionAdapter);
 			
 			Button b2 = new Button(buttonComp, SWT.PUSH);
 			b2.setText("Splits");
-			b2.setData("selected", false);
 			b2.setData("pInd", "s");
 			b2.addSelectionListener(pSelectionAdapter);
 			
 			Button b3 = new Button(buttonComp, SWT.PUSH);
 			b3.setText("Volume");
-			b3.setData("selected", false);
 			b3.setData("pInd", "v");
 			b3.addSelectionListener(pSelectionAdapter);
 		}
@@ -215,51 +198,35 @@ public class StockChartPart implements AppStateListener {
 			buttonComp.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, true, false));
 			buttonComp.setLayout(new FillLayout());
 			
-//			ast_Stoch	 Stochastic	fs
-//			MACD	 Moving-Average-Convergence-Divergence	m26-12-9
-//			MFI	 Money Flow Index	f14
-//			ROC	 Rate of Change	p12
-//			RSI	 Relative Strength Index	r14
-//			Slow_Stoch	 Slow Stochastic	ss
-//			Vol	 Volume	v
-//			Vol_MA	 Volume with Moving Average	vm
-//			W_R	 Williams Percent Range	w14
-			
 			Button b = new Button(buttonComp, SWT.PUSH);
 			b.setText("Fast Stoch");
-			b.setData("selected", false);
 			b.setData("aInd", "fs");
-			b.addSelectionListener(aSelectionAdapter);
+			b.addSelectionListener(pSelectionAdapter);
 			
 			Button b2 = new Button(buttonComp, SWT.PUSH);
 			b2.setText("Slow Stoch");
-			b2.setData("selected", false);
 			b2.setData("aInd", "ss");
-			b2.addSelectionListener(aSelectionAdapter);
+			b2.addSelectionListener(pSelectionAdapter);
 			
 			Button b3 = new Button(buttonComp, SWT.PUSH);
 			b3.setText("MACD 26");
-			b3.setData("selected", false);
 			b3.setData("aInd", "m26");
-			b3.addSelectionListener(aSelectionAdapter);
+			b3.addSelectionListener(pSelectionAdapter);
 			
 			Button b4 = new Button(buttonComp, SWT.PUSH);
 			b4.setText("MACD 12");
-			b4.setData("selected", false);
 			b4.setData("aInd", "m12");
-			b4.addSelectionListener(aSelectionAdapter);
+			b4.addSelectionListener(pSelectionAdapter);
 			
 			Button b5 = new Button(buttonComp, SWT.PUSH);
 			b5.setText("MACD 9");
-			b5.setData("selected", false);
 			b5.setData("aInd", "m9");
-			b5.addSelectionListener(aSelectionAdapter);
+			b5.addSelectionListener(pSelectionAdapter);
 			
 			Button b6 = new Button(buttonComp, SWT.PUSH);
 			b6.setText("RSI 14");
-			b6.setData("selected", false);
 			b6.setData("aInd", "r14");
-			b6.addSelectionListener(aSelectionAdapter);
+			b6.addSelectionListener(pSelectionAdapter);
 		}
 
 		chartComp = new Composite(bar, SWT.BORDER);
@@ -291,12 +258,14 @@ public class StockChartPart implements AppStateListener {
 		chartLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 		chartLabel.setData("t", "1y");
 		chartLabel.setData("q", "l");
+		
 		ArrayList<String> pVals = new ArrayList<String>();
 		pVals.add("b");
+		pVals.add("e200");
+		
 		chartLabel.setData("pVals", pVals);
 		ArrayList<String> aVals = new ArrayList<String>();
 		aVals.add("r14");
-		aVals.add("m26");
 		chartLabel.setData("aVals", aVals);
 		
 		ExpandItem item0 = new ExpandItem (bar, SWT.NONE, 0);

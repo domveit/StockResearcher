@@ -139,7 +139,9 @@ public class EPSPart implements AppStateListener  {
 									if (avgEPS.compareTo(BigDecimal.ZERO) != 0){
 										System.err.println("avg PE for " + y + " " + avgPrice.divide(avgEPS, 2, RoundingMode.HALF_UP));
 									}
-									earningsBucket = earningsBucket.add(earnings.multiply(BigDecimal.valueOf(factor)));
+									if (earnings.compareTo(BigDecimal.ZERO) > 0){
+										earningsBucket = earningsBucket.add(earnings.multiply(BigDecimal.valueOf(factor)));
+									}
 									avgMarketCap = avgMarketCap.add(avgPrice.multiply(dilutedShares).multiply(BigDecimal.valueOf(factor)));
 
 								}
