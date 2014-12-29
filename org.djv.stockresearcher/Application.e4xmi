@@ -21,6 +21,7 @@
               </children>
               <children xsi:type="basic:Part" xmi:id="_4z3BkBHNEeOtdsOEIe2N7Q" elementId="org.djv.stockresearcher.part.3" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.WatchListPart" label="Watch List"/>
               <children xsi:type="basic:Part" xmi:id="_urcomQn1EeOInNDXYak8ig" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.SectorSearchPart" label="Sector Search"/>
+              <children xsi:type="basic:Part" xmi:id="_aFzKAI9zEeSr5Zt0ZlCvAg" elementId="org.djv.stockresearcher.part.9" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.SleakPart" label="Sleak"/>
             </children>
           </children>
           <children xsi:type="basic:PartSashContainer" xmi:id="_3cqAQAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.partsashcontainer.0" horizontal="true">
@@ -33,6 +34,7 @@
               <children xsi:type="basic:Part" xmi:id="_wggGcAz6EeO-noCWkd_QVw" elementId="org.djv.stockresearcher.part.0" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.FinancialsPart" label="Financials"/>
               <children xsi:type="basic:Part" xmi:id="_hTYsUGzoEeSoe-ALy-fw7A" elementId="org.djv.stockresearcher.part.7" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.EPSPart" label="EPS"/>
               <children xsi:type="basic:Part" xmi:id="_mIx88B3KEeOdqf0xBjiqtA" elementId="org.djv.stockresearcher.part.4" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.InfoPart" label="Info"/>
+              <children xsi:type="basic:Part" xmi:id="_CY_KEI08EeSsvqy-fsasyA" elementId="org.djv.stockresearcher.part.8" contributionURI="bundleclass://org.djv.stockresearcher/org.djv.stockresearcher.parts.BuffetologyPart" label="Buffetology"/>
             </children>
           </children>
         </children>

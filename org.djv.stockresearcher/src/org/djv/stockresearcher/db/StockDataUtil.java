@@ -7,12 +7,45 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.djv.stockresearcher.broker.IFinancialDataBroker;
 import org.djv.stockresearcher.model.AnalystRatings;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.DivYearData;
+import org.djv.stockresearcher.model.FinDataTable;
 import org.djv.stockresearcher.model.StockData;
 
 public class StockDataUtil {
+	
+	
+	public static FinDataTable getIncomeStatement(StockData sd) throws Exception {
+		FinDataTable data = sd.getIncomeStatement();
+		if (data == null){
+			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
+			data = b.getIncomeStatement(sd);
+			sd.setIncomeStatement(data);
+		}
+		return data;
+	}
+	
+	public static FinDataTable getBalanceSheet(StockData sd) throws Exception {
+		FinDataTable data = sd.getBalanceSheet();
+		if (data == null){
+			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
+			data = b.getBalanceSheet(sd);
+			sd.setBalanceSheet(data);
+		}
+		return data;
+	}
+	
+	public static FinDataTable getCashFlowStatement(StockData sd) throws Exception {
+		FinDataTable data = sd.getCashFlowStatement();
+		if (data == null){
+			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
+			data = b.getCashFlowStatement(sd);
+			sd.setCashFlowStatement(data);
+		}
+		return data;
+	}
 	
 	public static void crunchDividends(StockData stockData) {
 		buildDivYearData(stockData);

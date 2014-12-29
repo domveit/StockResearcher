@@ -25,6 +25,8 @@ import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.graphics.Font;
@@ -206,8 +208,15 @@ public class DividendsPart implements AppStateListener, StockDataChangeListener 
 										continue;
 									}
 									TableItem item = new TableItem(divTable, SWT.NONE);
-									item.setFont(new Font(Display.getDefault(), "Tahoma", 10,
-											SWT.BOLD));
+									final Font font = new Font(Display.getDefault(), "Tahoma", 10,
+											SWT.BOLD);
+									item.setFont(font);
+									item.addDisposeListener(new DisposeListener() {
+										@Override
+										public void widgetDisposed(DisposeEvent e) {
+											font.dispose();
+										}
+									});
 									item.setText(0, String.valueOf(dyd.getYear()));
 									item.setText(1, String.valueOf(dyd.getDiv()));
 									item.setText(3,

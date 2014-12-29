@@ -19,6 +19,7 @@ Require-Bundle: javax.inject;bundle-version="1.0.0",
  org.eclipse.e4.core.commands;bundle-version="0.10.2",
  javax.annotation,
  org.junit,
- com.google.json;bundle-version="1.0.0"
+ com.google.json;bundle-version="1.0.0",
+ org.eclipse.swt.tools;bundle-version="3.101.0"
 Import-Package: javax.annotation;version="1.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7

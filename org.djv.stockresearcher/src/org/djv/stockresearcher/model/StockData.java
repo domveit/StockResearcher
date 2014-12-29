@@ -49,6 +49,34 @@ public class StockData {
 	
 	AnalystRatings analystRatings;
 	
+	FinDataTable incomeStatement;
+	FinDataTable balanceSheet;
+	FinDataTable cashFlowStatement;
+	
+	public FinDataTable getIncomeStatement() {
+		return incomeStatement;
+	}
+
+	public void setIncomeStatement(FinDataTable incomeStatement) {
+		this.incomeStatement = incomeStatement;
+	}
+
+	public FinDataTable getBalanceSheet() {
+		return balanceSheet;
+	}
+
+	public void setBalanceSheet(FinDataTable balanceSheet) {
+		this.balanceSheet = balanceSheet;
+	}
+
+	public FinDataTable getCashFlowStatement() {
+		return cashFlowStatement;
+	}
+
+	public void setCashFlowStatement(FinDataTable cashFlowStatement) {
+		this.cashFlowStatement = cashFlowStatement;
+	}
+
 	public StockData() {
 		super();
 	}

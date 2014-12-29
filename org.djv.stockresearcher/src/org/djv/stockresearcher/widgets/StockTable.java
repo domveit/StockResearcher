@@ -14,6 +14,8 @@ import org.djv.stockresearcher.widgets.support.StockTableColumn;
 import org.djv.stockresearcher.widgets.support.StockTableConfig;
 import org.djv.stockresearcher.widgets.support.TableSortListener;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
@@ -217,7 +219,14 @@ public class StockTable extends Composite {
 				} else if (val instanceof Integer){
 					colorRank = new Double((Integer) val);
 				} 
-				item.setBackground(index, getColorForRank(colorRank));
+				final Color colorForRank = getColorForRank(colorRank);
+				item.setBackground(index, colorForRank);
+				item.addDisposeListener(new DisposeListener(){
+					@Override
+					public void widgetDisposed(DisposeEvent e) {
+						colorForRank.dispose();
+					}
+				});
 			}
 		}
 	};

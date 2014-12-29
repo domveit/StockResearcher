@@ -8,20 +8,17 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.djv.stockresearcher.broker.IFinancialDataBroker;
 import org.djv.stockresearcher.db.AppState;
 import org.djv.stockresearcher.db.AppStateListener;
-import org.djv.stockresearcher.db.StockDB;
+import org.djv.stockresearcher.db.StockDataUtil;
 import org.djv.stockresearcher.model.FinDataPeriod;
 import org.djv.stockresearcher.model.FinDataRow;
 import org.djv.stockresearcher.model.FinDataTable;
 import org.djv.stockresearcher.model.FinKeyData;
 import org.djv.stockresearcher.model.StockData;
-import org.djv.stockresearcher.util.Colors;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
@@ -89,27 +86,24 @@ public class FinancialsPart implements AppStateListener {
 			buildKeyRatioTable(sd);
 		} else if ("Income Statement".equals(s)) {
 			StockData sd = AppState.getInstance().getSelectedStock();
-			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
 			try {
-				FinDataTable data = b.getIncomeStatement(sd);
+				FinDataTable data = StockDataUtil.getIncomeStatement(sd);
 				buildTable(data);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}  else if ("Balance Sheet".equals(s)) {
 			StockData sd = AppState.getInstance().getSelectedStock();
-			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
 			try {
-				FinDataTable data = b.getBalanceSheet(sd);
+				FinDataTable data = StockDataUtil.getBalanceSheet(sd);
 				buildTable(data);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		} else if ("Cash Flow Statement".equals(s)) {
 			StockData sd = AppState.getInstance().getSelectedStock();
-			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
 			try {
-				FinDataTable data = b.getCashFlowStatement(sd);
+				FinDataTable data = StockDataUtil.getCashFlowStatement(sd);
 				buildTable(data);
 			} catch (Exception e) {
 				e.printStackTrace();
