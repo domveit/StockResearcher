@@ -8,8 +8,8 @@ public class BuffetAnalysis {
 	
 	public List<BuffetDetail> details = new ArrayList<BuffetDetail>();
 	
-	public void add(String desc, BigDecimal bd, int value){
-		details.add(new BuffetDetail(desc, bd, value));
+	public void add(String desc, BigDecimal bd, boolean passOrFail, int value){
+		details.add(new BuffetDetail(desc, bd, passOrFail, value));
 	}
 	
 	public int getTotalScore(){

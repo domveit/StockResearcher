@@ -24,8 +24,12 @@ import org.djv.stockresearcher.model.FinDataRow;
 import org.djv.stockresearcher.model.FinDataTable;
 import org.djv.stockresearcher.model.HistPrice;
 import org.djv.stockresearcher.model.StockData;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.resource.LocalResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -42,6 +46,8 @@ import org.jfree.data.time.TimeSeriesCollection;
 public class EPSPart implements AppStateListener  {
 	
 	private Label epsChartLabel;
+	LocalResourceManager resManager;
+	
 	private Composite parent;
 	
 	@Inject
@@ -50,10 +56,11 @@ public class EPSPart implements AppStateListener  {
 	
 	@PostConstruct
 	public void postConstruct(Composite parent) {
-		parent.setLayout(new GridLayout(1, false));
 		this.parent = parent;
+		parent.setLayout(new GridLayout(1, false));
 		epsChartLabel = new Label(parent, SWT.NONE);
 		epsChartLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+		resManager =  new LocalResourceManager(JFaceResources.getResources(), epsChartLabel);
 		
 		AppState.getInstance().addListener(this);
 		Display.getDefault().asyncExec(new Runnable(){
@@ -102,7 +109,7 @@ public class EPSPart implements AppStateListener  {
 						List<FinDataPeriod> isPeriods = incomeStatement.getPeriods();
 						for (FinDataPeriod isPeriod : isPeriods){
 							int y = isPeriod.getYear();
-							if (y == 9999){
+							if (isPeriod.getName().equals("TTM")){
 								y = Calendar.getInstance().get(Calendar.YEAR);
 							}
 							Map<FinDataPeriod, BigDecimal> earningsRowMap = incomeStatement.getDataMap().get(earningsRow);
@@ -111,15 +118,13 @@ public class EPSPart implements AppStateListener  {
 							if (earnings == null){
 								earnings = BigDecimal.ZERO;
 							}
-							System.err.println("earnings for " + y + " " + earnings);
-							
 							Map<FinDataPeriod, BigDecimal> dilutedSharesMap = incomeStatement.getDataMap().get(dilutedSharesRow);
 							
 							BigDecimal dilutedShares = dilutedSharesMap.get(isPeriod);
 							if (dilutedShares == null){
 								dilutedShares = BigDecimal.ZERO;
 							}
-							System.err.println("dilutedShares for " + y + " " + dilutedShares);
+//							System.err.println("dilutedShares for " + y + " " + dilutedShares);
 							
 							BigDecimal avgPrice = BigDecimal.ZERO;
 							BigDecimal priceBucket = BigDecimal.ZERO;
@@ -134,10 +139,10 @@ public class EPSPart implements AppStateListener  {
 								BigDecimal avgEPS = earnings.divide(dilutedShares, 2, RoundingMode.HALF_UP);
 								if (nbrPrices > 0){
 									avgPrice = priceBucket.divide(BigDecimal.valueOf(nbrPrices), 2, RoundingMode.HALF_UP);
-									System.err.println("avg mkt cap for " + y + " " + avgPrice);
-									System.err.println("avg EPS for " + y + " " + avgEPS);
+//									System.err.println("avg mkt cap for " + y + " " + avgPrice);
+//									System.err.println("avg EPS for " + y + " " + avgEPS);
 									if (avgEPS.compareTo(BigDecimal.ZERO) != 0){
-										System.err.println("avg PE for " + y + " " + avgPrice.divide(avgEPS, 2, RoundingMode.HALF_UP));
+//										System.err.println("avg PE for " + y + " " + avgPrice.divide(avgEPS, 2, RoundingMode.HALF_UP));
 									}
 									if (earnings.compareTo(BigDecimal.ZERO) > 0){
 										earningsBucket = earningsBucket.add(earnings.multiply(BigDecimal.valueOf(factor)));
@@ -151,7 +156,7 @@ public class EPSPart implements AppStateListener  {
 						}
 						if (earningsBucket.compareTo(BigDecimal.ZERO) > 0){
 							averagePe = avgMarketCap.divide(earningsBucket, 2, RoundingMode.HALF_UP);
-							System.err.println("avg PE " +averagePe);
+//							System.err.println("avg PE " +averagePe);
 						}
 					}
 					
@@ -164,10 +169,10 @@ public class EPSPart implements AppStateListener  {
 					for (FinDataPeriod isPeriod : fairPriceMap.keySet()){
 						BigDecimal epsForPeriod = fairPriceMap.get(isPeriod);
 						if (epsForPeriod != null && isPeriod.getYear() != null && isPeriod.getMonth() != null){
-							if (isPeriod.getYear() == 9999){
+							if (isPeriod.getName().equals("TTM")){
 								{
 								Calendar c = Calendar.getInstance();
-								c.roll(Calendar.MONTH, -1);
+								c.add(Calendar.MONTH, -1);
 								int month = c.get(Calendar.MONTH) + 1;
 								int year = c.get(Calendar.YEAR);
 								histSeries.add(new Month(month, year), Math.max(epsForPeriod.multiply(averagePe).doubleValue(), 0));
@@ -253,13 +258,21 @@ public class EPSPart implements AppStateListener  {
 			
 					// Load the image from the same buffer using SWT
 					ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-					final Image divChartImage = new Image(Display.getDefault(), in);
+					ImageData imgData = new ImageData(in);
+					final ImageDescriptor imgDescriptor = ImageDescriptor.createFromImageData(imgData);
 					in.close();
-			
+					
 					Display.getDefault().asyncExec(new Runnable(){
 						@Override
 						public void run() {
-							epsChartLabel.setImage(divChartImage);
+							ImageDescriptor oldDescriptor = (ImageDescriptor)epsChartLabel.getData("ImageDescriptor");
+							Image img = resManager.createImage(imgDescriptor);
+							epsChartLabel.setImage(img);
+							epsChartLabel.setData("ImageDescriptor", imgDescriptor);
+							
+							if (oldDescriptor != null){
+								resManager.destroyImage(oldDescriptor);
+							}
 							parent.layout(true, true);
 						}
 					});

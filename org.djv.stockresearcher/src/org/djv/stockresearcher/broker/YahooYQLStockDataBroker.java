@@ -37,8 +37,10 @@ public class YahooYQLStockDataBroker implements IStockDataBroker{
 							+ "where symbol in (" + stockURLParm +")";
 			System.err.println(YQLquery);
 
-			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
+			BufferedReader br = null;
+			
 			try {
+				 br = YahooFinanceUtil.getYQLJson(YQLquery);
 				if (br == null){
 					throw new IllegalStateException ("br is null");
 				} else {
@@ -73,7 +75,9 @@ public class YahooYQLStockDataBroker implements IStockDataBroker{
 				}
 			} finally {
 				try {
-					br.close();
+					if (br != null){
+						br.close();
+					}
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -134,8 +138,9 @@ public class YahooYQLStockDataBroker implements IStockDataBroker{
 							+ "from yahoo.finance.quotes "
 							+ "where symbol in (" + stockURLParm +")";
 			System.err.println(YQLquery);
-			BufferedReader br = YahooFinanceUtil.getYQLJson(YQLquery);
+			BufferedReader br = null;
 			try {
+				br =  YahooFinanceUtil.getYQLJson(YQLquery);
 				if (br == null){
 					throw new IllegalStateException("br is null");
 				} else {
@@ -170,7 +175,9 @@ public class YahooYQLStockDataBroker implements IStockDataBroker{
 				}
 			} finally {
 				try {
-					br.close();
+					if (br != null){
+						br.close();
+					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

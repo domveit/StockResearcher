@@ -258,7 +258,6 @@ public class MSAnalystDataBroker implements IAnalystDataBroker {
 		}
 			
 		StringBuffer sb = Util.dumpBRtoStringBuffer(br);
-		System.err.println(sb);
 		
 		BigDecimal tot = BigDecimal.ZERO;
 		int nbrDiv = 0; 
@@ -271,7 +270,6 @@ public class MSAnalystDataBroker implements IAnalystDataBroker {
 				String epsStr = sb.substring(ixBeg1, ixEnd);
 				BigDecimal eps = Util.convertBd(epsStr);
 				if (eps != null && (10 - nbrYears) <= i){
-					System.err.println(eps);
 					if (eps.compareTo(new BigDecimal(100)) > 0){
 						tot = tot.add(new BigDecimal(100));
 					} else {
@@ -311,7 +309,6 @@ public class MSAnalystDataBroker implements IAnalystDataBroker {
 		try {
 			String sDiv = null;
 			while ((sDiv = br.readLine()) != null){
-				System.err.println(sDiv);
 				if (sDiv.startsWith("Date")){
 					continue;
 				}

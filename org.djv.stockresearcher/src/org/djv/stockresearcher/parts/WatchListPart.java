@@ -190,8 +190,7 @@ public class WatchListPart implements StockDataChangeListener, WatchListListener
 		stockTableConfig.getColumns().add(StockTableColumn.DG10);
 		stockTableConfig.getColumns().add(StockTableColumn.GROWTH_RANK);
 		
-		stockTableConfig.getColumns().add(StockTableColumn.RG5);
-		stockTableConfig.getColumns().add(StockTableColumn.RG10);
+		stockTableConfig.getColumns().add(StockTableColumn.BUFFET_SCORE);
 		stockTableConfig.getColumns().add(StockTableColumn.FIN_RANK);
 		
 		stockTableConfig.getColumns().add(StockTableColumn.ANAL_5YR);

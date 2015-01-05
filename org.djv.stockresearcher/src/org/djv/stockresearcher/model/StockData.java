@@ -22,9 +22,6 @@ public class StockData {
 	Double stdDev = 0d;
 	Double wildness = 0d;
 	
-	Double rg5 = 0d;
-	Double rg10 = 0d;
-
 	BigDecimal yrHighDiff;
 	BigDecimal oytUpside;
 	
@@ -45,36 +42,53 @@ public class StockData {
 	List<DivData> divData;
 	Map<Integer, DivYearData> divYearData;
 
-	Map<String, FinKeyData> finData;
-	
 	AnalystRatings analystRatings;
 	
-	FinDataTable incomeStatement;
-	FinDataTable balanceSheet;
-	FinDataTable cashFlowStatement;
+//	FinDataTable keyRatios;
+//	FinDataTable incomeStatement;
+//	FinDataTable balanceSheet;
+//	FinDataTable cashFlowStatement;
 	
-	public FinDataTable getIncomeStatement() {
-		return incomeStatement;
+	int buffetscore;
+	
+//	public FinDataTable getIncomeStatement() {
+//		return incomeStatement;
+//	}
+//
+//	public void setIncomeStatement(FinDataTable incomeStatement) {
+//		this.incomeStatement = incomeStatement;
+//	}
+//
+//	public FinDataTable getBalanceSheet() {
+//		return balanceSheet;
+//	}
+//
+//	public void setBalanceSheet(FinDataTable balanceSheet) {
+//		this.balanceSheet = balanceSheet;
+//	}
+//
+//	public FinDataTable getCashFlowStatement() {
+//		return cashFlowStatement;
+//	}
+//
+//	public void setCashFlowStatement(FinDataTable cashFlowStatement) {
+//		this.cashFlowStatement = cashFlowStatement;
+//	}
+//
+//	public FinDataTable getKeyRatios() {
+//		return keyRatios;
+//	}
+//
+//	public void setKeyRatios(FinDataTable keyRatios) {
+//		this.keyRatios = keyRatios;
+//	}
+
+	public int getBuffetscore() {
+		return buffetscore;
 	}
 
-	public void setIncomeStatement(FinDataTable incomeStatement) {
-		this.incomeStatement = incomeStatement;
-	}
-
-	public FinDataTable getBalanceSheet() {
-		return balanceSheet;
-	}
-
-	public void setBalanceSheet(FinDataTable balanceSheet) {
-		this.balanceSheet = balanceSheet;
-	}
-
-	public FinDataTable getCashFlowStatement() {
-		return cashFlowStatement;
-	}
-
-	public void setCashFlowStatement(FinDataTable cashFlowStatement) {
-		this.cashFlowStatement = cashFlowStatement;
+	public void setBuffetscore(int buffetscore) {
+		this.buffetscore = buffetscore;
 	}
 
 	public StockData() {
@@ -91,6 +105,7 @@ public class StockData {
 	public StockData(Stock s) {
 		super();
 		stock = s;
+		this.symbol = s.getSymbol();
 	}
 	
 	public BigDecimal getChowder() {
@@ -221,21 +236,6 @@ public class StockData {
 		this.yrHighDiff = yrHighDiff;
 	}
 
-	public Double getRg5() {
-		return rg5;
-	}
-
-	public void setRg5(Double rg5) {
-		this.rg5 = rg5;
-	}
-
-	public Double getRg10() {
-		return rg10;
-	}
-
-	public void setRg10(Double rg10) {
-		this.rg10 = rg10;
-	}
 
 	public BigDecimal getNormDividend() {
 		return normDividend;
@@ -251,13 +251,6 @@ public class StockData {
 
 	public void setNormYield(BigDecimal normYield) {
 		this.normYield = normYield;
-	}
-
-	public Map<String, FinKeyData> getFinData() {
-		return finData;
-	}
-	public void setFinData(Map<String, FinKeyData> finData) {
-		this.finData = finData;
 	}
 
 	public List<DivData> getDivData() {
@@ -338,13 +331,6 @@ public class StockData {
 			};
 		}
 		
-		if (finData != null){
-			s+= "===== finData ===== \n";
-			for (String fdKey : finData.keySet()){
-				FinKeyData fd = finData.get(fdKey);
-				s+= fd.toString();
-			};
-		}
 		return s;
 	}
 

@@ -68,7 +68,7 @@ public class OptionsPart implements AppStateListener, OptionListener {
 					return;
 				}
 				OptionPeriod op = new OptionPeriod(1900 + d.getYear(), d.getMonth() + 1, d.getDate());
-				System.err.println("op = " + op);
+//				System.err.println("op = " + op);
 				ot.setCurrentPeriod(op);
 				label.setText(currentSd.getStock().getSymbol() + " - " + (currentSd.getStockIndustry() == null ? "???" :  (currentSd.getStockIndustry().getName() + " - " + currentSd.getStock().getPrice())) + " getting options data....");
 				

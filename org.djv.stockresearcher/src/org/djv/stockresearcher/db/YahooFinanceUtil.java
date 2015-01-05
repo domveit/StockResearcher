@@ -22,6 +22,8 @@ public class YahooFinanceUtil {
 	public static BufferedReader getYahooCSV(String urlString) throws Exception {
 		URL yahooDiv = new URL(urlString);
 		URLConnection urlConnectionDiv = yahooDiv.openConnection();
+		urlConnectionDiv.setConnectTimeout(10000);
+		urlConnectionDiv.setReadTimeout(10000);
 		InputStream isDiv = urlConnectionDiv.getInputStream();
 		InputStreamReader isrDiv = new InputStreamReader(isDiv, "UTF-8");
 		BufferedReader brDiv = new BufferedReader(isrDiv);

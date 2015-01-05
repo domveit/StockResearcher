@@ -23,14 +23,17 @@ import org.djv.stockresearcher.model.StockData;
 import org.djv.stockresearcher.widgets.DivAdjDialog;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.resource.FontDescriptor;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.resource.LocalResourceManager;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -50,6 +53,7 @@ import org.jfree.data.time.Year;
 public class DividendsPart implements AppStateListener, StockDataChangeListener {
 	
 	private Label divChartLabel;
+	LocalResourceManager resManager;
 	
 	private String[] divTitles = {"Date", "Dividend", "AdjDate", "AdjDiv", "Growth"};
 	private Table divTable;
@@ -66,6 +70,7 @@ public class DividendsPart implements AppStateListener, StockDataChangeListener 
 		this.parent = parent;
 		divChartLabel = new Label(parent, SWT.NONE);
 		divChartLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+		resManager =  new LocalResourceManager(JFaceResources.getResources(), divChartLabel);
 		
 		divTable = new Table(parent, SWT.BORDER |SWT.V_SCROLL);
 		divTable.setLinesVisible(true);
@@ -189,13 +194,21 @@ public class DividendsPart implements AppStateListener, StockDataChangeListener 
 			
 					// Load the image from the same buffer using SWT
 					ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-					final Image divChartImage = new Image(Display.getDefault(), in);
+
+					ImageData imgData = new ImageData(in);
+					final ImageDescriptor imgDescriptor = ImageDescriptor.createFromImageData(imgData);
 					in.close();
-			
+					
 					Display.getDefault().asyncExec(new Runnable(){
 						@Override
 						public void run() {
-							divChartLabel.setImage(divChartImage);
+							ImageDescriptor oldDescriptor = (ImageDescriptor)divChartLabel.getData("ImageDescriptor");
+							Image img = resManager.createImage(imgDescriptor);
+							divChartLabel.setImage(img);
+							divChartLabel.setData("ImageDescriptor", imgDescriptor);
+							if (oldDescriptor != null){
+								resManager.destroyImage(oldDescriptor);
+							}
 							
 							divTable.removeAll();
 							if (sd.getDivYearData() != null) {
@@ -208,15 +221,10 @@ public class DividendsPart implements AppStateListener, StockDataChangeListener 
 										continue;
 									}
 									TableItem item = new TableItem(divTable, SWT.NONE);
-									final Font font = new Font(Display.getDefault(), "Tahoma", 10,
-											SWT.BOLD);
+									
+									Font font = resManager.createFont(FontDescriptor.createFrom("Tahoma", 10, SWT.BOLD));
+									
 									item.setFont(font);
-									item.addDisposeListener(new DisposeListener() {
-										@Override
-										public void widgetDisposed(DisposeEvent e) {
-											font.dispose();
-										}
-									});
 									item.setText(0, String.valueOf(dyd.getYear()));
 									item.setText(1, String.valueOf(dyd.getDiv()));
 									item.setText(3,

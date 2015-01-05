@@ -6,15 +6,23 @@ public class BuffetDetail {
 	
 	public String description;
 	public BigDecimal value;
+	public boolean pass;
 	public int score;
 	
-	public BuffetDetail(String description, BigDecimal value, int score) {
+	public BuffetDetail(String description, BigDecimal value, boolean pass,
+			int score) {
 		super();
 		this.description = description;
 		this.value = value;
+		this.pass = pass;
 		this.score = score;
 	}
-	
+	public boolean isPass() {
+		return pass;
+	}
+	public void setPass(boolean pass) {
+		this.pass = pass;
+	}
 	public String getDescription() {
 		return description;
 	}

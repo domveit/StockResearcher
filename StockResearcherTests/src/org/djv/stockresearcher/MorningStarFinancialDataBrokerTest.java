@@ -40,5 +40,16 @@ public class MorningStarFinancialDataBrokerTest {
 		FinDataTable is = b.getCashFlowStatement(sd);
 		System.err.println(is.toString());
 	}
+	
+	@Test
+	public void test4() throws Exception {
+		MSFinancialDataBroker b = new MSFinancialDataBroker();
+		Stock s = new Stock();
+		s.setSymbol("MSFT");
+		s.setExchange("NasdaqNM");
+		StockData sd = new StockData(s);
+		FinDataTable is = b.getKeyData(sd);
+		System.err.println(is.toString());
+	}
 
 }

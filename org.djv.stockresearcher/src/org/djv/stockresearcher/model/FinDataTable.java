@@ -2,7 +2,7 @@ package org.djv.stockresearcher.model;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -11,17 +11,43 @@ import org.djv.stockresearcher.db.Util;
 
 public class FinDataTable {
 	
+	String symbol;
+	FinDataType type;
+	
 	List<FinDataPeriod> periods = new ArrayList<FinDataPeriod>();
 	List<FinDataRow> rows = new ArrayList<FinDataRow>();
 	
 	Map<FinDataRow, Map<FinDataPeriod, BigDecimal>> dataMap = new TreeMap<FinDataRow, Map<FinDataPeriod, BigDecimal>>();
 	
+	public FinDataTable(String symbol, FinDataType type) {
+		super();
+		this.symbol = symbol;
+		this.type = type;
+	}
+
+	public String getSymbol() {
+		return symbol;
+	}
+
+	public void setSymbol(String symbol) {
+		this.symbol = symbol;
+	}
+
+	public FinDataType getType() {
+		return type;
+	}
+
+	public void setType(FinDataType type) {
+		this.type = type;
+	}
+
 	public List<FinDataPeriod> getPeriods() {
 		return periods;
 	}
 	
 	public void addPeriod(FinDataPeriod p){
 		periods.add(p);
+		Collections.sort(periods);
 	}
 
 	public List<FinDataRow> getRows() {
@@ -30,6 +56,7 @@ public class FinDataTable {
 
 	public void addRow(FinDataRow r){
 		rows.add(r);
+		Collections.sort(rows);
 	}
 	
 	public Map<FinDataRow, Map<FinDataPeriod, BigDecimal>> getDataMap() {
@@ -40,14 +67,22 @@ public class FinDataTable {
 		this.dataMap = dataMap;
 	}
 
-	public void addData(FinDataPeriod period, FinDataRow column, BigDecimal data){
-		if (data != null){
-			Map<FinDataPeriod, BigDecimal> periodMap = dataMap.get(column);
+	public void addData(FinDataPeriod period, FinDataRow row, BigDecimal data){
+//		if (data != null){
+			Map<FinDataPeriod, BigDecimal> periodMap = dataMap.get(row);
 			if (periodMap == null){
-				periodMap = new HashMap<FinDataPeriod, BigDecimal>();
-				dataMap.put(column, periodMap);
+				periodMap = new TreeMap<FinDataPeriod, BigDecimal>();
+				dataMap.put(row, periodMap);
 			}
 			periodMap.put(period, data);
+//		}
+		
+		if (!periods.contains(period)){
+			addPeriod(period);
+		}
+		
+		if (!rows.contains(row)){
+			addRow(row);
 		}
 	}
 	

@@ -1,6 +1,6 @@
 package org.djv.stockresearcher.model;
 
-public class FinDataRow implements Comparable {
+public class FinDataRow implements Comparable<FinDataRow> {
 	
 	public String name;
 	public Integer ix;
@@ -63,9 +63,8 @@ public class FinDataRow implements Comparable {
 	}
 
 	@Override
-	public int compareTo(Object arg0) {
-		FinDataRow r0 = (FinDataRow) arg0;
-		return this.getIx().compareTo(r0.getIx());
+	public int compareTo(FinDataRow arg0) {
+		return this.getIx().compareTo(arg0.getIx());
 	}
 
 }

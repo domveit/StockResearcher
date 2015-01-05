@@ -13,11 +13,12 @@ import org.djv.stockresearcher.model.StockData;
 import org.djv.stockresearcher.widgets.support.StockTableColumn;
 import org.djv.stockresearcher.widgets.support.StockTableConfig;
 import org.djv.stockresearcher.widgets.support.TableSortListener;
+import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.resource.LocalResourceManager;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -32,6 +33,7 @@ public class StockTable extends Composite {
 	
 	StockTableConfig stockTableConfig;
 	Table table;
+	LocalResourceManager resManager;
 
 	public StockTableConfig getStockTableConfig() {
 		return stockTableConfig;
@@ -67,6 +69,7 @@ public class StockTable extends Composite {
 		table = new Table (this, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
 		table.setLinesVisible (true);
 		table.setHeaderVisible (true);
+		resManager =  new LocalResourceManager(JFaceResources.getResources(), table);
 	}
 	
 	public void addSelectionListener(SelectionListener l){
@@ -219,31 +222,31 @@ public class StockTable extends Composite {
 				} else if (val instanceof Integer){
 					colorRank = new Double((Integer) val);
 				} 
-				final Color colorForRank = getColorForRank(colorRank);
-				item.setBackground(index, colorForRank);
-				item.addDisposeListener(new DisposeListener(){
-					@Override
-					public void widgetDisposed(DisposeEvent e) {
-						colorForRank.dispose();
-					}
-				});
+				
+				// create the manager and bind to a widget
+
+				final RGB colorForRank = getColorForRank(colorRank);
+				
+				// create resources
+				Color color = resManager.createColor(colorForRank);
+				item.setBackground(index, color);
 			}
 		}
 	};
 	
-	public Color getColorForRank(double rank) {
+	public RGB getColorForRank(double rank) {
 		if (rank >= 5){
 			int nongreenness = 255 - (int)((Math.pow((rank - 5), 1.5) * 255) / Math.pow(5, 1.5));
 			nongreenness = Math.max(nongreenness, 0);
 			nongreenness = Math.min(nongreenness, 255);
-			return new Color(Display.getDefault(), nongreenness, 255, 0);
+			return new RGB(nongreenness, 255, 0);
 		}
 		
 		if (rank <= 5){
 			int nonredness = 255 - (int)((Math.pow((5 - rank), 1.5) * 255) / Math.pow(5, 1.5));
 			nonredness = Math.max(nonredness, 0);
 			nonredness = Math.min(nonredness, 255);
-			return new Color(Display.getDefault(), 255, nonredness, 0);
+			return new RGB(255, nonredness, 0);
 		}
 		return null;
 	}

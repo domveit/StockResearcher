@@ -7,11 +7,11 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: org.h2,
  org.h2.api,
  org.h2.bnf,
+ org.h2.bnf.context,
  org.h2.command,
  org.h2.command.ddl,
  org.h2.command.dml,
  org.h2.compress,
- org.h2.constant,
  org.h2.constraint,
  org.h2.engine,
  org.h2.expression,
@@ -39,4 +39,4 @@ Export-Package: org.h2,
  org.h2.upgrade,
  org.h2.util,
  org.h2.value
-Bundle-ClassPath: h2-1.3.173.jar
+Bundle-ClassPath: h2-1.4.184.jar

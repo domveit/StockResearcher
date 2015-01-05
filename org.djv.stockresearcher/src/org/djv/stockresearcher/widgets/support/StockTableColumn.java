@@ -47,8 +47,7 @@ public enum StockTableColumn {
 	DG10			("dg10", 		"dg10",					"0.00", 		"N/A", 		true, 		"growthRank", 	ForgivingBigDecimalComparator.class),
 	GROWTH_RANK		("GRank", 		"growthRank",			null, 			"N/A", 		false, 		"growthRank",	ForgivingBigDecimalComparator.class),
 	
-	RG5				("rg5",		 	"rg5",					"0.00", 		"N/A", 		true, 		"finRank", 		ForgivingBigDecimalComparator.class),
-	RG10			("rg10", 		"rg10",					"0.00", 		"N/A", 		true, 		"finRank",		ForgivingBigDecimalComparator.class),
+	BUFFET_SCORE	("Buffet", 		"buffetscore",			"0", 			"N/A", 		false, 		"finRank",		ForgivingBigDecimalComparator.class),
 	FIN_RANK		("FRank", 		"finRank",				null, 			"N/A", 		false, 		"finRank",		ForgivingBigDecimalComparator.class),
 	
 	ANAL_5YR		("Anal 5Yr",	"analystRatings.fiveYearGrowthForcast",		"0.00", 		"N/A", 		true, 		"analRank", 		ForgivingBigDecimalComparator.class),
@@ -59,7 +58,6 @@ public enum StockTableColumn {
 	CHOWDER			("Chowder", 	"chowder",				"0.00", 		"N/A", 		true, 		null,			ForgivingBigDecimalComparator.class),
 
 	OVERALL_RANK	("RANK", 		"overAllRank",			"0.00", 		"N/A", 		false, 		"overAllRank",		ForgivingBigDecimalComparator.class),
-
 	;
 	
 	private final String description;

@@ -13,10 +13,14 @@ import org.djv.stockresearcher.db.AppState;
 import org.djv.stockresearcher.db.AppStateListener;
 import org.djv.stockresearcher.model.StockData;
 import org.eclipse.e4.ui.di.Focus;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.jface.resource.LocalResourceManager;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -47,6 +51,7 @@ public class StockChartPart implements AppStateListener {
 	
 	private Composite chartComp;
 	private Label chartLabel;
+	LocalResourceManager resManager;
 	
 	private AppState appState = AppState.getInstance();
 	
@@ -258,6 +263,7 @@ public class StockChartPart implements AppStateListener {
 		chartLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 		chartLabel.setData("t", "1y");
 		chartLabel.setData("q", "l");
+		resManager =  new LocalResourceManager(JFaceResources.getResources(), chartLabel);
 		
 		ArrayList<String> pVals = new ArrayList<String>();
 		pVals.add("b");
@@ -324,13 +330,21 @@ public class StockChartPart implements AppStateListener {
 					}
 					System.err.println(urlStr);
 					URL url = new URL(urlStr);
+					
 					InputStream is = url.openStream();
-					final Image img = new Image(Display.getDefault(), is);
+					ImageData imgData = new ImageData(is);
+					final ImageDescriptor imgDescriptor = ImageDescriptor.createFromImageData(imgData);
 					Display.getDefault().asyncExec(new Runnable(){
 						@Override
 						public void run() {
-							chartLabel.setImage(img);		
+							ImageDescriptor oldDescriptor = (ImageDescriptor)chartLabel.getData("ImageDescriptor");
+							Image img = resManager.createImage(imgDescriptor);
+							chartLabel.setImage(img);	
+							chartLabel.setData("ImageDescriptor", imgDescriptor);
 							item1.setHeight(chartComp.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+							if (oldDescriptor != null){
+								resManager.destroyImage(oldDescriptor);
+							}
 						}
 					});
 				} catch (Exception e){

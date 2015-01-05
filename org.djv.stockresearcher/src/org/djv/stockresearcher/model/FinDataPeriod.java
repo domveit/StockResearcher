@@ -1,41 +1,56 @@
 package org.djv.stockresearcher.model;
 
-public class FinDataPeriod implements Comparable{
+import java.util.Calendar;
+
+import org.djv.stockresearcher.db.StockDataUtil;
+
+public class FinDataPeriod implements Comparable<FinDataPeriod> {
 	
 	String name;
-	Integer year;
-	Integer month;
+	Calendar dataDate;
 	
 	public String getName() {
 		return name;
 	}
+	
+	public Calendar getDataDate() {
+		return dataDate;
+	}
+
+	public void setDataDate(Calendar dataDate) {
+		this.dataDate = dataDate;
+	}
+
 	public void setName(String name) {
 		this.name = name;
 	}
 	public Integer getYear() {
-		return year;
-	}
-	public void setYear(Integer year) {
-		this.year = year;
+		return dataDate.get(Calendar.YEAR);
 	}
 	public Integer getMonth() {
-		return month;
+		return dataDate.get(Calendar.MONTH) + 1;
 	}
-	public void setMonth(Integer month) {
-		this.month = month;
-	}
+	
 	public FinDataPeriod(String name) {
 		super();
 		this.name = name;
 		if ("TTM".equals(name)){
-			this.year = 9999;
-			this.month = 1;
+			dataDate = StockDataUtil.TTM_CAL;
 		} else {
-			this.year = Integer.valueOf(name.substring(0, 4));
-			this.month = Integer.valueOf(name.substring(5, 7));
+			dataDate = Calendar.getInstance();
+			int year = Integer.valueOf(name.substring(0, 4));
+			int month = Integer.valueOf(name.substring(5, 7));
+			dataDate.set(Calendar.YEAR, year);
+			dataDate.set(Calendar.MONTH, month - 1);
+			dataDate.set(Calendar.DATE, 1);
 		}
 	}
 	
+	public FinDataPeriod(String name, Calendar cal) {
+		super();
+		this.name = name;
+		this.dataDate = cal;
+	}
 
 	@Override
 	public int hashCode() {
@@ -60,13 +75,9 @@ public class FinDataPeriod implements Comparable{
 			return false;
 		return true;
 	}
-	public String toString(){
-		return "{" + name + ", " + year + "}";
-	}
-	
 	
 	@Override
-	public int compareTo(Object arg0) {
+	public int compareTo(FinDataPeriod arg0) {
 		FinDataPeriod p0 = (FinDataPeriod) arg0;
 		int comp =  this.getYear().compareTo(p0.getYear());
 		if (comp != 0){

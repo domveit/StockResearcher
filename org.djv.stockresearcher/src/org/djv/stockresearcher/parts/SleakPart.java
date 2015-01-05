@@ -52,7 +52,7 @@ public class SleakPart {
 	public void postConstruct(Composite parent) {
 		this.parent = parent;
 		
-		display = Display.getCurrent ();
+		display = Display.getDefault ();
 		list = new List (parent, SWT.BORDER | SWT.V_SCROLL);
 		list.addListener (SWT.Selection, new Listener () {
 			public void handleEvent (Event event) {
@@ -96,6 +96,7 @@ public class SleakPart {
 		});
 		check.setSelection (false);
 		text.setVisible (false);
+		layout ();
 	}
 
 		

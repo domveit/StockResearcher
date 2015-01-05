@@ -25,7 +25,6 @@ public class GoogleJSONOptionDataBroker implements IOptionDataBroker {
 		OptionTable table = new OptionTable();
 		table.setSymbol(symbol);
 		String urlString = "http://www.google.com/finance/option_chain?q=" + symbol+ "&output=json";
-		System.err.println(urlString);
 		BufferedReader br = YahooFinanceUtil.getYahooCSVNice(urlString);
 		
 		try {
@@ -116,7 +115,6 @@ public class GoogleJSONOptionDataBroker implements IOptionDataBroker {
 	public void getOptionCallsForCurrentPeriod(OptionTable table) throws Exception {
 		OptionPeriod per = table.getCurrentPeriod();
 		String urlString = "http://www.google.com/finance/option_chain?q="+table.getSymbol()+"&expd="+per.getD()+"&expm=" +per.getM()+ "&expy="+per.getY()+"&output=json";
-		System.err.println(urlString);
 		BufferedReader br = YahooFinanceUtil.getYahooCSVNice(urlString);
 		
 		try {

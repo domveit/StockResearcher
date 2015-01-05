@@ -6,13 +6,14 @@ import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -41,8 +42,13 @@ import org.djv.stockresearcher.db.dao.TransactionDAO;
 import org.djv.stockresearcher.db.dao.WatchListDAO;
 import org.djv.stockresearcher.model.AdjustedDiv;
 import org.djv.stockresearcher.model.AnalystRatings;
+import org.djv.stockresearcher.model.BuffetAnalysis;
 import org.djv.stockresearcher.model.DivData;
-import org.djv.stockresearcher.model.FinKeyData;
+import org.djv.stockresearcher.model.FinDataDTO;
+import org.djv.stockresearcher.model.FinDataPeriod;
+import org.djv.stockresearcher.model.FinDataRow;
+import org.djv.stockresearcher.model.FinDataTable;
+import org.djv.stockresearcher.model.FinDataType;
 import org.djv.stockresearcher.model.Lot;
 import org.djv.stockresearcher.model.Portfolio;
 import org.djv.stockresearcher.model.PortfolioData;
@@ -60,7 +66,7 @@ public class StockDB {
 	
 	private static StockDB instance;
 	Connection con = null;
-	private static final int STOCK_POOL_NBR_THREADS = 8;
+	private static final int STOCK_POOL_NBR_THREADS = 4;
 
 	ExecutorService pool1 = null;
 	List<ExecutorService> pools = new ArrayList<ExecutorService>();
@@ -311,10 +317,12 @@ public class StockDB {
 				@Override
 				public void run() {
 					try {
+						System.err.println("getting stock fine data " + sd.getSymbol());
 						getDivData(sd,forceUpdate);
-						getFinData(sd);
 						getAnalData(sd);
+						StockDataUtil.crunchFinancials(sd);
 						StockDataUtil.calcRankings(sd);
+						System.err.println("end getting stock fine data " + sd.getSymbol());
 						stocksUpdated++;
 						notifyAllStockDataChangeListeners(sd, stocksToUpdate, stocksUpdated);
 					} catch (Exception e) {
@@ -350,49 +358,105 @@ public class StockDB {
 		StockDataUtil.crunchDividends(sd);
 	}
 	
-	public void getFinData(StockData sd) throws Exception {
+	public void checkFinData(StockData sd) throws Exception {
 		if (Util.dataExpired(sd.getStock().getFinDataDate())){
-			new FinDataDAO(con).deleteForStock(sd.getStock().getSymbol());
-			Map<String, FinKeyData> finData = finBroker.getKeyData(sd);
-		    for (String key : finData.keySet()){
-		    	FinKeyData fpd = finData.get(key);
-		    	if (fpd.getYear() != null){
-		    		new FinDataDAO(con).insert(fpd);
-		    	}
-		    }
+			FinDataTable keyData = finBroker.getKeyData(sd);
+			saveFinData(keyData);
+			
+			FinDataTable is = finBroker.getIncomeStatement(sd);
+			saveFinData(is);
+			
+			FinDataTable bs = finBroker.getBalanceSheet(sd);
+			saveFinData(bs);
+			
+			FinDataTable cs = finBroker.getCashFlowStatement(sd);
+			saveFinData(cs);
+			
 			sd.getStock().setFinDataDate(new java.sql.Date(new Date().getTime()));
 			new StockDAO(con).update(sd.getStock());
 		}
-		
-		List<FinKeyData> fpdl = new FinDataDAO(con).getFinDataForStock(sd.getStock().getSymbol());
-		Map<String, FinKeyData> finDataDb = new TreeMap<String, FinKeyData>();
-		for (FinKeyData fpd: fpdl){
-			finDataDb.put(fpd.getPeriod(), fpd);
-		}
-		sd.setFinData(finDataDb);
-		StockDataUtil.crunchFinancials(sd);
+	}
+
+	public FinDataTable getKeyRatios(StockData sd) throws Exception {
+		checkFinData(sd);
+		List<FinDataDTO> keyDataRaw = new FinDataDAO(con).searchStockAndType(sd.getSymbol(), FinDataType.KEY_RATIOS.getTypeCode());
+		return convert(sd,FinDataType.KEY_RATIOS, keyDataRaw);
 	}
 	
+	public FinDataTable getIncomeStatement(StockData sd) throws Exception {
+		checkFinData(sd);
+		List<FinDataDTO> isRaw = new FinDataDAO(con).searchStockAndType(sd.getSymbol(), FinDataType.INCOME_STATEMENT.getTypeCode());
+		return convert(sd,FinDataType.INCOME_STATEMENT, isRaw);
+	}
+	
+	public FinDataTable getBalanceSheet(StockData sd) throws Exception {
+		checkFinData(sd);
+		List<FinDataDTO> balRaw = new FinDataDAO(con).searchStockAndType(sd.getSymbol(), FinDataType.BALANCE_SHEET.getTypeCode());
+		return convert(sd,FinDataType.BALANCE_SHEET, balRaw);
+	}
+	
+	public FinDataTable getCashFlowStatement(StockData sd) throws Exception {
+		checkFinData(sd);
+		List<FinDataDTO> cfsRaw = new FinDataDAO(con).searchStockAndType(sd.getSymbol(), FinDataType.CASH_FLOW_STATEMENT.getTypeCode());
+		return convert(sd,FinDataType.CASH_FLOW_STATEMENT, cfsRaw);
+	}
+	
+	private FinDataTable convert(StockData sd, FinDataType type, List<FinDataDTO> keyDataRaw) {
+		FinDataTable table = new FinDataTable(sd.getSymbol(), type);
+		for (FinDataDTO dto: keyDataRaw){
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(dto.getDataDate());
+			String name = "";
+			if (dto.getDataDate().compareTo(StockDataUtil.TTM_CAL.getTime()) == 0){
+				name = "TTM";
+			} else {
+				name = cal.get(Calendar.YEAR) + "-" + new DecimalFormat("00").format(cal.get(Calendar.MONTH) + 1); 
+			}
+			FinDataPeriod p = new FinDataPeriod(name, cal);
+			FinDataRow row = new FinDataRow(dto.getFieldName(), dto.getSeq());
+			table.addData(p, row, dto.getValue());
+		}
+		return table;
+	}
+
+	private void saveFinData(FinDataTable keyData) throws Exception {
+		FinDataDAO dao = new FinDataDAO(con);
+		for (FinDataRow row : keyData.getDataMap().keySet()){
+			Map<FinDataPeriod, BigDecimal> dt = keyData.getDataMap().get(row);
+			for (FinDataPeriod p : dt.keySet()){
+				BigDecimal bd = dt.get(p);
+		         FinDataDTO dto = new FinDataDTO();
+		         dto.setSymbol(keyData.getSymbol());
+		         dto.setType(keyData.getType().getTypeCode());
+
+		         dto.setDataDate(new java.sql.Date(p.getDataDate().getTime().getTime()));
+		         dto.setSeq(row.getIx());
+		         dto.setFieldName(row.getName());
+		         dto.setValue(bd);
+		         int rowsUpdated = dao.update(dto);
+		         if (rowsUpdated == 0){
+		        	 dao.insert(dto);
+		         } else {
+		         }
+			}
+		}
+	}
+
 	public void getAnalData(StockData sd) throws Exception {
 		AnalystRatingsDAO dao = new AnalystRatingsDAO(con);
 		AnalystRatings ar = dao.select(sd.getSymbol());
 		if (ar == null) {
-//			System.err.println("inserting anal data " + sd.getSymbol());
 			ar = analystBroker.getAnalystRatings(sd);
 			dao.insert(ar);
 			
 		} else {
-//			System.err.println(ar.getDataDate());
 			if (Util.dataExpired(ar.getDataDate())){
-//				System.err.println("updating anal data " + sd.getSymbol());
 				ar = analystBroker.getAnalystRatings(sd);
 				if (ar != null){
 					dao.update(ar);
 				}
 				sd.setAnalystRatings(ar);
-			} else {
-//				System.err.println("skipping anal data " + sd.getSymbol());
-			}
+			} 
 		}
 		sd.setAnalystRatings(ar);
 	}
@@ -945,7 +1009,6 @@ public class StockDB {
 		getDataForStocks(sdList);
 		for (StockData sd : sdList){
 			getDivData(sd,false);
-			getFinData(sd);
 			StockDataUtil.calcRankings(sd);
 		}
 		

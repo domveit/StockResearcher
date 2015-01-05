@@ -7,44 +7,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.djv.stockresearcher.broker.IFinancialDataBroker;
 import org.djv.stockresearcher.model.AnalystRatings;
+import org.djv.stockresearcher.model.BuffetAnalysis;
 import org.djv.stockresearcher.model.DivData;
 import org.djv.stockresearcher.model.DivYearData;
-import org.djv.stockresearcher.model.FinDataTable;
 import org.djv.stockresearcher.model.StockData;
 
 public class StockDataUtil {
 	
+	public static final Calendar TTM_CAL;
 	
-	public static FinDataTable getIncomeStatement(StockData sd) throws Exception {
-		FinDataTable data = sd.getIncomeStatement();
-		if (data == null){
-			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
-			data = b.getIncomeStatement(sd);
-			sd.setIncomeStatement(data);
-		}
-		return data;
-	}
-	
-	public static FinDataTable getBalanceSheet(StockData sd) throws Exception {
-		FinDataTable data = sd.getBalanceSheet();
-		if (data == null){
-			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
-			data = b.getBalanceSheet(sd);
-			sd.setBalanceSheet(data);
-		}
-		return data;
-	}
-	
-	public static FinDataTable getCashFlowStatement(StockData sd) throws Exception {
-		FinDataTable data = sd.getCashFlowStatement();
-		if (data == null){
-			IFinancialDataBroker b = StockDB.getInstance().getFinBroker();
-			data = b.getCashFlowStatement(sd);
-			sd.setCashFlowStatement(data);
-		}
-		return data;
+	static {
+		Calendar c  = Calendar.getInstance();
+		c.set(Calendar.YEAR, 9999);
+		c.set(Calendar.MONTH, 11);
+		c.set(Calendar.DATE, 31);
+		c.set(Calendar.HOUR_OF_DAY, 0);
+		c.set(Calendar.MINUTE, 0);
+		c.set(Calendar.SECOND, 0);
+		c.set(Calendar.MILLISECOND, 0);
+		TTM_CAL = c;
 	}
 	
 	public static void crunchDividends(StockData stockData) {
@@ -337,39 +319,9 @@ public class StockDataUtil {
 			} 
 		}
 		
-		int fr = 0;
-		if (stockData.getRg5() != null && stockData.getRg10() != null){
-			if (stockData.getRg5() > 0){
-				fr = 1;
-			} 
-			if (stockData.getRg5() >= 1.5){
-				fr = 2;
-			} 
-			if (stockData.getRg5() >= 3){
-				fr = 3;
-			} 
-			if (stockData.getRg5() >= 4 && stockData.getRg10() >=1){
-				fr = 4;
-			} 
-			if (stockData.getRg5() >= 5 && stockData.getRg10() >=2){
-				fr = 5;
-			} 
-			if (stockData.getRg5() >= 6 && stockData.getRg10() >=3){
-				fr = 6;
-			} 
-			if (stockData.getRg5() >= 10 && stockData.getRg10() >=7){
-				fr = 7;
-			} 
-			if (stockData.getRg5() >= 15 && stockData.getRg10() >=10){
-				fr = 8;
-			} 
-			if (stockData.getRg5() >= 20 && stockData.getRg10() >=15){
-				fr = 9;
-			} 
-			if (stockData.getRg5() >= 25 && stockData.getRg10() >=20){
-				fr = 10;
-			} 
-		}
+		int fr = stockData.getBuffetscore();
+		fr = Math.min(fr,  10);
+		fr = Math.max(0, fr);
 		
 		BigDecimal yrHighDiff = null;
 		if (stockData.getStock().getYearHigh() != null && stockData.getStock().getYearLow() != null){
@@ -494,64 +446,10 @@ public class StockDataUtil {
 		stockData.setRanksCalculated(true);
 	}
 
-	public static void crunchFinancials(StockData stockData) {
-		if (stockData.getFinData() == null){
-			return;
-		}
-		
-		Calendar c = Calendar.getInstance();
-		int currYYYY = c.get(Calendar.YEAR) + 1;
-		
-		Double revNow = null;
-
-		int nbrTimes = 0;
-		int year4 = 0;
-		int year8 = 0;
-		while (revNow == null && nbrTimes < 3){
-			nbrTimes ++;
-			currYYYY = currYYYY - 1;
-			year4 = currYYYY - 4;
-			year8 = currYYYY - 8;
-
-			for (String s : stockData.getFinData().keySet()){
-				BigDecimal rev = stockData.getFinData().get(s).getRevenue();
-				if (s.contains(String.valueOf(currYYYY)) && rev != null){
-					revNow = rev.doubleValue();
-				}
-			}
-		}
-		
-		Double rev4yr = null;
-		Double rev8yr = null;
-
-		for (String s : stockData.getFinData().keySet()){
-			BigDecimal rev = stockData.getFinData().get(s).getRevenue();
-			
-			if (s.contains(String.valueOf(year4)) && rev != null){
-				rev4yr = rev.doubleValue();
-			}
-			
-			if (s.contains(String.valueOf(year8)) && rev != null){
-				rev8yr = rev.doubleValue();
-			}
-		}
-
-		if (revNow != null){
-			if (rev4yr != null && rev4yr > 0){
-				double d = revNow / rev4yr;
-				double pow = Math.pow(d, (1.0 / 4.0));
-				double e4y = (pow - 1) * 100;
-				stockData.setRg5(e4y);
-			}
-			if (rev8yr != null && rev8yr > 0){
-				double d = revNow / rev8yr;
-				double pow = Math.pow(d, (1.0 / 8.0));
-				double e8y = (pow - 1) * 100;
-				stockData.setRg10(e8y);
-			} 
-		}
-		
+	public static void crunchFinancials(StockData stockData) throws Exception {
+		BuffetologyService buffetService = new BuffetologyService();
+		BuffetAnalysis ba = buffetService.buffetize(stockData);
+		stockData.setBuffetscore(ba.getTotalScore());
 	}
-
 
 }
